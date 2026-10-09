@@ -2,8 +2,8 @@
 /* ============================================================
    Mini Vector — tailwind.config.js
    Palet meniru UI Figma (dark): abu-abu gelap + teks putih.
-   Nilai di bawah adalah SATU-SATUNYA tempat warna disimpan.
-   Setelah diubah, build ulang libs/tailwind.css (lihat src/input.css).
+   Konfigurasi ini hanya dipakai jika Tailwind dibuild secara lokal.
+   Aplikasi memakai CDN; tema aktifnya diatur di index.html sebelum script CDN.
    ============================================================ */
 module.exports = {
   content: ['./index.html'],
