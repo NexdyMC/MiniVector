@@ -13,608 +13,300 @@
     --c-success: #14AE5C; --c-danger: #F24822;
   }
 </style>
+<link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          bg: '#1E1E1E',
-          panel: '#2C2C2C',
-          input: '#383838',
-          hover: 'rgba(255, 255, 255, 0.08)',
-          line: {
-            DEFAULT: '#444444',
-            strong: '#5A5A5A',
-          },
-          ink: '#FFFFFF',
-          mute: '#B3B3B3',
-          dim: '#8C8C8C',
-          accent: {
-            DEFAULT: '#0D99FF',
-            soft: 'rgba(13, 153, 255, 0.22)',
-          },
-          success: '#14AE5C',
-          danger: '#F24822',
-        },
-        fontFamily: {
-          sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-          mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
-        },
-      },
-    },
-  };
-</script>
+<script src="tailwind.config.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
-<style>
-  /* ============================================================
-     [EDIT] UKURAN TEKS & KONTROL
-     Semua ukuran dikontrol lewat variabel di :root. Atur ukuran teks
-     (besar -> kecil) di sini, mirip Figma. Tiap breakpoint punya set sendiri.
-     ============================================================ */
-  :root {
-    --fs: 14px;        /* teks utama */
-    --fs-sm: 13px;     /* label kecil, kode */
-    --fs-title: calc(var(--fs) + 2px);  /* judul popup */
-    --ico: 18px;       /* ikon */
-    --ctl: 34px;       /* tinggi tombol / input / baris layer */
-    --bar: 48px;       /* tinggi top bar */
-    --side: 260px;     /* lebar sidebar kiri & kanan */
-    --tool: 38px;      /* tombol toolbar bawah */
-  }
-  @media (min-width: 1440px) {
-    :root { --fs: 16px; --fs-sm: 14px; --ico: 20px; --ctl: 38px; --bar: 54px; --side: 300px; --tool: 42px; }
-  }
-  @media (max-width: 1023px) {
-    :root { --fs: 15px; --fs-sm: 14px; --ico: 20px; --ctl: 40px; --bar: 52px; --side: 280px; --tool: 42px; }
-  }
-  @media (max-width: 639px) {
-    :root { --fs: 16px; --fs-sm: 15px; --ico: 22px; --ctl: 44px; --bar: 56px; --side: min(86vw, 320px); --tool: 44px; }
-  }
-
-  /* ============================================================
-     [EDIT] UKURAN POPUP
-     ============================================================ */
-  :root {
-    --settings-w: 400px; --settings-h: 500px;
-    --save-w: 600px;     --save-h: 400px;
-    --import-w: 520px;
-    --help-w: 720px;
-    --img-cell-w: 250px; --img-cell-h: 200px; --img-gap: 12px;   /* grid Image: 3 kolom x 2 baris */
-  }
-
-  /* ---------- Dasar ---------- */
-  [hidden] { display: none !important; }
-  html, body { height: 100%; }
-  body {
-    margin: 0; overflow: hidden; background: var(--c-bg); color: var(--c-ink);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-size: var(--fs); line-height: 1.4; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
-  }
-  * { scrollbar-width: thin; scrollbar-color: var(--c-line-strong) transparent; }
-  button, input, select { font: inherit; color: inherit; }
-  button { cursor: pointer; }
-  button:disabled { opacity: .4; cursor: default; }
-  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: -2px; }
-  .ico { width: var(--ico); height: var(--ico); flex: none; fill: none; stroke: currentColor;
-         stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* ---------- Kerangka ---------- */
-  #app  { display: grid; grid-template-rows: var(--bar) minmax(0, 1fr); height: 100vh; height: 100dvh; width: 100vw; }
-  #main { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); min-height: 0; }
-  #canvas { touch-action: none; }
-
-  /* ---------- Top bar ---------- */
-  #topbar { display: flex; align-items: stretch; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
-  #topbar::-webkit-scrollbar { display: none; }
-  #topbar > * { flex-shrink: 0; }
-  #file-name { display: flex; align-items: center; min-width: 110px; padding: 0 14px; font-weight: 600; white-space: nowrap;
-    border-right: 1px solid var(--c-line); box-shadow: inset 0 -2px 0 var(--c-accent); }
-  .tb-group { display: flex; align-items: center; gap: 2px; padding: 0 6px; }
-  .tb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
-    min-height: var(--ctl); min-width: var(--ctl); padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--c-ink); }
-  .tb-btn:hover { background: var(--c-hover); }
-  .tb-btn.is-primary { background: var(--c-accent); color: #fff; font-weight: 600; }
-  .tb-btn.is-primary:hover { filter: brightness(1.1); }
-  #btn-new { align-self: center; margin: 0 6px; width: var(--ctl); height: var(--ctl); display: grid; place-items: center;
-    border: 1px solid var(--c-line); border-radius: 6px; background: transparent; }
-  #btn-new:hover { background: var(--c-hover); }
-
-  /* Zoom: [-]  [100 %]  [+] */
-  .zoom { display: flex; align-items: center; height: var(--ctl); margin: 0 6px; background: var(--c-input); border-radius: 6px; }
-  .zoom-btn { display: grid; place-items: center; width: var(--ctl); height: 100%; border: 0; border-radius: 6px; background: transparent; }
-  .zoom-btn:hover:not(:disabled) { background: var(--c-hover); }
-  .zoom-val { display: flex; align-items: center; gap: 2px; padding: 0 4px; height: 100%; border-radius: 4px; color: var(--c-mute); }
-  .zoom-val:focus-within { box-shadow: inset 0 0 0 1px var(--c-accent); }
-  .zoom-val input { width: 4ch; padding: 0; border: 0; outline: 0; background: transparent; text-align: right;
-    font-weight: 600; color: var(--c-ink); -moz-appearance: textfield; }
-  .zoom-val input::-webkit-outer-spin-button, .zoom-val input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-  /* Tombol drawer (hanya HP / tablet kecil) */
-  .drawer-btn { display: none; place-items: center; align-self: center; margin: 0 6px; width: var(--ctl); height: var(--ctl);
-    border: 1px solid var(--c-line); border-radius: 6px; background: transparent; }
-  #backdrop { display: none; position: fixed; left: 0; right: 0; bottom: 0; top: var(--bar); z-index: 30; background: rgba(0,0,0,.55); }
-
-  /* ---------- Sidebar kiri / Layers ---------- */
-  #left-sidebar { display: flex; flex-direction: column; min-height: 0; }
-  .side-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 6px; font-weight: 600; }
-  .icon-btn { display: grid; place-items: center; width: var(--ctl); height: var(--ctl); flex: none; border: 0; border-radius: 6px;
-    background: transparent; color: var(--c-mute); }
-  .icon-btn:hover { background: var(--c-hover); color: var(--c-ink); }
-  #layer-search { width: 100%; height: var(--ctl); padding: 0 10px; border: 1px solid transparent; border-radius: 6px;
-    background: var(--c-input); color: var(--c-ink); outline: 0; }
-  #layer-search::placeholder { color: var(--c-dim); }
-  #layer-search:focus { border-color: var(--c-accent); }
-
-  #layer-list { display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0; padding: 4px 6px; overflow-y: auto;
-    list-style: none; border-top: 1px solid var(--c-line); }
-  .layer { position: relative; flex: none; display: flex; align-items: center; gap: 6px; min-height: var(--ctl);
-    padding: 0 8px 0 calc(4px + var(--depth, 0) * 18px); border-radius: 6px; color: var(--c-ink);
-    user-select: none; -webkit-user-select: none; touch-action: pan-y; cursor: default; }
-  .layer:hover { background: var(--c-hover); }
-  .layer.selected { background: var(--c-accent-soft); }
-  .layer > .ico { color: var(--c-mute); }
-  .layer.selected > .ico { color: var(--c-ink); }
-  .layer .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .twirl { flex: none; display: grid; place-items: center; width: var(--ico); height: var(--ico); padding: 0; border: 0;
-    border-radius: 4px; background: transparent; color: var(--c-mute); }
-  button.twirl:hover { background: var(--c-hover); color: var(--c-ink); }
-  .twirl .ico { width: 12px; height: 12px; transition: transform .12s ease; }
-  .layer.open > .twirl .ico { transform: rotate(90deg); }
-  .layer-end { flex: 1 0 28px; }
-
-  /* indikator drag & drop */
-  .layer.dragging { opacity: .4; }
-  .layer.drop-before::before, .layer.drop-after::after { content: ""; position: absolute; left: calc(4px + var(--depth, 0) * 18px); right: 4px;
-    height: 2px; border-radius: 1px; background: var(--c-accent); pointer-events: none; z-index: 1; }
-  .layer.drop-before::before { top: -1px; }
-  .layer.drop-after::after { bottom: -1px; }
-  .layer.drop-inside { background: transparent; outline: 2px solid var(--c-accent); outline-offset: -2px; }
-  .layer-end.drop-end { box-shadow: inset 0 2px 0 var(--c-accent); }
-  .drag-ghost { position: fixed; z-index: 100; display: flex; align-items: center; gap: 8px; padding: 6px 12px; pointer-events: none;
-    border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-panel); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
-  body.dragging-layer, body.dragging-layer * { cursor: grabbing !important; user-select: none; }
-
-  .side-foot { padding: 6px 8px; border-top: 1px solid var(--c-line); }
-  #btn-settings { display: flex; align-items: center; gap: 8px; width: 100%; height: var(--ctl); padding: 0 8px; border: 0; border-radius: 6px;
-    background: transparent; color: var(--c-mute); }
-  #btn-settings:hover { background: var(--c-hover); color: var(--c-ink); }
-
-  /* ---------- Tengah / toolbar ---------- */
-  #workspace { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
-  #empty-state { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px 24px; text-align: center;
-    color: var(--c-dim); pointer-events: none; }
-  #toolbar { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    display: flex; align-items: center; gap: 4px; padding: 6px; max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none;
-    border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-panel); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
-  #toolbar::-webkit-scrollbar { display: none; }
-  .tool { display: grid; place-items: center; flex: none; width: var(--tool); height: var(--tool); border: 0; border-radius: 6px;
-    background: transparent; color: var(--c-ink); }
-  .tool:hover { background: var(--c-hover); }
-  .tool.active { background: var(--c-accent); color: #fff; }
-  .tool-sep { flex: none; width: 1px; height: calc(var(--tool) * .55); margin: 0 4px; background: var(--c-line); }
-
-  /* ---------- Sidebar kanan ---------- */
-  #right-sidebar { display: flex; flex-direction: column; min-height: 0; }
-  .tabs { display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--c-line); }
-  .mode-tab { min-height: var(--ctl); padding: 0 16px; border: 0; border-radius: 6px; background: transparent; color: var(--c-mute); font-weight: 600; }
-  .mode-tab:hover { background: var(--c-hover); color: var(--c-ink); }
-  .mode-tab.active { background: var(--c-input); color: var(--c-ink); }
-
-  .code-block { padding: 12px 14px; border-bottom: 1px solid var(--c-line); }
-  .code-block .code-title { margin-bottom: 6px; font-weight: 600; }
-  .code-block pre { margin: 0; padding: 10px 12px; overflow-x: auto; border-radius: 6px; background: var(--c-input);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--fs-sm); line-height: 1.5; }
-
-  /* panel properti */
-  .fg-sec { padding: 10px 14px 14px; border-bottom: 1px solid var(--c-line); color: var(--c-ink); }
-  .fg-head { display: flex; align-items: center; justify-content: space-between; min-height: var(--ctl); margin-bottom: 4px; font-weight: 600; font-size: var(--fs); }
-  .fg-actions { display: flex; align-items: center; gap: 2px; }
-  .fg-ib { display: grid; place-items: center; width: var(--ctl); height: var(--ctl); flex: none; border: 0; border-radius: 6px;
-    background: transparent; color: #d0d0d0; font-size: calc(var(--ico) - 4px); }
-  .fg-ib:hover { background: var(--c-hover); color: #fff; }
-  .fg-label { margin: 12px 0 6px; font-size: var(--fs-sm); font-weight: 500; color: var(--c-mute); }
-  .fg-label:first-of-type { margin-top: 6px; }
-  .fg-grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; align-items: center; }
-  .fg-grid.three { grid-template-columns: 1fr 1fr var(--ctl); }
-  .fg-grid.fill { grid-template-columns: minmax(0, 1fr) var(--ctl) var(--ctl); gap: 4px; }
-  .fg-grid > .fg-label { margin: 10px 0 0; }
-  .fg-in { display: flex; align-items: center; gap: 8px; height: var(--ctl); padding: 0 10px; min-width: 0;
-    background: var(--c-input); border: 1px solid transparent; border-radius: 6px; }
-  .fg-in:hover { border-color: var(--c-line-strong); }
-  .fg-in:focus-within { border-color: var(--c-accent); }
-  .fg-in > i, .fg-in > .lb { flex: none; width: 1.2em; text-align: center; color: var(--c-mute); font-size: var(--fs-sm); }
-  .fg-in input { flex: 1; min-width: 0; width: 100%; height: 100%; padding: 0; background: transparent; border: 0; outline: 0;
-    font-size: var(--fs); font-weight: 600; appearance: none; -moz-appearance: textfield; }
-  .fg-in input::-webkit-outer-spin-button, .fg-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .fg-in .end { flex: none; color: var(--c-mute); font-size: var(--fs-sm); }
-  .fg-seg { display: flex; align-items: center; height: var(--ctl); padding: 2px; background: var(--c-input); border-radius: 6px; }
-  .fg-seg .fg-ib { flex: 1; width: auto; height: 100%; }
-  .fg-seg .fg-ib.on { background: rgba(255,255,255,.14); color: #fff; }
-  .fg-fieldbtn { background: var(--c-input); }
-  .fg-color { display: flex; align-items: center; gap: 8px; height: var(--ctl); padding: 0 10px; min-width: 0;
-    background: var(--c-input); border: 1px solid transparent; border-radius: 6px; }
-  .fg-color:focus-within { border-color: var(--c-accent); }
-  .fg-color input[type="color"] { flex: none; width: calc(var(--ico) + 2px); height: calc(var(--ico) + 2px); padding: 0;
-    border: 1px solid var(--c-line-strong); border-radius: 4px; background: none; cursor: pointer; appearance: none; -webkit-appearance: none; }
-  .fg-color input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-  .fg-color input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
-  .fg-color input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
-  .fg-color .hex { flex: 1; min-width: 0; width: 100%; background: transparent; border: 0; outline: 0; font-weight: 600; text-transform: uppercase; }
-  .fg-color .op { width: 3.2em; flex: none; background: transparent; border: 0; outline: 0; text-align: right; font-weight: 600; -moz-appearance: textfield; }
-  .fg-color .op::-webkit-outer-spin-button, .fg-color .op::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .fg-color .pc { color: var(--c-mute); font-size: var(--fs-sm); }
-  .fg-acc { padding-top: 4px; padding-bottom: 4px; }
-  .fg-acc .fg-head { margin-bottom: 0; }
-  .fg-acc-toggle { flex: 1; display: flex; align-items: center; min-height: var(--ctl); text-align: left; font-weight: 600;
-    background: transparent; border: 0; color: inherit; }
-  .fg-acc .fg-chev i { transition: transform .15s ease; }
-  .fg-acc.open .fg-chev i { transform: rotate(90deg); }
-  .fg-body { padding: 4px 0 12px; }
-  .fg-btn { min-height: var(--ctl); padding: 0 14px; border: 1px solid var(--c-line-strong); border-radius: 6px; background: transparent; font-weight: 600; }
-  .fg-btn:hover { background: var(--c-hover); }
-
-  /* ---------- Tombol umum (popup) ---------- */
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--ctl); padding: 0 16px;
-    border: 1px solid var(--c-line-strong); border-radius: 6px; background: transparent; font-weight: 600; }
-  .btn:hover:not(:disabled) { background: var(--c-hover); }
-  .btn-primary { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: var(--c-accent); filter: brightness(1.1); }
-
-  /* ============================================================
-     POPUP (modal) — dipakai Settings, Image, Import, Save, Shortcut
-     ============================================================ */
-  .modal { position: fixed; inset: 0; z-index: 60; display: none; padding: 12px; background: rgba(0,0,0,.6);
-    grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); place-items: center; }
-  .modal.open { display: grid; }
-  .modal-box { display: flex; flex-direction: column; width: min(var(--mw, 520px), 100%); height: var(--mh, auto); max-height: 100%;
-    overflow: hidden; border: 1px solid var(--c-line); border-radius: 12px; background: var(--c-panel); box-shadow: 0 16px 48px rgba(0,0,0,.55); }
-  .modal-head { display: flex; align-items: center; justify-content: space-between; flex: none; min-height: calc(var(--ctl) + 14px);
-    padding: 0 8px 0 18px; border-bottom: 1px solid var(--c-line); font-size: var(--fs-title); font-weight: 600; }
-  .modal-body { flex: 1; min-height: 0; padding: 16px 18px; overflow: auto; }
-  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; flex: none; padding: 12px 18px; border-top: 1px solid var(--c-line); }
-
-  #modal-settings .modal-box { --mw: var(--settings-w); --mh: var(--settings-h); }   /* 400 x 500 */
-  #modal-save     .modal-box { --mw: var(--save-w);     --mh: var(--save-h); }       /* 600 x 400 */
-  #modal-import   .modal-box { --mw: var(--import-w); }
-  #modal-help     .modal-box { --mw: var(--help-w); }
-  #modal-image    .modal-box { width: fit-content; max-width: 100%; }                 /* mengikuti grid */
-
-  /* Image: grid 3 kolom x 2 baris, kotak 250 x 200 */
-  .img-grid { display: grid; gap: var(--img-gap); grid-template-columns: repeat(3, var(--img-cell-w)); grid-template-rows: repeat(2, var(--img-cell-h)); }
-  .img-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0;
-    border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-input); color: var(--c-mute); }
-  .img-cell .ico { width: 32px; height: 32px; }
-  .img-cell:hover { border-color: var(--c-line-strong); color: var(--c-ink); }
-  .img-cell.selected { border-color: var(--c-accent); box-shadow: 0 0 0 1px var(--c-accent); color: var(--c-ink); }
-
-  /* Import */
-  .field-label { font-weight: 600; }
-  .field-desc { margin: 2px 0 14px; color: var(--c-mute); font-size: var(--fs-sm); }
-  .dropzone { display: grid; justify-items: center; gap: 6px; padding: 28px 16px; text-align: center; cursor: pointer;
-    border: 1.5px dashed var(--c-line-strong); border-radius: 10px; background: transparent; color: var(--c-mute); }
-  .dropzone:hover { border-color: var(--c-mute); }
-  .dropzone.dragover { border-color: var(--c-accent); background: var(--c-accent-soft); color: var(--c-ink); }
-  .dropzone .ico { width: 28px; height: 28px; }
-  .dropzone strong { color: var(--c-ink); }
-  .dropzone small { color: var(--c-dim); font-size: var(--fs-sm); }
-  .file-chip { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--c-line);
-    border-radius: 8px; background: var(--c-input); }
-  .file-chip .meta { flex: 1; min-width: 0; }
-  .file-chip .meta b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-  .file-chip .meta span { color: var(--c-mute); font-size: var(--fs-sm); }
-  .badge { flex: none; padding: 2px 10px; border-radius: 999px; font-size: var(--fs-sm); font-weight: 600; }
-  .badge.ok  { background: rgba(20,174,92,.18); color: var(--c-success); }
-  .badge.bad { background: rgba(242,72,34,.18); color: var(--c-danger); }
-  .file-chip.is-bad { border-color: var(--c-danger); }
-  .notice { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 8px;
-    background: rgba(20,174,92,.15); color: var(--c-success); font-weight: 600; }
-
-  /* Shortcut (akan dipindah ke Settings) */
-  .help-h3 { margin: 14px 0 6px; font-weight: 600; color: var(--c-mute); }
-  .help-h3:first-child { margin-top: 0; }
-  .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 24px; }
-  .help-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
-  kbd { padding: 1px 7px; border: 1px solid var(--c-line-strong); border-radius: 4px; background: rgba(255,255,255,.06);
-    font-family: inherit; font-size: var(--fs-sm); white-space: nowrap; }
-  @media (max-width: 639px) { .help-grid { grid-template-columns: 1fr; } }
-
-  /* ---------- Responsif ---------- */
-  @media (max-width: 899px) {
-    #main { grid-template-columns: minmax(0, 1fr); }
-    #left-sidebar, #right-sidebar { position: fixed; top: var(--bar); bottom: 0; width: var(--side); z-index: 40;
-      transition: transform .2s ease; box-shadow: 0 0 24px rgba(0,0,0,.5); }
-    #left-sidebar  { left: 0;  transform: translateX(-105%); }
-    #right-sidebar { right: 0; transform: translateX(105%); }
-    body.show-left  #left-sidebar, body.show-right #right-sidebar { transform: none; }
-    body.show-left #backdrop, body.show-right #backdrop { display: block; }
-    .drawer-btn { display: grid; }
-  }
-  @media (max-width: 639px) {
-    .lbl { display: none; }
-    #file-name { min-width: 84px; }
-  }
-  @media (min-width: 900px) {
-    body.hide-left  #left-sidebar,  body.hide-right #right-sidebar { display: none; }
-    body.hide-left  #main { grid-template-columns: 0 minmax(0, 1fr) var(--side); }
-    body.hide-right #main { grid-template-columns: var(--side) minmax(0, 1fr) 0; }
-    body.hide-left.hide-right #main { grid-template-columns: 0 minmax(0, 1fr) 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    #left-sidebar, #right-sidebar, .twirl .ico, .fg-acc .fg-chev i { transition: none; }
-  }
-</style>
 </head>
 <body class="bg-bg text-ink">
-<!-- Ikon SVG inline (offline) -->
-<svg width="0" height="0" class="absolute" aria-hidden="true"><defs>
-  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></symbol>
-  <symbol id="i-minus" viewBox="0 0 16 16"><path d="M2 8h12"/></symbol>
-  <symbol id="i-close" viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13"/></symbol>
-  <symbol id="i-check" viewBox="0 0 16 16"><path d="m3 8.5 3.2 3.2L13 4.8"/></symbol>
-  <symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 11V3M5 6l3-3 3 3M3 13h10"/></symbol>
-  <symbol id="i-file" viewBox="0 0 16 16"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/></symbol>
-  <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5 3 2 6l3 3"/><path d="M2 6h7a4 4 0 0 1 0 8H6"/></symbol>
-  <symbol id="i-redo" viewBox="0 0 16 16"><path d="m11 3 3 3-3 3"/><path d="M14 6H7a4 4 0 0 0 0 8h3"/></symbol>
-  <symbol id="i-drive" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="6" cy="7" r="1.2"/><path d="m3 12 4-3 3 2 3-3"/></symbol>
-  <symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2v8M5 7l3 3 3-3M3 13h10"/></symbol>
-  <symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2h8l2 2v10H3z"/><path d="M5 2v4h5V2M5 14v-4h6v4"/></symbol>
-  <symbol id="i-chev" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></symbol>
-  <symbol id="i-layers" viewBox="0 0 16 16"><path d="M2 5h8M2 8h12M2 11h9"/></symbol>
-  <symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="7" cy="12" r="1.3"/></symbol>
-  <symbol id="i-select" viewBox="0 0 16 16"><path d="M3 2v11l3-3 2 4 2-1-2-4h4z"/></symbol>
-  <symbol id="i-hand" viewBox="0 0 16 16"><path d="M5 8V3.5a1 1 0 0 1 2 0V7m0-3.5v-1a1 1 0 0 1 2 0V7m0-3a1 1 0 0 1 2 0v4l1-1.5a1 1 0 0 1 1.6 1.2L11 13H7.5L4 9.5A1 1 0 0 1 5 8z"/></symbol>
-  <symbol id="i-frame" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></symbol>
-  <symbol id="i-rect" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9"/></symbol>
-  <symbol id="i-ellipse" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/></symbol>
-  <symbol id="i-line" viewBox="0 0 16 16"><path d="M3 13 13 3"/></symbol>
-  <symbol id="i-polygon" viewBox="0 0 16 16"><path d="M8 2.5 13.5 6.5 11.5 13h-7l-2-6.5z"/></symbol>
-  <symbol id="i-star" viewBox="0 0 16 16"><path d="m8 2 1.8 4 4.2.4-3.2 2.8 1 4.2L8 11.2 4.2 13.4l1-4.2L2 6.4 6.2 6z"/></symbol>
-  <symbol id="i-pen" viewBox="0 0 16 16"><path d="m3 13 1-4 6-6 3 3-6 6z"/><path d="m9 4 3 3"/></symbol>
-  <symbol id="i-pencil" viewBox="0 0 16 16"><path d="m2.5 13.5 1-3L11 3l2 2-7.5 7.5z"/></symbol>
-  <symbol id="i-text" viewBox="0 0 16 16"><path d="M3 4V3h10v1M8 3v10M6 13h4"/></symbol>
-  <symbol id="i-image" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10"/><circle cx="6" cy="7" r="1"/><path d="m2 12 4-3 3 2 5-4"/></symbol>
-</defs></svg>
+  <div id="app">
 
-<div id="app">
+    <svg width="0" height="0" class="absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12" /></symbol>
+        <symbol id="i-minus" viewBox="0 0 16 16"><path d="M2 8h12" /></symbol>
+        <symbol id="i-close" viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13" /></symbol>
+        <symbol id="i-check" viewBox="0 0 16 16"><path d="m3 8.5 3.2 3.2L13 4.8" /></symbol>
+        <symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 11V3M5 6l3-3 3 3M3 13h10" /></symbol>
+        <symbol id="i-file" viewBox="0 0 16 16"><path d="M4 2h5l3 3v9H4z" /><path d="M9 2v3h3" /></symbol>
+        <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5 3 2 6l3 3" /><path d="M2 6h7a4 4 0 0 1 0 8H6" /></symbol>
+        <symbol id="i-redo" viewBox="0 0 16 16"><path d="m11 3 3 3-3 3" /><path d="M14 6H7a4 4 0 0 0 0 8h3" /></symbol>
+        <symbol id="i-drive" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1" /><circle cx="6" cy="7" r="1.2" /><path d="m3 12 4-3 3 2 3-3" /></symbol>
+        <symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" /></symbol>
+        <symbol id="i-save" viewBox="0 0 16 16"><path d="M3 2h8l2 2v10H3z" /><path d="M5 2v4h5V2M5 14v-4h6v4" /></symbol>
+        <symbol id="i-chev" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></symbol>
+        <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" /><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" /></symbol>
+        <symbol id="i-layers" viewBox="0 0 16 16"><path d="M2 5h8M2 8h12M2 11h9" /></symbol>
+        <symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12" /><circle cx="5" cy="4" r="1.3" /><circle cx="11" cy="8" r="1.3" /><circle cx="7" cy="12" r="1.3" /></symbol>
+        <symbol id="i-select" viewBox="0 0 16 16"><path d="M3 2v11l3-3 2 4 2-1-2-4h4z" /></symbol>
+        <symbol id="i-hand" viewBox="0 0 16 16"><path d="M5 8V3.5a1 1 0 0 1 2 0V7m0-3.5v-1a1 1 0 0 1 2 0V7m0-3a1 1 0 0 1 2 0v4l1-1.5a1 1 0 0 1 1.6 1.2L11 13H7.5L4 9.5A1 1 0 0 1 5 8z" /></symbol>
+        <symbol id="i-frame" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12" /></symbol>
+        <symbol id="i-rect" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9" /></symbol>
+        <symbol id="i-ellipse" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" /></symbol>
+        <symbol id="i-line" viewBox="0 0 16 16"><path d="M3 13 13 3" /></symbol>
+        <symbol id="i-polygon" viewBox="0 0 16 16"><path d="M8 2.5 13.5 6.5 11.5 13h-7l-2-6.5z" /></symbol>
+        <symbol id="i-star" viewBox="0 0 16 16"><path d="m8 2 1.8 4 4.2.4-3.2 2.8 1 4.2L8 11.2 4.2 13.4l1-4.2L2 6.4 6.2 6z" /></symbol>
+        <symbol id="i-pen" viewBox="0 0 16 16"><path d="m3 13 1-4 6-6 3 3-6 6z" /><path d="m9 4 3 3" /></symbol>
+        <symbol id="i-pencil" viewBox="0 0 16 16"><path d="m2.5 13.5 1-3L11 3l2 2-7.5 7.5z" /></symbol>
+        <symbol id="i-text" viewBox="0 0 16 16"><path d="M3 4V3h10v1M8 3v10M6 13h4" /></symbol>
+        <symbol id="i-image" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" /><circle cx="6" cy="7" r="1" /><path d="m2 12 4-3 3 2 5-4" /></symbol>
+      </defs>
+    </svg>
 
-  <!-- 1. TOP NAVIGATION -->
-  <header id="topbar" class="bg-panel border-b border-line">
-    <button id="btn-toggle-left" class="drawer-btn" title="Layers" aria-label="Buka Layers"><svg class="ico"><use href="#i-layers"/></svg></button>
-    <div id="file-name">Untitled</div>
-    <button id="btn-new" title="File baru (Alt+N)" aria-label="File baru"><svg class="ico"><use href="#i-plus"/></svg></button>
-    <div class="tb-group">
-      <button id="btn-undo" class="tb-btn" title="Undo (Ctrl+Z)" aria-label="Undo"><svg class="ico"><use href="#i-undo"/></svg></button>
-      <button id="btn-redo" class="tb-btn" title="Redo (Ctrl+Y)" aria-label="Redo"><svg class="ico"><use href="#i-redo"/></svg></button>
-    </div>
-    <div class="tb-group">
-      <button id="btn-drive" class="tb-btn" title="Image (Alt+D)" data-open-modal="image"><svg class="ico"><use href="#i-drive"/></svg><span class="lbl">Image</span></button>
-      <button id="btn-import" class="tb-btn" title="Import (Alt+I)" data-open-modal="import"><svg class="ico"><use href="#i-import"/></svg><span class="lbl">Import</span></button>
-    </div>
-    <div class="flex-1"></div>
+    <div id="app">
 
-    <!-- Zoom: tombol - / + dan input angka (bisa diketik manual) -->
-    <div class="zoom" role="group" aria-label="Zoom">
-      <button id="btn-zoom-out" class="zoom-btn" title="Zoom out (-)" aria-label="Zoom out"><svg class="ico"><use href="#i-minus"/></svg></button>
-      <label class="zoom-val" title="Zoom (ketik angka lalu Enter)">
-        <input id="zoom-input" type="number" min="10" max="800" step="1" value="100" inputmode="numeric" aria-label="Zoom dalam persen"><span>%</span>
-      </label>
-      <button id="btn-zoom-in" class="zoom-btn" title="Zoom in (+)" aria-label="Zoom in"><svg class="ico"><use href="#i-plus"/></svg></button>
-    </div>
+      <!-- 1. TOP NAVIGATION -->
+      <header id="topbar" class="bg-panel border-b border-line">
+        <button id="btn-toggle-left" class="drawer-btn" title="Layers" aria-label="Buka Layers"><svg class="ico">
+            <use href="#i-layers" /></svg></button>
+        <div id="file-name">Untitled</div>
+        <button id="btn-new" title="File baru (Alt+N)" aria-label="File baru"><svg class="ico">
+            <use href="#i-plus" /></svg></button>
+        <div class="tb-group">
+          <button id="btn-undo" class="tb-btn" title="Undo (Ctrl+Z)" aria-label="Undo"><svg class="ico">
+              <use href="#i-undo" /></svg></button>
+          <button id="btn-redo" class="tb-btn" title="Redo (Ctrl+Y)" aria-label="Redo"><svg class="ico">
+              <use href="#i-redo" /></svg></button>
+        </div>
+        <div class="tb-group">
+          <button id="btn-drive" class="tb-btn" title="Image (Alt+D)" data-open-modal="image"><svg class="ico">
+              <use href="#i-drive" /></svg><span class="lbl">Image</span></button>
+          <button id="btn-import" class="tb-btn" title="Import (Alt+I)" data-open-modal="import"><svg class="ico">
+              <use href="#i-import" /></svg><span class="lbl">Import</span></button>
+        </div>
+        <div class="flex-1"></div>
 
-    <div class="tb-group">
-      <button id="btn-save" class="tb-btn is-primary" title="Save (Ctrl+S)" data-open-modal="save"><svg class="ico"><use href="#i-save"/></svg><span class="lbl">Save</span></button>
-    </div>
-    <button id="btn-toggle-right" class="drawer-btn" title="Properti" aria-label="Buka panel Properti"><svg class="ico"><use href="#i-sliders"/></svg></button>
-  </header>
+        <!-- Zoom: tombol - / + dan input angka (bisa diketik manual) -->
+        <div class="tb-group" role="group" aria-label="Zoom">
+          <div class="zoom">
 
-  <div id="main">
-
-    <!-- 2. LEFT SIDEBAR -->
-    <aside id="left-sidebar" class="bg-panel border-r border-line">
-      <div class="side-head">
-        <span>Layers</span>
-        <button id="btn-collapse-layers" class="icon-btn" title="Collapse / expand semua frame" aria-label="Collapse semua"><svg class="ico"><use href="#i-layers"/></svg></button>
-      </div>
-      <div style="padding:0 10px 10px">
-        <input id="layer-search" type="search" placeholder="Search" autocomplete="off" aria-label="Cari layer">
-      </div>
-      <ul id="layer-list" role="tree" aria-label="Daftar layer"></ul>
-      <div class="side-foot">
-        <button id="btn-settings" data-open-modal="settings"><svg class="ico"><use href="#i-gear"/></svg>Settings</button>
-      </div>
-    </aside>
-
-    <!-- 3. CENTER -->
-    <main id="workspace" class="bg-bg">
-      <canvas id="canvas" class="absolute inset-0 w-full h-full block"></canvas>
-      <div id="empty-state"><span>Create a frame or select a tool to start designing</span></div>
-      <nav id="toolbar" aria-label="Tools"></nav>
-    </main>
-
-    <!-- 4. RIGHT SIDEBAR -->
-    <aside id="right-sidebar" class="bg-panel border-l border-line">
-      <div class="tabs" role="tablist">
-        <button id="tab-design" class="mode-tab active" data-mode="design" role="tab" aria-selected="true">Design</button>
-        <button id="tab-code" class="mode-tab" data-mode="code" role="tab" aria-selected="false">Code</button>
-      </div>
-      <div class="flex-1 overflow-y-auto min-h-0">
-        <div id="view-design">
-
-          <!-- POSITION -->
-          <section class="fg-sec">
-            <div class="fg-head"><span>Position</span></div>
-            <div class="fg-label">Alignment</div>
-            <div class="fg-grid">
-              <div class="fg-seg">
-                <button class="fg-ib" title="Align left"><i class="fa-solid fa-align-left"></i></button>
-                <button class="fg-ib" title="Align horizontal center"><i class="fa-solid fa-align-center"></i></button>
-                <button class="fg-ib" title="Align right"><i class="fa-solid fa-align-right"></i></button>
-              </div>
-              <div class="fg-seg">
-                <button class="fg-ib" title="Align top"><i class="fa-solid fa-align-left fa-rotate-90"></i></button>
-                <button class="fg-ib" title="Align vertical center"><i class="fa-solid fa-align-center fa-rotate-90"></i></button>
-                <button class="fg-ib" title="Align bottom"><i class="fa-solid fa-align-right fa-rotate-90"></i></button>
-              </div>
-            </div>
-            <div class="fg-label">Position</div>
-            <div class="fg-grid">
-              <label class="fg-in"><span class="lb">X</span><input id="prop-x" type="number" value="0"></label>
-              <label class="fg-in"><span class="lb">Y</span><input id="prop-y" type="number" value="0"></label>
-            </div>
-            <div class="fg-label">Rotation</div>
-            <div class="fg-grid">
-              <label class="fg-in"><i class="fa-solid fa-angle-left fa-rotate-by" style="--fa-rotate-angle:-45deg"></i><input id="prop-rotation" type="number" value="0"><span class="end">°</span></label>
-              <div class="fg-seg">
-                <button class="fg-ib" title="Putar 90°"><i class="fa-solid fa-rotate-right"></i></button>
-                <button class="fg-ib" title="Flip horizontal"><i class="fa-solid fa-left-right"></i></button>
-                <button class="fg-ib" title="Flip vertical"><i class="fa-solid fa-up-down"></i></button>
-              </div>
-            </div>
-          </section>
-
-          <!-- LAYOUT -->
-          <section class="fg-sec">
-            <div class="fg-head"><span>Layout</span></div>
-            <div class="fg-label">Dimensions</div>
-            <div class="fg-grid three">
-              <label class="fg-in"><span class="lb">W</span><input id="prop-w" type="number" value="120"></label>
-              <label class="fg-in"><span class="lb">H</span><input id="prop-h" type="number" value="80"></label>
-              <button class="fg-ib fg-fieldbtn" title="Pertahankan rasio / resize to fit"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
-            </div>
-          </section>
-
-          <!-- APPEARANCE -->
-          <section class="fg-sec">
-            <div class="fg-head"><span>Appearance</span>
-              <div class="fg-actions">
-                <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
-                <button class="fg-ib" title="Blend mode"><i class="fa-solid fa-droplet"></i></button>
-              </div>
-            </div>
-            <div class="fg-grid three">
-              <div class="fg-label" style="margin:6px 0 0">Opacity</div>
-              <div class="fg-label" style="margin:6px 0 0">Corner radius</div>
-              <span></span>
-              <label class="fg-in"><i class="fa-solid fa-chess-board"></i><input id="prop-opacity" type="number" value="100"><span class="end">%</span></label>
-              <label class="fg-in"><i class="fa-solid fa-vector-square"></i><input id="prop-radius" type="number" value="0"></label>
-              <button class="fg-ib fg-fieldbtn" title="Radius per sudut"><i class="fa-solid fa-sliders"></i></button>
-              <div class="fg-label">Count</div>
-              <div class="fg-label">Ratio</div>
-              <span></span>
-              <label class="fg-in"><i class="fa-solid fa-asterisk"></i><input id="prop-count" type="number" value="5"></label>
-              <label class="fg-in"><i class="fa-solid fa-play"></i><input id="prop-ratio" type="number" value="38.2"><span class="end">%</span></label>
-              <span></span>
-            </div>
-          </section>
-
-          <!-- TYPOGRAPHY -->
-          <section class="fg-sec">
-            <div class="fg-head"><span>Typography</span>
-              <div class="fg-actions"><button class="fg-ib" title="Pengaturan teks"><i class="fa-solid fa-ellipsis"></i></button></div>
-            </div>
-            <label class="fg-in"><input id="prop-font" type="text" value="Inter"><i class="fa-solid fa-chevron-down" style="width:auto"></i></label>
-            <div class="fg-grid" style="margin-top:8px">
-              <label class="fg-in"><input id="prop-fontweight" type="number" value="400"><i class="fa-solid fa-chevron-down" style="width:auto"></i></label>
-              <label class="fg-in"><i class="fa-solid fa-text-height"></i><input id="prop-fontsize" type="number" value="16"></label>
-              <label class="fg-in"><i class="fa-solid fa-arrows-up-down"></i><input id="prop-lineheight" type="text" value="Auto"></label>
-              <label class="fg-in"><i class="fa-solid fa-text-width"></i><input id="prop-letterspacing" type="number" value="0"><span class="end">%</span></label>
-            </div>
-            <div class="fg-grid" style="margin-top:8px">
-              <div class="fg-seg">
-                <button class="fg-ib on" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
-                <button class="fg-ib" title="Rata tengah"><i class="fa-solid fa-align-center"></i></button>
-                <button class="fg-ib" title="Rata kanan"><i class="fa-solid fa-align-right"></i></button>
-                <button class="fg-ib" title="Rata kiri-kanan"><i class="fa-solid fa-align-justify"></i></button>
-              </div>
-              <div class="fg-seg">
-                <button class="fg-ib" title="Underline"><i class="fa-solid fa-underline"></i></button>
-                <button class="fg-ib" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
-                <button class="fg-ib" title="Italic"><i class="fa-solid fa-italic"></i></button>
-              </div>
-            </div>
-          </section>
-
-          <!-- FILL -->
-          <section class="fg-sec">
-            <div class="fg-head"><span>Fill</span>
-              <div class="fg-actions">
-                <button class="fg-ib" title="Styles & variables"><i class="fa-solid fa-table-cells-large"></i></button>
-                <button class="fg-ib" title="Tambah fill"><i class="fa-solid fa-plus"></i></button>
-              </div>
-            </div>
-            <div class="fg-grid fill">
-              <div class="fg-color"><input type="color" id="prop-fill" value="#d9d9d9"><input class="hex" id="prop-fill-hex" value="d9d9d9" maxlength="6" spellcheck="false"><input class="op" id="prop-fill-opacity" type="number" value="100"><span class="pc">%</span></div>
-              <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
-              <button class="fg-ib" title="Hapus"><i class="fa-solid fa-minus"></i></button>
-            </div>
-          </section>
-
-          <!-- STROKE (accordion) -->
-          <section class="fg-sec fg-acc">
-            <div class="fg-head">
-              <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-stroke">Stroke</button>
-              <div class="fg-actions">
-                <button class="fg-ib fg-add" title="Tambah stroke"><i class="fa-solid fa-plus"></i></button>
-                <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-stroke" aria-label="Buka / tutup Stroke"><i class="fa-solid fa-chevron-right"></i></button>
-              </div>
-            </div>
-            <div class="fg-body" id="sec-stroke" hidden>
-              <div class="fg-grid fill">
-                <div class="fg-color"><input type="color" id="prop-stroke" value="#000000"><input class="hex" id="prop-stroke-hex" value="000000" maxlength="6" spellcheck="false"><input class="op" id="prop-stroke-opacity" type="number" value="100"><span class="pc">%</span></div>
-                <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
-                <button class="fg-ib" title="Hapus"><i class="fa-solid fa-minus"></i></button>
-              </div>
-              <div class="fg-grid" style="margin-top:8px">
-                <label class="fg-in"><i class="fa-solid fa-border-all"></i><input id="prop-strokewidth" type="number" value="1"></label>
-                <label class="fg-in"><i class="fa-regular fa-square"></i><input type="text" value="Inside" readonly></label>
-              </div>
-            </div>
-          </section>
-
-          <!-- EFFECTS (accordion) -->
-          <section class="fg-sec fg-acc">
-            <div class="fg-head">
-              <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-effects">Effects</button>
-              <div class="fg-actions">
-                <button class="fg-ib fg-add" title="Tambah efek"><i class="fa-solid fa-plus"></i></button>
-                <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-effects" aria-label="Buka / tutup Effects"><i class="fa-solid fa-chevron-right"></i></button>
-              </div>
-            </div>
-            <div class="fg-body" id="sec-effects" hidden>
-              <div class="fg-grid">
-                <label class="fg-in"><i class="fa-solid fa-droplet"></i><input id="prop-blur" type="number" value="0"></label>
-                <label class="fg-in"><i class="fa-regular fa-clone"></i><input id="prop-shadow" type="number" value="0"></label>
-              </div>
-            </div>
-          </section>
-
-          <!-- EXPORT (accordion) -->
-          <section class="fg-sec fg-acc">
-            <div class="fg-head">
-              <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-export">Export</button>
-              <div class="fg-actions">
-                <button class="fg-ib fg-add" title="Tambah export"><i class="fa-solid fa-plus"></i></button>
-                <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-export" aria-label="Buka / tutup Export"><i class="fa-solid fa-chevron-right"></i></button>
-              </div>
-            </div>
-            <div class="fg-body" id="sec-export" hidden>
-              <div class="fg-grid">
-                <label class="fg-in"><i class="fa-solid fa-maximize"></i><input id="export-scale" type="number" value="1" step="0.25"><span class="end">x</span></label>
-                <label class="fg-in"><i class="fa-regular fa-image"></i><input type="text" value="PNG" readonly></label>
-              </div>
-              <button id="btn-export" class="fg-btn" style="margin-top:10px;width:100%"><i class="fa-solid fa-download" style="margin-right:8px"></i>Export PNG</button>
-            </div>
-          </section>
+            <button id="btn-zoom-out" class="zoom-btn" title="Zoom out (-)" aria-label="Zoom out"><svg class="ico"><use href="#i-minus" /></svg></button>
+            <label class="zoom-val" title="Zoom (ketik angka lalu Enter)">
+              <input id="zoom-input" type="number" min="10" max="800" step="1" value="100" inputmode="numeric" aria-label="Zoom dalam persen"><span>%</span>
+            </label>
+            <button id="btn-zoom-in" class="zoom-btn" title="Zoom in (+)" aria-label="Zoom in"><svg class="ico"><use href="#i-plus" /></svg></button>
+          </div>
         </div>
 
-        <div id="view-code" hidden>
-          <div class="code-block"><div class="code-title">HTML</div>
-            <pre id="code-html">&lt;div class="rectangle-106"&gt;&lt;/div&gt;</pre></div>
-          <div class="code-block"><div class="code-title">CSS</div>
-            <pre id="code-css">.rectangle-106 {
+        <div class="tb-group">
+          <button id="btn-save" class="tb-btn is-primary" title="Save (Ctrl+S)" data-open-modal="save"><svg class="ico">
+              <use href="#i-save" /></svg><span class="lbl">Save</span></button>
+        </div>
+        <button id="btn-toggle-right" class="drawer-btn" title="Properti" aria-label="Buka panel Properti"><svg class="ico">
+            <use href="#i-sliders" /></svg></button>
+      </header>
+
+      <div id="main">
+
+        <!-- 2. LEFT SIDEBAR -->
+        <aside id="left-sidebar" class="bg-panel border-r border-line">
+          <div class="side-head">
+            <span>Layers</span>
+            <button id="btn-collapse-layers" class="icon-btn" title="Collapse / expand semua frame" aria-label="Collapse semua"><svg class="ico">
+                <use href="#i-layers" /></svg></button>
+          </div>
+          <div style="padding:0 10px 10px">
+            <input id="layer-search" type="search" placeholder="Search" autocomplete="off" aria-label="Cari layer">
+          </div>
+          <ul id="layer-list" role="tree" aria-label="Daftar layer"></ul>
+          <div class="side-foot">
+            <button id="btn-settings" data-open-modal="settings"><svg class="ico">
+                <use href="#i-gear" /></svg>Settings</button>
+          </div>
+        </aside>
+
+        <!-- 3. CENTER -->
+        <main id="workspace" class="bg-bg">
+          <canvas id="canvas" class="absolute inset-0 w-full h-full block"></canvas>
+          <div id="empty-state"><span>Create a frame or select a tool to start designing</span></div>
+          <nav id="toolbar" aria-label="Tools"></nav>
+        </main>
+
+        <!-- 4. RIGHT SIDEBAR -->
+        <aside id="right-sidebar" class="bg-panel border-l border-line">
+          <div class="tabs" role="tablist">
+            <button id="tab-design" class="mode-tab active" data-mode="design" role="tab" aria-selected="true">Design</button>
+            <button id="tab-code" class="mode-tab" data-mode="code" role="tab" aria-selected="false">Code</button>
+          </div>
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <div id="view-design">
+
+              <!-- POSITION -->
+              <section class="fg-sec">
+                <div class="fg-head"><span>Position</span></div>
+                <div class="fg-label">Alignment</div>
+                <div class="fg-grid">
+                  <div class="fg-seg">
+                    <button class="fg-ib" title="Align left"><i class="fa-solid fa-align-left"></i></button>
+                    <button class="fg-ib" title="Align horizontal center"><i class="fa-solid fa-align-center"></i></button>
+                    <button class="fg-ib" title="Align right"><i class="fa-solid fa-align-right"></i></button>
+                  </div>
+                  <div class="fg-seg">
+                    <button class="fg-ib" title="Align top"><i class="fa-solid fa-align-left fa-rotate-90"></i></button>
+                    <button class="fg-ib" title="Align vertical center"><i class="fa-solid fa-align-center fa-rotate-90"></i></button>
+                    <button class="fg-ib" title="Align bottom"><i class="fa-solid fa-align-right fa-rotate-90"></i></button>
+                  </div>
+                </div>
+                <div class="fg-label">Position</div>
+                <div class="fg-grid">
+                  <label class="fg-in"><span class="lb">X</span><input id="prop-x" type="number" value="0"></label>
+                  <label class="fg-in"><span class="lb">Y</span><input id="prop-y" type="number" value="0"></label>
+                </div>
+                <div class="fg-label">Rotation</div>
+                <div class="fg-grid">
+                  <label class="fg-in"><i class="fa-solid fa-angle-left fa-rotate-by" style="--fa-rotate-angle:-45deg"></i><input id="prop-rotation" type="number" value="0"><span class="end">°</span></label>
+                  <div class="fg-seg">
+                    <button class="fg-ib" title="Putar 90°"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button class="fg-ib" title="Flip horizontal"><i class="fa-solid fa-left-right"></i></button>
+                    <button class="fg-ib" title="Flip vertical"><i class="fa-solid fa-up-down"></i></button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- LAYOUT -->
+              <section class="fg-sec">
+                <div class="fg-head"><span>Layout</span></div>
+                <div class="fg-label">Dimensions</div>
+                <div class="fg-grid three">
+                  <label class="fg-in"><span class="lb">W</span><input id="prop-w" type="number" value="120"></label>
+                  <label class="fg-in"><span class="lb">H</span><input id="prop-h" type="number" value="80"></label>
+                  <button class="fg-ib fg-fieldbtn" title="Pertahankan rasio / resize to fit"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+                </div>
+              </section>
+
+              <!-- APPEARANCE -->
+              <section class="fg-sec">
+                <div class="fg-head"><span>Appearance</span>
+                  <div class="fg-actions">
+                    <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
+                    <button class="fg-ib" title="Blend mode"><i class="fa-solid fa-droplet"></i></button>
+                  </div>
+                </div>
+                <div class="fg-grid three">
+                  <div class="fg-label" style="margin:6px 0 0">Opacity</div>
+                  <div class="fg-label" style="margin:6px 0 0">Corner radius</div>
+                  <span></span>
+                  <label class="fg-in"><i class="fa-solid fa-chess-board"></i><input id="prop-opacity" type="number" value="100"><span class="end">%</span></label>
+                  <label class="fg-in"><i class="fa-solid fa-vector-square"></i><input id="prop-radius" type="number" value="0"></label>
+                  <button class="fg-ib fg-fieldbtn" title="Radius per sudut"><i class="fa-solid fa-sliders"></i></button>
+                  <div class="fg-label">Count</div>
+                  <div class="fg-label">Ratio</div>
+                  <span></span>
+                  <label class="fg-in"><i class="fa-solid fa-asterisk"></i><input id="prop-count" type="number" value="5"></label>
+                  <label class="fg-in"><i class="fa-solid fa-play"></i><input id="prop-ratio" type="number" value="38.2"><span class="end">%</span></label>
+                  <span></span>
+                </div>
+              </section>
+
+              <!-- TYPOGRAPHY -->
+              <section class="fg-sec">
+                <div class="fg-head"><span>Typography</span>
+                  <div class="fg-actions"><button class="fg-ib" title="Pengaturan teks"><i class="fa-solid fa-ellipsis"></i></button></div>
+                </div>
+                <label class="fg-in"><input id="prop-font" type="text" value="Inter"><i class="fa-solid fa-chevron-down" style="width:auto"></i></label>
+                <div class="fg-grid" style="margin-top:8px">
+                  <label class="fg-in"><input id="prop-fontweight" type="number" value="400"><i class="fa-solid fa-chevron-down" style="width:auto"></i></label>
+                  <label class="fg-in"><i class="fa-solid fa-text-height"></i><input id="prop-fontsize" type="number" value="16"></label>
+                  <label class="fg-in"><i class="fa-solid fa-arrows-up-down"></i><input id="prop-lineheight" type="text" value="Auto"></label>
+                  <label class="fg-in"><i class="fa-solid fa-text-width"></i><input id="prop-letterspacing" type="number" value="0"><span class="end">%</span></label>
+                </div>
+                <div class="fg-grid" style="margin-top:8px">
+                  <div class="fg-seg">
+                    <button class="fg-ib on" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
+                    <button class="fg-ib" title="Rata tengah"><i class="fa-solid fa-align-center"></i></button>
+                    <button class="fg-ib" title="Rata kanan"><i class="fa-solid fa-align-right"></i></button>
+                    <button class="fg-ib" title="Rata kiri-kanan"><i class="fa-solid fa-align-justify"></i></button>
+                  </div>
+                  <div class="fg-seg">
+                    <button class="fg-ib" title="Underline"><i class="fa-solid fa-underline"></i></button>
+                    <button class="fg-ib" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
+                    <button class="fg-ib" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- FILL -->
+              <section class="fg-sec">
+                <div class="fg-head"><span>Fill</span>
+                  <div class="fg-actions">
+                    <button class="fg-ib" title="Styles & variables"><i class="fa-solid fa-table-cells-large"></i></button>
+                    <button class="fg-ib" title="Tambah fill"><i class="fa-solid fa-plus"></i></button>
+                  </div>
+                </div>
+                <div class="fg-grid fill">
+                  <div class="fg-color"><input type="color" id="prop-fill" value="#d9d9d9"><input class="hex" id="prop-fill-hex" value="d9d9d9" maxlength="6" spellcheck="false"><input class="op" id="prop-fill-opacity" type="number" value="100"><span class="pc">%</span></div>
+                  <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
+                  <button class="fg-ib" title="Hapus"><i class="fa-solid fa-minus"></i></button>
+                </div>
+              </section>
+
+              <!-- STROKE (accordion) -->
+              <section class="fg-sec fg-acc">
+                <div class="fg-head">
+                  <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-stroke">Stroke</button>
+                  <div class="fg-actions">
+                    <button class="fg-ib fg-add" title="Tambah stroke"><i class="fa-solid fa-plus"></i></button>
+                    <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-stroke" aria-label="Buka / tutup Stroke"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                </div>
+                <div class="fg-body" id="sec-stroke" hidden>
+                  <div class="fg-grid fill">
+                    <div class="fg-color"><input type="color" id="prop-stroke" value="#000000"><input class="hex" id="prop-stroke-hex" value="000000" maxlength="6" spellcheck="false"><input class="op" id="prop-stroke-opacity" type="number" value="100"><span class="pc">%</span></div>
+                    <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
+                    <button class="fg-ib" title="Hapus"><i class="fa-solid fa-minus"></i></button>
+                  </div>
+                  <div class="fg-grid" style="margin-top:8px">
+                    <label class="fg-in"><i class="fa-solid fa-border-all"></i><input id="prop-strokewidth" type="number" value="1"></label>
+                    <label class="fg-in"><i class="fa-regular fa-square"></i><input type="text" value="Inside" readonly></label>
+                  </div>
+                </div>
+              </section>
+
+              <!-- EFFECTS (accordion) -->
+              <section class="fg-sec fg-acc">
+                <div class="fg-head">
+                  <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-effects">Effects</button>
+                  <div class="fg-actions">
+                    <button class="fg-ib fg-add" title="Tambah efek"><i class="fa-solid fa-plus"></i></button>
+                    <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-effects" aria-label="Buka / tutup Effects"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                </div>
+                <div class="fg-body" id="sec-effects" hidden>
+                  <div class="fg-grid">
+                    <label class="fg-in"><i class="fa-solid fa-droplet"></i><input id="prop-blur" type="number" value="0"></label>
+                    <label class="fg-in"><i class="fa-regular fa-clone"></i><input id="prop-shadow" type="number" value="0"></label>
+                  </div>
+                </div>
+              </section>
+
+              <!-- EXPORT (accordion) -->
+              <section class="fg-sec fg-acc">
+                <div class="fg-head">
+                  <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-export">Export</button>
+                  <div class="fg-actions">
+                    <button class="fg-ib fg-add" title="Tambah export"><i class="fa-solid fa-plus"></i></button>
+                    <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-export" aria-label="Buka / tutup Export"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                </div>
+                <div class="fg-body" id="sec-export" hidden>
+                  <div class="fg-grid">
+                    <label class="fg-in"><i class="fa-solid fa-maximize"></i><input id="export-scale" type="number" value="1" step="0.25"><span class="end">x</span></label>
+                    <label class="fg-in"><i class="fa-regular fa-image"></i><input type="text" value="PNG" readonly></label>
+                  </div>
+                  <button id="btn-export" class="fg-btn" style="margin-top:10px;width:100%"><i class="fa-solid fa-download" style="margin-right:8px"></i>Export PNG</button>
+                </div>
+              </section>
+            </div>
+
+            <div id="view-code" hidden>
+              <div class="code-block">
+                <div class="code-title">HTML</div>
+                <pre id="code-html">&lt;div class="rectangle-106"&gt;&lt;/div&gt;</pre>
+              </div>
+              <div class="code-block">
+                <div class="code-title">CSS</div>
+                <pre id="code-css">.rectangle-106 {
   display: block;
   position: absolute;
   width: 120px;
@@ -624,508 +316,768 @@
   border-radius: 10px;
   opacity: 1;
   transform: rotate(-33.94deg);
-}</pre></div>
-        </div>
+}</pre>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
-    </aside>
-  </div>
-</div>
+    </div>
 
-<!-- Latar gelap saat sidebar terbuka sebagai drawer (HP / tablet kecil) -->
-<div id="backdrop"></div>
+    <div id="backdrop"></div>
 
-<!-- ============================================================
+    <!-- ============================================================
      POPUP
      ============================================================ -->
 
-<!-- Settings: 400 x 500, kosong. [EDIT] isi di #settings-body -->
-<div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-  <div class="modal-box">
-    <div class="modal-head"><span id="settings-title">Settings</span>
-      <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico"><use href="#i-close"/></svg></button></div>
-    <div class="modal-body" id="settings-body"><!-- [EDIT] isi Settings (nanti pindahkan Shortcut / Help ke sini) --></div>
-  </div>
-</div>
-
-<!-- Image: grid 3 kolom x 2 baris, kotak 250 x 200 -->
-<div class="modal" id="modal-image" role="dialog" aria-modal="true" aria-labelledby="image-title">
-  <div class="modal-box">
-    <div class="modal-head"><span id="image-title">Image</span>
-      <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico"><use href="#i-close"/></svg></button></div>
-    <div class="modal-body">
-      <div class="img-grid" id="image-grid"><!-- [EDIT] 6 kotak dummy; ganti dengan gambar asli --></div>
-    </div>
-  </div>
-</div>
-
-<!-- Import: label + deskripsi + dropzone (dummy) + tombol hasil lolos -->
-<div class="modal" id="modal-import" role="dialog" aria-modal="true" aria-labelledby="import-title">
-  <div class="modal-box">
-    <div class="modal-head"><span id="import-title">Import</span>
-      <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico"><use href="#i-close"/></svg></button></div>
-    <div class="modal-body">
-      <div class="field-label">Import project</div>
-      <p class="field-desc">Tarik dan lepas file ke area di bawah, atau klik untuk memilih file dari komputer.</p>
-
-      <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Pilih atau lepas file di sini">
-        <svg class="ico"><use href="#i-upload"/></svg>
-        <strong>Drop file di sini</strong>
-        <small>Didukung: .json .svg .png .jpg .fig (dummy)</small>
-      </div>
-      <input id="import-file" type="file" hidden>
-
-      <div id="import-result" class="file-chip" hidden>
-        <svg class="ico"><use href="#i-file"/></svg>
-        <div class="meta"><b id="import-name">-</b><span id="import-size">-</span></div>
-        <span id="import-badge" class="badge ok">Lolos</span>
-      </div>
-      <div id="import-success" class="notice" hidden><svg class="ico"><use href="#i-check"/></svg>File lolos &amp; berhasil diimport (dummy)</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn" data-close-modal>Batal</button>
-      <button id="btn-import-confirm" class="btn btn-primary" disabled><svg class="ico"><use href="#i-check"/></svg>Import</button>
-      <button id="btn-import-done" class="btn btn-primary" data-close-modal hidden>Selesai</button>
-    </div>
-  </div>
-</div>
-
-<!-- Save: 600 x 400, kosong. [EDIT] isi di #save-body -->
-<div class="modal" id="modal-save" role="dialog" aria-modal="true" aria-labelledby="save-title">
-  <div class="modal-box">
-    <div class="modal-head"><span id="save-title">Save</span>
-      <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico"><use href="#i-close"/></svg></button></div>
-    <div class="modal-body" id="save-body"><!-- [EDIT] isi Save --></div>
-  </div>
-</div>
-
-<!-- Shortcut (tombol Help dihapus; panel ini tetap bisa dibuka dengan tombol ?). [EDIT] pindahkan ke Settings nanti -->
-<div class="modal" id="modal-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
-  <div class="modal-box">
-    <div class="modal-head"><span id="help-title">Shortcut keyboard</span>
-      <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico"><use href="#i-close"/></svg></button></div>
-    <div class="modal-body">
-      <h3 class="help-h3">Alat</h3>
-      <div class="help-grid">
-        <div class="help-row"><span>Select</span><kbd>V</kbd></div>
-        <div class="help-row"><span>Hand (tahan untuk geser sementara)</span><span><kbd>H</kbd> / <kbd>Space</kbd></span></div>
-        <div class="help-row"><span>Frame</span><kbd>F</kbd></div>
-        <div class="help-row"><span>Rectangle</span><kbd>R</kbd></div>
-        <div class="help-row"><span>Ellipse</span><kbd>O</kbd></div>
-        <div class="help-row"><span>Line</span><kbd>L</kbd></div>
-        <div class="help-row"><span>Polygon</span><kbd>G</kbd></div>
-        <div class="help-row"><span>Star</span><kbd>S</kbd></div>
-        <div class="help-row"><span>Pen</span><kbd>P</kbd></div>
-        <div class="help-row"><span>Pencil</span><span><kbd>Shift</kbd>+<kbd>P</kbd></span></div>
-        <div class="help-row"><span>Text</span><kbd>T</kbd></div>
-        <div class="help-row"><span>Image</span><kbd>I</kbd></div>
-      </div>
-      <h3 class="help-h3">File &amp; edit</h3>
-      <div class="help-grid">
-        <div class="help-row"><span>Undo</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></div>
-        <div class="help-row"><span>Redo</span><span><kbd>Ctrl</kbd>+<kbd>Y</kbd></span></div>
-        <div class="help-row"><span>Save</span><span><kbd>Ctrl</kbd>+<kbd>S</kbd></span></div>
-        <div class="help-row"><span>File baru</span><span><kbd>Alt</kbd>+<kbd>N</kbd></span></div>
-        <div class="help-row"><span>Image</span><span><kbd>Alt</kbd>+<kbd>D</kbd></span></div>
-        <div class="help-row"><span>Import</span><span><kbd>Alt</kbd>+<kbd>I</kbd></span></div>
-      </div>
-      <h3 class="help-h3">Tampilan &amp; navigasi</h3>
-      <div class="help-grid">
-        <div class="help-row"><span>Zoom in / out</span><span><kbd>+</kbd> / <kbd>-</kbd></span></div>
-        <div class="help-row"><span>Zoom 100% / Fit</span><span><kbd>Shift</kbd>+<kbd>0</kbd> / <kbd>Shift</kbd>+<kbd>1</kbd></span></div>
-        <div class="help-row"><span>Layer sebelumnya / berikutnya</span><span><kbd>↑</kbd> / <kbd>↓</kbd></span></div>
-        <div class="help-row"><span>Pindah urutan layer</span><span><kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></span></div>
-        <div class="help-row"><span>Cari layer</span><span><kbd>Ctrl</kbd>+<kbd>F</kbd></span></div>
-        <div class="help-row"><span>Panel Layers</span><span><kbd>Alt</kbd>+<kbd>L</kbd></span></div>
-        <div class="help-row"><span>Panel properti</span><span><kbd>Alt</kbd>+<kbd>R</kbd></span></div>
-        <div class="help-row"><span>Tab Design / Code</span><span><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>2</kbd></span></div>
-        <div class="help-row"><span>Tutup popup / kembali ke Select</span><kbd>Esc</kbd></div>
-        <div class="help-row"><span>Buka daftar ini</span><kbd>?</kbd></div>
+    <!-- Settings -->
+    <div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-box">
+        <div class="modal-head"><span id="settings-title">Settings</span>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
+              <use href="#i-close" /></svg></button></div>
+        <div class="modal-body" id="settings-body">
+          <!-- [EDIT] isi Settings (nanti pindahkan Shortcut / Help ke sini) -->
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<script src="libs/jquery.min.js"></script>
-<script>
-/* UI-only. Saat disambung ke panel.js / alat.js / layer.js, hapus bagian yang sudah ditangani
-   file tersebut agar tidak ada event listener ganda. Semua id/class dipertahankan. */
-$(function () {
-  const ico = n => `<svg class="ico"><use href="#i-${n}"/></svg>`;
-  const esc = s => $('<div>').text(s).html();
+    <!-- Image -->
+    <div class="modal" id="modal-image" role="dialog" aria-modal="true" aria-labelledby="image-title">
+      <div class="modal-box">
+        <div class="modal-head"><span id="image-title">Image</span>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
+              <use href="#i-close" /></svg></button></div>
+        <div class="modal-body">
+          <div class="img-grid" id="image-grid">
+            <!-- [EDIT] 6 kotak dummy; ganti dengan gambar asli -->
+          </div>
+        </div>
+      </div>
+    </div>
 
-  /* ================= TOOLBAR ================= */
-  const tools = [
-    ['select','select','Select (V)'], ['hand','hand','Hand (H)'], null,
-    ['frame','frame','Frame (F)'], ['rectangle','rect','Rectangle (R)'], ['ellipse','ellipse','Ellipse (O)'],
-    ['line','line','Line (L)'], ['polygon','polygon','Polygon'], ['star','star','Star'], null,
-    ['pen','pen','Pen (P)'], ['pencil','pencil','Pencil (Shift+P)'], ['text','text','Text (T)'], ['image','image','Image']
-  ];
-  $('#toolbar').html(tools.map(t => t
-    ? `<button class="tool${t[0]==='select'?' active':''}" data-tool="${t[0]}" title="${t[2]}" aria-label="${t[2]}">${ico(t[1])}</button>`
-    : '<span class="tool-sep"></span>').join(''));
-  $('#toolbar').on('click', '.tool', function () {
-    $('#toolbar .tool').removeClass('active'); $(this).addClass('active');
-  });
+    <!-- Import -->
+    <div class="modal" id="modal-import" role="dialog" aria-modal="true" aria-labelledby="import-title">
+      <div class="modal-box">
+        <div class="modal-head"><span id="import-title">Import</span>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
+              <use href="#i-close" /></svg></button></div>
+        <div class="modal-body">
+          <div class="field-label">Import project</div>
+          <p class="field-desc">Tarik dan lepas file ke area di bawah, atau klik untuk memilih file dari komputer.</p>
 
-  /* ================= POPUP (modal) ================= */
-  let lastFocus = null;
-  const modalOpen = () => $('.modal.open').length > 0;
-  const openModal = id => {
-    const $m = $('#modal-' + id); if (!$m.length) return;
-    lastFocus = document.activeElement;
-    $m.addClass('open').trigger('modal:open');
-    $m.find('.modal-close').first().trigger('focus');
-  };
-  const closeModal = () => {
-    $('.modal.open').removeClass('open');
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-  };
-  const trapTab = e => {
-    const f = $('.modal.open').find('button, input:not([hidden]), [tabindex]:not([tabindex="-1"])')
-      .filter(':visible:not(:disabled)').toArray();
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
-  $(document).on('click', '[data-open-modal]', function () { openModal($(this).data('open-modal')); });
-  $(document).on('click', '[data-close-modal]', closeModal);
-  let downOnBackdrop = false;
-  $('.modal').on('mousedown', function (e) { downOnBackdrop = e.target === this; })
-             .on('click', function (e) { if (e.target === this && downOnBackdrop) closeModal(); });
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Pilih atau lepas file di sini">
+            <svg class="ico">
+              <use href="#i-upload" /></svg>
+            <strong>Drop file di sini</strong>
+            <small>Didukung: .json .svg .png .jpg .fig (dummy)</small>
+          </div>
+          <input id="import-file" type="file" hidden>
 
-  /* ---- Image: 6 kotak dummy ---- */
-  $('#image-grid').html(Array.from({ length: 6 }, (_, i) =>
-    `<button class="img-cell" aria-label="Image ${i + 1}">${ico('image')}<span>Image ${i + 1}</span></button>`).join(''));
-  $('#image-grid').on('click', '.img-cell', function () {
-    $('#image-grid .img-cell').removeClass('selected'); $(this).addClass('selected');
-  });
+          <div id="import-result" class="file-chip" hidden>
+            <svg class="ico">
+              <use href="#i-file" /></svg>
+            <div class="meta"><b id="import-name">-</b><span id="import-size">-</span></div>
+            <span id="import-badge" class="badge ok">Lolos</span>
+          </div>
+          <div id="import-success" class="notice" hidden><svg class="ico">
+              <use href="#i-check" /></svg>File lolos &amp; berhasil diimport (dummy)</div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" data-close-modal>Batal</button>
+          <button id="btn-import-confirm" class="btn btn-primary" disabled><svg class="ico">
+              <use href="#i-check" /></svg>Import</button>
+          <button id="btn-import-done" class="btn btn-primary" data-close-modal hidden>Selesai</button>
+        </div>
+      </div>
+    </div>
 
-  /* ---- Import (dummy) ---- */
-  const ACCEPT = /\.(json|svg|png|jpe?g|fig)$/i;      // [EDIT] format yang dianggap lolos
-  const fmtSize = b => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
-  const resetImport = () => {
-    $('#import-file').val('');
-    $('#import-result, #import-success, #btn-import-done').prop('hidden', true);
-    $('#btn-import-confirm').prop('hidden', false).prop('disabled', true);
-    $('#dropzone').removeClass('dragover');
-  };
-  const takeFile = f => {
-    if (!f) return;
-    const ok = ACCEPT.test(f.name);
-    $('#import-name').text(f.name); $('#import-size').text(fmtSize(f.size));
-    $('#import-badge').text(ok ? 'Lolos' : 'Format tidak didukung').toggleClass('ok', ok).toggleClass('bad', !ok);
-    $('#import-result').prop('hidden', false).toggleClass('is-bad', !ok);
-    $('#import-success').prop('hidden', true);
-    $('#btn-import-confirm').prop('hidden', false).prop('disabled', !ok);
-    $('#btn-import-done').prop('hidden', true);
-  };
-  $('#modal-import').on('modal:open', resetImport);
-  $('#dropzone')
-    .on('click', () => $('#import-file').trigger('click'))
-    .on('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#import-file').trigger('click'); } })
-    .on('dragenter dragover', function (e) { e.preventDefault(); $(this).addClass('dragover'); })
-    .on('dragleave', function () { $(this).removeClass('dragover'); })
-    .on('drop', function (e) {
-      e.preventDefault(); $(this).removeClass('dragover');
-      takeFile(e.originalEvent.dataTransfer.files[0]);
-    });
-  $('#import-file').on('change', function () { takeFile(this.files[0]); });
-  $('#btn-import-confirm').on('click', function () {
-    $('#import-success').prop('hidden', false);
-    $(this).prop('hidden', true); $('#btn-import-done').prop('hidden', false).trigger('focus');
-  });
-  // cegah browser membuka file bila dilepas di luar dropzone
-  $(window).on('dragover drop', e => e.preventDefault());
+    <!-- Save -->
+    <div class="modal" id="modal-save" role="dialog" aria-modal="true" aria-labelledby="save-title">
+      <div class="modal-box">
+        <div class="modal-head"><span id="save-title">Save</span>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
+              <use href="#i-close" /></svg></button></div>
+        <div class="modal-body" id="save-body">
+          <!-- [EDIT] isi Save -->
+        </div>
+      </div>
+    </div>
 
-  /* ================= ZOOM ================= */
-  const ZOOMS = [10, 25, 50, 75, 100, 150, 200, 300, 400, 600, 800];   // [EDIT] langkah tombol + / -
-  const ZMIN = 10, ZMAX = 800;
-  const $zoom = $('#zoom-input');
-  const getZoom = () => parseFloat($zoom.val()) || 100;
-  // Event untuk canvas: $(document).on('zoom:change', (e, persen) => { ... })
-  const setZoom = v => {
-    v = Math.round(Math.min(ZMAX, Math.max(ZMIN, Number(v) || 100)));
-    $zoom.val(v);
-    $('#btn-zoom-out').prop('disabled', v <= ZMIN);
-    $('#btn-zoom-in').prop('disabled', v >= ZMAX);
-    $('#workspace').attr('data-zoom', v);
-    $(document).trigger('zoom:change', [v]);
-    return v;
-  };
-  const stepZoom = dir => {
-    const v = getZoom();
-    const next = dir > 0 ? ZOOMS.find(z => z > v) : [...ZOOMS].reverse().find(z => z < v);
-    setZoom(next === undefined ? v : next);
-  };
-  const fitZoom = () => setZoom(100);     // [EDIT] ganti dengan hitungan "Fit" setelah canvas tersambung
-  $('#btn-zoom-in').on('click', () => stepZoom(1));
-  $('#btn-zoom-out').on('click', () => stepZoom(-1));
-  $zoom.on('change', function () { setZoom(this.value); })
-       .on('keydown', function (e) {
-         if (e.key === 'Enter')     { e.preventDefault(); setZoom(this.value); this.select(); }
-         if (e.key === 'ArrowUp')   { e.preventDefault(); stepZoom(1); }
-         if (e.key === 'ArrowDown') { e.preventDefault(); stepZoom(-1); }
-       });
-  setZoom(100);
+    <!-- Shortcut -->
+    <div class="modal" id="modal-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <div class="modal-box">
+        <div class="modal-head"><span id="help-title">Shortcut keyboard</span>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
+              <use href="#i-close" /></svg></button></div>
+        <div class="modal-body">
+          <h3 class="help-h3">Alat</h3>
+          <div class="help-grid">
+            <div class="help-row"><span>Select</span><kbd>V</kbd></div>
+            <div class="help-row"><span>Hand (tahan untuk geser sementara)</span><span><kbd>H</kbd> / <kbd>Space</kbd></span></div>
+            <div class="help-row"><span>Frame</span><kbd>F</kbd></div>
+            <div class="help-row"><span>Rectangle</span><kbd>R</kbd></div>
+            <div class="help-row"><span>Ellipse</span><kbd>O</kbd></div>
+            <div class="help-row"><span>Line</span><kbd>L</kbd></div>
+            <div class="help-row"><span>Polygon</span><kbd>G</kbd></div>
+            <div class="help-row"><span>Star</span><kbd>S</kbd></div>
+            <div class="help-row"><span>Pen</span><kbd>P</kbd></div>
+            <div class="help-row"><span>Pencil</span><span><kbd>Shift</kbd>+<kbd>P</kbd></span></div>
+            <div class="help-row"><span>Text</span><kbd>T</kbd></div>
+            <div class="help-row"><span>Image</span><kbd>I</kbd></div>
+          </div>
+          <h3 class="help-h3">File &amp; edit</h3>
+          <div class="help-grid">
+            <div class="help-row"><span>Undo</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></div>
+            <div class="help-row"><span>Redo</span><span><kbd>Ctrl</kbd>+<kbd>Y</kbd></span></div>
+            <div class="help-row"><span>Save</span><span><kbd>Ctrl</kbd>+<kbd>S</kbd></span></div>
+            <div class="help-row"><span>File baru</span><span><kbd>Alt</kbd>+<kbd>N</kbd></span></div>
+            <div class="help-row"><span>Image</span><span><kbd>Alt</kbd>+<kbd>D</kbd></span></div>
+            <div class="help-row"><span>Import</span><span><kbd>Alt</kbd>+<kbd>I</kbd></span></div>
+          </div>
+          <h3 class="help-h3">Tampilan &amp; navigasi</h3>
+          <div class="help-grid">
+            <div class="help-row"><span>Zoom in / out</span><span><kbd>+</kbd> / <kbd>-</kbd></span></div>
+            <div class="help-row"><span>Zoom 100% / Fit</span><span><kbd>Shift</kbd>+<kbd>0</kbd> / <kbd>Shift</kbd>+<kbd>1</kbd></span></div>
+            <div class="help-row"><span>Layer sebelumnya / berikutnya</span><span><kbd>↑</kbd> / <kbd>↓</kbd></span></div>
+            <div class="help-row"><span>Pindah urutan layer</span><span><kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></span></div>
+            <div class="help-row"><span>Cari layer</span><span><kbd>Ctrl</kbd>+<kbd>F</kbd></span></div>
+            <div class="help-row"><span>Panel Layers</span><span><kbd>Alt</kbd>+<kbd>L</kbd></span></div>
+            <div class="help-row"><span>Panel properti</span><span><kbd>Alt</kbd>+<kbd>R</kbd></span></div>
+            <div class="help-row"><span>Tab Design / Code</span><span><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>2</kbd></span></div>
+            <div class="help-row"><span>Tutup popup / kembali ke Select</span><kbd>Esc</kbd></div>
+            <div class="help-row"><span>Buka daftar ini</span><kbd>?</kbd></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  /* ================= LAYERS (tree + drag & drop) ================= */
-  let uid = 0;
-  const mk = (type, name, children) => ({ id: 'n' + (++uid), type, name, ...(children ? { children, open: true } : {}) });
-  // 3 objek di luar + 3 objek di dalam Frame 1 = 6 objek + 1 frame. [EDIT] hapus saat disambung ke layer.js
-  let tree = [
-    mk('rect', 'Rectangle 3'),
-    mk('frame', 'Frame 1', [mk('ellipse', 'Ellipse 1'), mk('rect', 'Rectangle 2'), mk('ellipse', 'Ellipse 2')]),
-    mk('ellipse', 'Ellipse 3'),
-    mk('rect', 'Rectangle 1')
-  ];
-  let sel = null, query = '';
-  const ICON = { frame: 'frame', rect: 'rect', ellipse: 'ellipse' };
+    <script src="libs/jquery.min.js"></script>
+    <script>
+      $(function() {
+        const ico = n => `<svg class="ico"><use href="#i-${n}"/></svg>`;
+        const esc = s => $('<div>').text(s).html();
 
-  const find = (id, list = tree, parent = null) => {
-    for (let i = 0; i < list.length; i++) {
-      const n = list[i];
-      if (n.id === id) return { node: n, arr: list, index: i, parent };
-      if (n.children) { const r = find(id, n.children, n); if (r) return r; }
-    }
-    return null;
-  };
-  const contains = (a, id) => !!(a.children && find(id, a.children));
+        /* ================= TOOLBAR ================= */
+        const tools = [
+          ['select', 'select', 'Select (V)'],
+          ['hand', 'hand', 'Hand (H)'], null,
+          ['frame', 'frame', 'Frame (F)'],
+          ['rectangle', 'rect', 'Rectangle (R)'],
+          ['ellipse', 'ellipse', 'Ellipse (O)'],
+          ['line', 'line', 'Line (L)'],
+          ['polygon', 'polygon', 'Polygon'],
+          ['star', 'star', 'Star'], null,
+          ['pen', 'pen', 'Pen (P)'],
+          ['pencil', 'pencil', 'Pencil (Shift+P)'],
+          ['text', 'text', 'Text (T)'],
+          ['image', 'image', 'Image']
+        ];
+        $('#toolbar').html(tools.map(t => t ?
+          `<button class="tool${t[0]==='select'?' active':''}" data-tool="${t[0]}" title="${t[2]}" aria-label="${t[2]}">${ico(t[1])}</button>` :
+          '<span class="tool-sep"></span>').join(''));
+        $('#toolbar').on('click', '.tool', function() {
+          $('#toolbar .tool').removeClass('active');
+          $(this).addClass('active');
+        });
 
-  const render = () => {
-    const matches = n => !query || n.name.toLowerCase().includes(query);
-    const visible = n => matches(n) || (n.children || []).some(visible);
-    const rows = [];
-    const walk = (list, d) => list.forEach(n => {
-      if (!visible(n)) return;
-      rows.push([n, d]);
-      if (n.children && (n.open || query)) walk(n.children, d + 1);
-    });
-    walk(tree, 0);
-    $('#layer-list').html(rows.map(([n, d]) => {
-      const open = n.children && (n.open || query);
-      return `<li class="layer${n.children ? ' frame' : ''}${open ? ' open' : ''}${n.id === sel ? ' selected' : ''}" data-id="${n.id}" style="--depth:${d}"
-        role="treeitem" aria-level="${d + 1}" aria-selected="${n.id === sel}"${n.children ? ` aria-expanded="${!!open}"` : ''}>`
-        + (n.children ? `<button class="twirl" tabindex="-1" aria-label="Buka / tutup ${esc(n.name)}">${ico('chev')}</button>` : '<span class="twirl"></span>')
-        + ico(ICON[n.type]) + `<span class="name">${esc(n.name)}</span></li>`;
-    }).join('') + '<li class="layer-end" aria-hidden="true"></li>');
-    $('#empty-state').prop('hidden', tree.length > 0);
-  };
-  render();
+        /* ================= POPUP (modal) ================= */
+        let lastFocus = null;
+        const modalOpen = () => $('.modal.open').length > 0;
+        const openModal = id => {
+          const $m = $('#modal-' + id);
+          if (!$m.length) return;
+          lastFocus = document.activeElement;
+          $m.addClass('open').trigger('modal:open');
+          $m.find('.modal-close').first().trigger('focus');
+        };
+        const closeModal = () => {
+          $('.modal.open').removeClass('open');
+          if (lastFocus && lastFocus.focus) lastFocus.focus();
+        };
+        const trapTab = e => {
+          const f = $('.modal.open').find('button, input:not([hidden]), [tabindex]:not([tabindex="-1"])')
+            .filter(':visible:not(:disabled)').toArray();
+          if (!f.length) return;
+          const first = f[0],
+            last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        };
+        $(document).on('click', '[data-open-modal]', function() {
+          openModal($(this).data('open-modal'));
+        });
+        $(document).on('click', '[data-close-modal]', closeModal);
+        let downOnBackdrop = false;
+        $('.modal').on('mousedown', function(e) {
+            downOnBackdrop = e.target === this;
+          })
+          .on('click', function(e) {
+            if (e.target === this && downOnBackdrop) closeModal();
+          });
 
-  // pilih + search + collapse
-  let justDragged = false;
-  $('#layer-list').on('click', '.twirl', function (e) {
-    e.stopPropagation();
-    const r = find($(this).closest('.layer').data('id')); if (r) { r.node.open = !r.node.open; render(); }
-  });
-  $('#layer-list').on('click', '.layer', function () {
-    if (justDragged) return;
-    sel = String($(this).data('id'));
-    $('#layer-list .layer').removeClass('selected').attr('aria-selected', false);
-    $(this).addClass('selected').attr('aria-selected', true);
-  });
-  $('#layer-search').on('input', function () { query = this.value.trim().toLowerCase(); render(); });
-  $('#btn-collapse-layers').on('click', () => {
-    const frames = []; (function collect(l) { l.forEach(n => { if (n.children) { frames.push(n); collect(n.children); } }); })(tree);
-    const anyOpen = frames.some(f => f.open);
-    frames.forEach(f => f.open = !anyOpen); render();
-  });
+        /* ---- Image: 6 kotak dummy ---- */
+        $('#image-grid').html(Array.from({
+            length: 6
+          }, (_, i) =>
+          `<button class="img-cell" aria-label="Image ${i + 1}">${ico('image')}<span>Image ${i + 1}</span></button>`).join(''));
+        $('#image-grid').on('click', '.img-cell', function() {
+          $('#image-grid .img-cell').removeClass('selected');
+          $(this).addClass('selected');
+        });
 
-  const moveNode = (id, drop) => {
-    const src = find(id); if (!src) return;
-    src.arr.splice(src.index, 1);                      // cabut dulu, cari target SETELAH itu
-    if (drop.pos === 'end') tree.push(src.node);
-    else if (drop.pos === 'inside') { const t = find(drop.ref).node; t.children.unshift(src.node); t.open = true; }
-    else { const t = find(drop.ref); t.arr.splice(t.index + (drop.pos === 'after' ? 1 : 0), 0, src.node); }
-    sel = id; render();
-  };
-  // Alt+↑/↓: pindah urutan di antara saudara (alternatif keyboard untuk drag & drop)
-  const nudgeLayer = dir => {
-    const r = sel && find(sel); if (!r) return;
-    const i = r.index + dir; if (i < 0 || i >= r.arr.length) return;
-    r.arr.splice(r.index, 1); r.arr.splice(i, 0, r.node); render();
-  };
+        /* ---- Import (dummy) ---- */
+        const ACCEPT = /\.(json|svg|png|jpe?g|fig)$/i; // [EDIT] format yang dianggap lolos
+        const fmtSize = b => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+        const resetImport = () => {
+          $('#import-file').val('');
+          $('#import-result, #import-success, #btn-import-done').prop('hidden', true);
+          $('#btn-import-confirm').prop('hidden', false).prop('disabled', true);
+          $('#dropzone').removeClass('dragover');
+        };
+        const takeFile = f => {
+          if (!f) return;
+          const ok = ACCEPT.test(f.name);
+          $('#import-name').text(f.name);
+          $('#import-size').text(fmtSize(f.size));
+          $('#import-badge').text(ok ? 'Lolos' : 'Format tidak didukung').toggleClass('ok', ok).toggleClass('bad', !ok);
+          $('#import-result').prop('hidden', false).toggleClass('is-bad', !ok);
+          $('#import-success').prop('hidden', true);
+          $('#btn-import-confirm').prop('hidden', false).prop('disabled', !ok);
+          $('#btn-import-done').prop('hidden', true);
+        };
+        $('#modal-import').on('modal:open', resetImport);
+        $('#dropzone')
+          .on('click', () => $('#import-file').trigger('click'))
+          .on('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              $('#import-file').trigger('click');
+            }
+          })
+          .on('dragenter dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('dragover');
+          })
+          .on('dragleave', function() {
+            $(this).removeClass('dragover');
+          })
+          .on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('dragover');
+            takeFile(e.originalEvent.dataTransfer.files[0]);
+          });
+        $('#import-file').on('change', function() {
+          takeFile(this.files[0]);
+        });
+        $('#btn-import-confirm').on('click', function() {
+          $('#import-success').prop('hidden', false);
+          $(this).prop('hidden', true);
+          $('#btn-import-done').prop('hidden', false).trigger('focus');
+        });
+        // cegah browser membuka file bila dilepas di luar dropzone
+        $(window).on('dragover drop', e => e.preventDefault());
 
-  // ---- drag & drop pakai pointer events (mouse + touch; touch = tahan 250 ms) ----
-  let drag = null;
-  const clearMarks = () => $('#layer-list .layer, #layer-list .layer-end').removeClass('drop-before drop-after drop-inside drop-end');
-  const startDrag = () => {
-    if (!drag || drag.started) return;
-    drag.started = true;
-    const n = find(drag.id).node;
-    $('<div class="drag-ghost">').html(ico(ICON[n.type]) + '<span>' + esc(n.name) + '</span>').appendTo('body');
-    $('body').addClass('dragging-layer');
-    $(`#layer-list .layer[data-id="${drag.id}"]`).addClass('dragging');
-    moveGhost(drag.x, drag.y);
-    if (drag.touch && navigator.vibrate) navigator.vibrate(10);
-  };
-  const moveGhost = (x, y) => $('.drag-ghost').css({ left: x + 14, top: y + 14 });
-  const computeDrop = e => {
-    clearMarks(); drag.drop = null;
-    const list = $('#layer-list')[0], lr = list.getBoundingClientRect();
-    if (e.clientY < lr.top + 28) list.scrollTop -= 10; else if (e.clientY > lr.bottom - 28) list.scrollTop += 10;
-    const $row = $(document.elementFromPoint(e.clientX, e.clientY)).closest('.layer, .layer-end');
-    if (!$row.length || !list.contains($row[0])) return;
-    if ($row.hasClass('layer-end')) { drag.drop = { pos: 'end' }; $row.addClass('drop-end'); return; }
-    const id = String($row.data('id'));
-    const src = find(drag.id).node;
-    if (id === drag.id || contains(src, id)) return;            // tidak boleh ke diri sendiri / anaknya
-    const node = find(id).node, r = $row[0].getBoundingClientRect(), t = (e.clientY - r.top) / r.height;
-    let pos;
-    if (node.children) pos = t < .25 ? 'before' : (t > .75 && !node.open ? 'after' : 'inside');
-    else pos = t < .5 ? 'before' : 'after';
-    drag.drop = { ref: id, pos };
-    $row.addClass('drop-' + pos);
-  };
-  const endDrag = commit => {
-    if (!drag) return;
-    clearTimeout(drag.timer);
-    const d = drag; drag = null;
-    if (!d.started) return;
-    $('.drag-ghost').remove(); $('body').removeClass('dragging-layer'); clearMarks();
-    justDragged = true; setTimeout(() => { justDragged = false; }, 60);
-    if (commit && d.drop) moveNode(d.id, d.drop); else $('#layer-list .layer').removeClass('dragging');
-  };
-  $('#layer-list').on('pointerdown', '.layer', function (e) {
-    if (e.button !== 0 || query || $(e.target).closest('.twirl').length) return;   // saat search aktif, drag dimatikan
-    drag = { id: String($(this).data('id')), x: e.clientX, y: e.clientY, started: false, drop: null, touch: e.pointerType === 'touch', timer: null };
-    if (drag.touch) drag.timer = setTimeout(startDrag, 250);
-  });
-  $(document).on('pointermove', e => {
-    if (!drag) return;
-    if (!drag.started) {
-      const moved = Math.hypot(e.clientX - drag.x, e.clientY - drag.y);
-      if (drag.touch) { if (moved > 8) { clearTimeout(drag.timer); drag = null; } return; }   // geser = scroll biasa
-      if (moved < 5) return;
-      startDrag();
-    }
-    moveGhost(e.clientX, e.clientY); computeDrop(e);
-  });
-  $(document).on('pointerup', () => endDrag(true)).on('pointercancel', () => endDrag(false));
-  document.addEventListener('touchmove', e => { if (drag && drag.started) e.preventDefault(); }, { passive: false });
+        /* ================= ZOOM ================= */
+        const ZOOMS = [10, 25, 50, 70, 80, 90, 100, 110, 125, 135, 140, 150, 175, 200, 250, 300, 400, 600, 800]; // [EDIT] langkah tombol + / -
+        const ZMIN = 10,
+          ZMAX = 800;
+        const $zoom = $('#zoom-input');
+        const getZoom = () => parseFloat($zoom.val()) || 100;
+        // Event untuk canvas: $(document).on('zoom:change', (e, persen) => { ... })
+        const setZoom = v => {
+          v = Math.round(Math.min(ZMAX, Math.max(ZMIN, Number(v) || 100)));
+          $zoom.val(v);
+          $('#btn-zoom-out').prop('disabled', v <= ZMIN);
+          $('#btn-zoom-in').prop('disabled', v >= ZMAX);
+          $('#workspace').attr('data-zoom', v);
+          $(document).trigger('zoom:change', [v]);
+          return v;
+        };
+        const stepZoom = dir => {
+          const v = getZoom();
+          const next = dir > 0 ? ZOOMS.find(z => z > v) : [...ZOOMS].reverse().find(z => z < v);
+          setZoom(next === undefined ? v : next);
+        };
+        const fitZoom = () => setZoom(100); // [EDIT] ganti dengan hitungan "Fit" setelah canvas tersambung
+        $('#btn-zoom-in').on('click', () => stepZoom(1));
+        $('#btn-zoom-out').on('click', () => stepZoom(-1));
+        $zoom.on('change', function() {
+            setZoom(this.value);
+          })
+          .on('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              setZoom(this.value);
+              this.select();
+            }
+            if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              stepZoom(1);
+            }
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              stepZoom(-1);
+            }
+          });
+        setZoom(100);
 
-  /* ================= TAB DESIGN / CODE & ACCORDION ================= */
-  const setAcc = ($sec, open) => {
-    $sec.toggleClass('open', open);
-    $sec.find('.fg-body').prop('hidden', !open);
-    $sec.find('.fg-acc-toggle').attr('aria-expanded', open);
-  };
-  $('#view-design').on('click', '.fg-acc-toggle', function () {
-    const $s = $(this).closest('.fg-acc'); setAcc($s, !$s.hasClass('open'));
-  });
-  $('#view-design').on('click', '.fg-add', function () { setAcc($(this).closest('.fg-acc'), true); });
-  $('#view-design').on('input', '.fg-color input[type="color"]', function () {
-    $(this).siblings('.hex').val(this.value.slice(1).toUpperCase());
-  });
-  $('#view-design').on('input', '.fg-color .hex', function () {
-    if (/^[0-9a-f]{6}$/i.test(this.value)) $(this).siblings('input[type="color"]').val('#' + this.value);
-  });
-  $('.mode-tab').on('click', function () {
-    const mode = $(this).data('mode');
-    $('.mode-tab').removeClass('active').attr('aria-selected', false);
-    $(this).addClass('active').attr('aria-selected', true);
-    $('#view-design').prop('hidden', mode !== 'design');
-    $('#view-code').prop('hidden', mode !== 'code');
-  });
+        /* ================= LAYERS (tree + drag & drop) ================= */
+        let uid = 0;
+        const mk = (type, name, children) => ({
+          id: 'n' + (++uid),
+          type,
+          name,
+          ...(children ? {
+            children,
+            open: true
+          } : {})
+        });
+        // 3 objek di luar + 3 objek di dalam Frame 1 = 6 objek + 1 frame. [EDIT] hapus saat disambung ke layer.js
+        let tree = [
+          mk('rect', 'Rectangle 3'),
+          mk('frame', 'Frame 1', [mk('ellipse', 'Ellipse 1'), mk('rect', 'Rectangle 2'), mk('ellipse', 'Ellipse 2')]),
+          mk('ellipse', 'Ellipse 3'),
+          mk('rect', 'Rectangle 1')
+        ];
+        let sel = null,
+          query = '';
+        const ICON = {
+          frame: 'frame',
+          rect: 'rect',
+          ellipse: 'ellipse'
+        };
 
-  /* ================= DRAWER (< 900px) ================= */
-  const closeDrawers = () => $('body').removeClass('show-left show-right');
-  $('#btn-toggle-left').on('click',  () => $('body').toggleClass('show-left').removeClass('show-right'));
-  $('#btn-toggle-right').on('click', () => $('body').toggleClass('show-right').removeClass('show-left'));
-  $('#backdrop').on('click', closeDrawers);
-  window.matchMedia('(min-width: 900px)').addEventListener('change', e => { if (e.matches) closeDrawers(); });
+        const find = (id, list = tree, parent = null) => {
+          for (let i = 0; i < list.length; i++) {
+            const n = list[i];
+            if (n.id === id) return {
+              node: n,
+              arr: list,
+              index: i,
+              parent
+            };
+            if (n.children) {
+              const r = find(id, n.children, n);
+              if (r) return r;
+            }
+          }
+          return null;
+        };
+        const contains = (a, id) => !!(a.children && find(id, a.children));
 
-  /* ================= SHORTCUT KEYBOARD ================= */
-  const SMALL = window.matchMedia('(max-width: 899px)');
-  const toolKeys = {
-    KeyV:'select', KeyH:'hand', KeyF:'frame', KeyR:'rectangle', KeyO:'ellipse',
-    KeyL:'line', KeyG:'polygon', KeyS:'star', KeyP:'pen', KeyT:'text', KeyI:'image'
-  };
-  const pickTool = name => $(`#toolbar .tool[data-tool="${name}"]`).trigger('click');
-  const currentTool = () => $('#toolbar .tool.active').data('tool');
-  const typing = t => t && (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable);
-  const relayout = () => setTimeout(() => $(window).trigger('resize'), 0);
+        const render = () => {
+          const matches = n => !query || n.name.toLowerCase().includes(query);
+          const visible = n => matches(n) || (n.children || []).some(visible);
+          const rows = [];
+          const walk = (list, d) => list.forEach(n => {
+            if (!visible(n)) return;
+            rows.push([n, d]);
+            if (n.children && (n.open || query)) walk(n.children, d + 1);
+          });
+          walk(tree, 0);
+          $('#layer-list').html(rows.map(([n, d]) => {
+            const open = n.children && (n.open || query);
+            return `<li class="layer${n.children ? ' frame' : ''}${open ? ' open' : ''}${n.id === sel ? ' selected' : ''}" data-id="${n.id}" style="--depth:${d}"
+        role="treeitem" aria-level="${d + 1}" aria-selected="${n.id === sel}"${n.children ? ` aria-expanded="${!!open}"` : ''}>` +
+              (n.children ? `<button class="twirl" tabindex="-1" aria-label="Buka / tutup ${esc(n.name)}">${ico('chev')}</button>` : '<span class="twirl"></span>') +
+              ico(ICON[n.type]) + `<span class="name">${esc(n.name)}</span></li>`;
+          }).join('') + '<li class="layer-end" aria-hidden="true"></li>');
+          $('#empty-state').prop('hidden', tree.length > 0);
+        };
+        render();
 
-  const stepLayer = dir => {
-    const $all = $('#layer-list .layer:visible'); if (!$all.length) return;
-    const i = $all.index($all.filter('.selected').first());
-    $all.eq(Math.min($all.length - 1, Math.max(0, i < 0 ? (dir > 0 ? 0 : $all.length - 1) : i + dir))).trigger('click')[0]
-      .scrollIntoView({ block: 'nearest' });
-  };
-  const togglePanel = side => {
-    if (SMALL.matches) { $('body').toggleClass('show-' + side).removeClass(side === 'left' ? 'show-right' : 'show-left'); }
-    else { $('body').toggleClass('hide-' + side); relayout(); }
-  };
+        // pilih + search + collapse
+        let justDragged = false;
+        $('#layer-list').on('click', '.twirl', function(e) {
+          e.stopPropagation();
+          const r = find($(this).closest('.layer').data('id'));
+          if (r) {
+            r.node.open = !r.node.open;
+            render();
+          }
+        });
+        $('#layer-list').on('click', '.layer', function() {
+          if (justDragged) return;
+          sel = String($(this).data('id'));
+          $('#layer-list .layer').removeClass('selected').attr('aria-selected', false);
+          $(this).addClass('selected').attr('aria-selected', true);
+        });
+        $('#layer-search').on('input', function() {
+          query = this.value.trim().toLowerCase();
+          render();
+        });
+        $('#btn-collapse-layers').on('click', () => {
+          const frames = [];
+          (function collect(l) {
+            l.forEach(n => {
+              if (n.children) {
+                frames.push(n);
+                collect(n.children);
+              }
+            });
+          })(tree);
+          const anyOpen = frames.some(f => f.open);
+          frames.forEach(f => f.open = !anyOpen);
+          render();
+        });
 
-  let prevTool = null;   // untuk Space = hand sementara
+        const moveNode = (id, drop) => {
+          const src = find(id);
+          if (!src) return;
+          src.arr.splice(src.index, 1); // cabut dulu, cari target SETELAH itu
+          if (drop.pos === 'end') tree.push(src.node);
+          else if (drop.pos === 'inside') {
+            const t = find(drop.ref).node;
+            t.children.unshift(src.node);
+            t.open = true;
+          } else {
+            const t = find(drop.ref);
+            t.arr.splice(t.index + (drop.pos === 'after' ? 1 : 0), 0, src.node);
+          }
+          sel = id;
+          render();
+        };
+        // Alt+↑/↓: pindah urutan di antara saudara (alternatif keyboard untuk drag & drop)
+        const nudgeLayer = dir => {
+          const r = sel && find(sel);
+          if (!r) return;
+          const i = r.index + dir;
+          if (i < 0 || i >= r.arr.length) return;
+          r.arr.splice(r.index, 1);
+          r.arr.splice(i, 0, r.node);
+          render();
+        };
 
-  $(document).on('keydown', function (e) {
-    // Popup terbuka: hanya Esc / ? / Tab yang aktif
-    if (modalOpen()) {
-      if (e.key === 'Escape' || (e.key === '?' && $('#modal-help').hasClass('open') && !typing(e.target))) { e.preventDefault(); closeModal(); }
-      else if (e.key === 'Tab') trapTab(e);
-      return;
-    }
-    if (typing(e.target) && e.key !== 'Escape') return;
-    const ctrl = e.ctrlKey || e.metaKey;
+        // ---- drag & drop pakai pointer events (mouse + touch; touch = tahan 250 ms) ----
+        let drag = null;
+        const clearMarks = () => $('#layer-list .layer, #layer-list .layer-end').removeClass('drop-before drop-after drop-inside drop-end');
+        const startDrag = () => {
+          if (!drag || drag.started) return;
+          drag.started = true;
+          const n = find(drag.id).node;
+          $('<div class="drag-ghost">').html(ico(ICON[n.type]) + '<span>' + esc(n.name) + '</span>').appendTo('body');
+          $('body').addClass('dragging-layer');
+          $(`#layer-list .layer[data-id="${drag.id}"]`).addClass('dragging');
+          moveGhost(drag.x, drag.y);
+          if (drag.touch && navigator.vibrate) navigator.vibrate(10);
+        };
+        const moveGhost = (x, y) => $('.drag-ghost').css({
+          left: x + 14,
+          top: y + 14
+        });
+        const computeDrop = e => {
+          clearMarks();
+          drag.drop = null;
+          const list = $('#layer-list')[0],
+            lr = list.getBoundingClientRect();
+          if (e.clientY < lr.top + 28) list.scrollTop -= 10;
+          else if (e.clientY > lr.bottom - 28) list.scrollTop += 10;
+          const $row = $(document.elementFromPoint(e.clientX, e.clientY)).closest('.layer, .layer-end');
+          if (!$row.length || !list.contains($row[0])) return;
+          if ($row.hasClass('layer-end')) {
+            drag.drop = {
+              pos: 'end'
+            };
+            $row.addClass('drop-end');
+            return;
+          }
+          const id = String($row.data('id'));
+          const src = find(drag.id).node;
+          if (id === drag.id || contains(src, id)) return; // tidak boleh ke diri sendiri / anaknya
+          const node = find(id).node,
+            r = $row[0].getBoundingClientRect(),
+            t = (e.clientY - r.top) / r.height;
+          let pos;
+          if (node.children) pos = t < .25 ? 'before' : (t > .75 && !node.open ? 'after' : 'inside');
+          else pos = t < .5 ? 'before' : 'after';
+          drag.drop = {
+            ref: id,
+            pos
+          };
+          $row.addClass('drop-' + pos);
+        };
+        const endDrag = commit => {
+          if (!drag) return;
+          clearTimeout(drag.timer);
+          const d = drag;
+          drag = null;
+          if (!d.started) return;
+          $('.drag-ghost').remove();
+          $('body').removeClass('dragging-layer');
+          clearMarks();
+          justDragged = true;
+          setTimeout(() => {
+            justDragged = false;
+          }, 60);
+          if (commit && d.drop) moveNode(d.id, d.drop);
+          else $('#layer-list .layer').removeClass('dragging');
+        };
+        $('#layer-list').on('pointerdown', '.layer', function(e) {
+          if (e.button !== 0 || query || $(e.target).closest('.twirl').length) return; // saat search aktif, drag dimatikan
+          drag = {
+            id: String($(this).data('id')),
+            x: e.clientX,
+            y: e.clientY,
+            started: false,
+            drop: null,
+            touch: e.pointerType === 'touch',
+            timer: null
+          };
+          if (drag.touch) drag.timer = setTimeout(startDrag, 250);
+        });
+        $(document).on('pointermove', e => {
+          if (!drag) return;
+          if (!drag.started) {
+            const moved = Math.hypot(e.clientX - drag.x, e.clientY - drag.y);
+            if (drag.touch) {
+              if (moved > 8) {
+                clearTimeout(drag.timer);
+                drag = null;
+              }
+              return;
+            } // geser = scroll biasa
+            if (moved < 5) return;
+            startDrag();
+          }
+          moveGhost(e.clientX, e.clientY);
+          computeDrop(e);
+        });
+        $(document).on('pointerup', () => endDrag(true)).on('pointercancel', () => endDrag(false));
+        document.addEventListener('touchmove', e => {
+          if (drag && drag.started) e.preventDefault();
+        }, {
+          passive: false
+        });
 
-    if (e.key === '?') { e.preventDefault(); openModal('help'); return; }
-    if (e.key === 'Escape') {
-      if (drag && drag.started) { endDrag(false); return; }
-      if ($('body').is('.show-left,.show-right')) { closeDrawers(); return; }
-      if (typing(e.target)) { e.target.blur(); return; }
-      pickTool('select'); return;
-    }
+        /* ================= TAB DESIGN / CODE & ACCORDION ================= */
+        const setAcc = ($sec, open) => {
+          $sec.toggleClass('open', open);
+          $sec.find('.fg-body').prop('hidden', !open);
+          $sec.find('.fg-acc-toggle').attr('aria-expanded', open);
+        };
+        $('#view-design').on('click', '.fg-acc-toggle', function() {
+          const $s = $(this).closest('.fg-acc');
+          setAcc($s, !$s.hasClass('open'));
+        });
+        $('#view-design').on('click', '.fg-add', function() {
+          setAcc($(this).closest('.fg-acc'), true);
+        });
+        $('#view-design').on('input', '.fg-color input[type="color"]', function() {
+          $(this).siblings('.hex').val(this.value.slice(1).toUpperCase());
+        });
+        $('#view-design').on('input', '.fg-color .hex', function() {
+          if (/^[0-9a-f]{6}$/i.test(this.value)) $(this).siblings('input[type="color"]').val('#' + this.value);
+        });
+        $('.mode-tab').on('click', function() {
+          const mode = $(this).data('mode');
+          $('.mode-tab').removeClass('active').attr('aria-selected', false);
+          $(this).addClass('active').attr('aria-selected', true);
+          $('#view-design').prop('hidden', mode !== 'design');
+          $('#view-code').prop('hidden', mode !== 'code');
+        });
 
-    if (ctrl && !e.altKey) {
-      switch (e.code) {
-        case 'KeyZ': e.preventDefault(); $(e.shiftKey ? '#btn-redo' : '#btn-undo').trigger('click'); return;
-        case 'KeyY': e.preventDefault(); $('#btn-redo').trigger('click'); return;
-        case 'KeyS': e.preventDefault(); $('#btn-save').trigger('click'); return;
-        case 'KeyF': e.preventDefault(); if (SMALL.matches) $('body').addClass('show-left').removeClass('show-right');
-                     else $('body').removeClass('hide-left');
-                     $('#layer-search').trigger('focus').trigger('select'); return;
-      }
-      return;
-    }
+        /* ================= DRAWER (< 900px) ================= */
+        const closeDrawers = () => $('body').removeClass('show-left show-right');
+        $('#btn-toggle-left').on('click', () => $('body').toggleClass('show-left').removeClass('show-right'));
+        $('#btn-toggle-right').on('click', () => $('body').toggleClass('show-right').removeClass('show-left'));
+        $('#backdrop').on('click', closeDrawers);
+        window.matchMedia('(min-width: 900px)').addEventListener('change', e => {
+          if (e.matches) closeDrawers();
+        });
 
-    if (e.altKey && !ctrl) {
-      const acts = {
-        KeyN: () => $('#btn-new').trigger('click'),
-        KeyD: () => $('#btn-drive').trigger('click'),
-        KeyI: () => $('#btn-import').trigger('click'),
-        KeyL: () => togglePanel('left'),
-        KeyR: () => togglePanel('right'),
-        ArrowUp:   () => nudgeLayer(-1),
-        ArrowDown: () => nudgeLayer(1),
-        Digit1: () => { if (SMALL.matches) $('body').addClass('show-right').removeClass('show-left'); else $('body').removeClass('hide-right'); $('#tab-design').trigger('click'); },
-        Digit2: () => { if (SMALL.matches) $('body').addClass('show-right').removeClass('show-left'); else $('body').removeClass('hide-right'); $('#tab-code').trigger('click'); }
-      };
-      if (acts[e.code]) { e.preventDefault(); acts[e.code](); }
-      return;
-    }
+        /* ================= SHORTCUT KEYBOARD ================= */
+        const SMALL = window.matchMedia('(max-width: 899px)');
+        const toolKeys = {
+          KeyV: 'select',
+          KeyH: 'hand',
+          KeyF: 'frame',
+          KeyR: 'rectangle',
+          KeyO: 'ellipse',
+          KeyL: 'line',
+          KeyG: 'polygon',
+          KeyS: 'star',
+          KeyP: 'pen',
+          KeyT: 'text',
+          KeyI: 'image'
+        };
+        const pickTool = name => $(`#toolbar .tool[data-tool="${name}"]`).trigger('click');
+        const currentTool = () => $('#toolbar .tool.active').data('tool');
+        const typing = t => t && (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable);
+        const relayout = () => setTimeout(() => $(window).trigger('resize'), 0);
 
-    if (e.code === 'Space') {
-      e.preventDefault();
-      if (!e.repeat && currentTool() !== 'hand') { prevTool = currentTool(); pickTool('hand'); }
-      return;
-    }
-    if (e.shiftKey && e.code === 'KeyP') { e.preventDefault(); pickTool('pencil'); return; }
-    if (e.shiftKey && e.code === 'Digit0') { e.preventDefault(); setZoom(100); return; }
-    if (e.shiftKey && e.code === 'Digit1') { e.preventDefault(); fitZoom(); return; }
-    if (e.key === '+' || e.key === '=') { e.preventDefault(); stepZoom(1); return; }
-    if (e.key === '-' || e.key === '_') { e.preventDefault(); stepZoom(-1); return; }
-    if (e.key === 'ArrowDown') { e.preventDefault(); stepLayer(1); return; }
-    if (e.key === 'ArrowUp')   { e.preventDefault(); stepLayer(-1); return; }
-    if (!e.shiftKey && toolKeys[e.code]) { e.preventDefault(); pickTool(toolKeys[e.code]); }
-  });
+        const stepLayer = dir => {
+          const $all = $('#layer-list .layer:visible');
+          if (!$all.length) return;
+          const i = $all.index($all.filter('.selected').first());
+          $all.eq(Math.min($all.length - 1, Math.max(0, i < 0 ? (dir > 0 ? 0 : $all.length - 1) : i + dir))).trigger('click')[0]
+            .scrollIntoView({
+              block: 'nearest'
+            });
+        };
+        const togglePanel = side => {
+          if (SMALL.matches) {
+            $('body').toggleClass('show-' + side).removeClass(side === 'left' ? 'show-right' : 'show-left');
+          } else {
+            $('body').toggleClass('hide-' + side);
+            relayout();
+          }
+        };
 
-  $(document).on('keyup', function (e) {
-    if (e.code === 'Space' && prevTool) { pickTool(prevTool); prevTool = null; }
-  });
-  $(window).on('blur', () => { if (prevTool) { pickTool(prevTool); prevTool = null; } });
-});
-</script>
+        let prevTool = null; // untuk Space = hand sementara
+
+        $(document).on('keydown', function(e) {
+          // Popup terbuka: hanya Esc / ? / Tab yang aktif
+          if (modalOpen()) {
+            if (e.key === 'Escape' || (e.key === '?' && $('#modal-help').hasClass('open') && !typing(e.target))) {
+              e.preventDefault();
+              closeModal();
+            } else if (e.key === 'Tab') trapTab(e);
+            return;
+          }
+          if (typing(e.target) && e.key !== 'Escape') return;
+          const ctrl = e.ctrlKey || e.metaKey;
+
+          if (e.key === '?') {
+            e.preventDefault();
+            openModal('help');
+            return;
+          }
+          if (e.key === 'Escape') {
+            if (drag && drag.started) {
+              endDrag(false);
+              return;
+            }
+            if ($('body').is('.show-left,.show-right')) {
+              closeDrawers();
+              return;
+            }
+            if (typing(e.target)) {
+              e.target.blur();
+              return;
+            }
+            pickTool('select');
+            return;
+          }
+
+          if (ctrl && !e.altKey) {
+            switch (e.code) {
+              case 'KeyZ':
+                e.preventDefault();
+                $(e.shiftKey ? '#btn-redo' : '#btn-undo').trigger('click');
+                return;
+              case 'KeyY':
+                e.preventDefault();
+                $('#btn-redo').trigger('click');
+                return;
+              case 'KeyS':
+                e.preventDefault();
+                $('#btn-save').trigger('click');
+                return;
+              case 'KeyF':
+                e.preventDefault();
+                if (SMALL.matches) $('body').addClass('show-left').removeClass('show-right');
+                else $('body').removeClass('hide-left');
+                $('#layer-search').trigger('focus').trigger('select');
+                return;
+            }
+            return;
+          }
+
+          if (e.altKey && !ctrl) {
+            const acts = {
+              KeyN: () => $('#btn-new').trigger('click'),
+              KeyD: () => $('#btn-drive').trigger('click'),
+              KeyI: () => $('#btn-import').trigger('click'),
+              KeyL: () => togglePanel('left'),
+              KeyR: () => togglePanel('right'),
+              ArrowUp: () => nudgeLayer(-1),
+              ArrowDown: () => nudgeLayer(1),
+              Digit1: () => {
+                if (SMALL.matches) $('body').addClass('show-right').removeClass('show-left');
+                else $('body').removeClass('hide-right');
+                $('#tab-design').trigger('click');
+              },
+              Digit2: () => {
+                if (SMALL.matches) $('body').addClass('show-right').removeClass('show-left');
+                else $('body').removeClass('hide-right');
+                $('#tab-code').trigger('click');
+              }
+            };
+            if (acts[e.code]) {
+              e.preventDefault();
+              acts[e.code]();
+            }
+            return;
+          }
+
+          if (e.code === 'Space') {
+            e.preventDefault();
+            if (!e.repeat && currentTool() !== 'hand') {
+              prevTool = currentTool();
+              pickTool('hand');
+            }
+            return;
+          }
+          if (e.shiftKey && e.code === 'KeyP') {
+            e.preventDefault();
+            pickTool('pencil');
+            return;
+          }
+          if (e.shiftKey && e.code === 'Digit0') {
+            e.preventDefault();
+            setZoom(100);
+            return;
+          }
+          if (e.shiftKey && e.code === 'Digit1') {
+            e.preventDefault();
+            fitZoom();
+            return;
+          }
+          if (e.key === '+' || e.key === '=') {
+            e.preventDefault();
+            stepZoom(1);
+            return;
+          }
+          if (e.key === '-' || e.key === '_') {
+            e.preventDefault();
+            stepZoom(-1);
+            return;
+          }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            stepLayer(1);
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            stepLayer(-1);
+            return;
+          }
+          if (!e.shiftKey && toolKeys[e.code]) {
+            e.preventDefault();
+            pickTool(toolKeys[e.code]);
+          }
+        });
+
+        $(document).on('keyup', function(e) {
+          if (e.code === 'Space' && prevTool) {
+            pickTool(prevTool);
+            prevTool = null;
+          }
+        });
+        $(window).on('blur', () => {
+          if (prevTool) {
+            pickTool(prevTool);
+            prevTool = null;
+          }
+        });
+      });
+    </script>
 </body>
 </html>
