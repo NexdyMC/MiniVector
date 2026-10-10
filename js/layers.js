@@ -69,20 +69,36 @@ $(function() {
   // Dengarkan project:load, object:add, dan object:change untuk membangun ulang panel
   $(document).on('project:load', () => {
     syncTreeFromState();
-    if (!find(sel)) sel = null;
+    sel = State.selectedId ? String(State.selectedId) : null;
     render();
   });
   $(document).on('object:add', (e, obj) => {
     syncTreeFromState();
-    if (obj && obj.id) sel = String(obj.id);
+    if (obj && obj.id) {
+      sel = String(obj.id);
+      State.selectedId = obj.id;
+    }
     render();
   });
   $(document).on('object:change', () => {
     syncTreeFromState();
+    sel = State.selectedId ? String(State.selectedId) : null;
     render();
+  });
+  $(document).on('selection:change', (e, obj) => {
+    sel = obj ? String(obj.id) : null;
+    $('#layer-list .layer').removeClass('selected').attr('aria-selected', false);
+    if (sel) {
+      const $el = $(`#layer-list .layer[data-id="${sel}"]`);
+      $el.addClass('selected').attr('aria-selected', true);
+      if ($el.length && $el[0].scrollIntoView) {
+        $el[0].scrollIntoView({ block: 'nearest' });
+      }
+    }
   });
 
   syncTreeFromState();
+  sel = State.selectedId ? String(State.selectedId) : null;
   render();
 
   // pilih + search + collapse
@@ -98,8 +114,11 @@ $(function() {
   $('#layer-list').on('click', '.layer', function() {
     if (justDragged) return;
     sel = String($(this).data('id'));
+    State.selectedId = sel;
     $('#layer-list .layer').removeClass('selected').attr('aria-selected', false);
     $(this).addClass('selected').attr('aria-selected', true);
+    const obj = (State.objects || []).find(o => String(o.id) === sel);
+    $(document).trigger('selection:change', [obj]);
   });
   $('#layer-search').on('input', function() {
     query = this.value.trim().toLowerCase();

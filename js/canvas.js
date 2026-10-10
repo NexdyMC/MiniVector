@@ -73,6 +73,44 @@ const drawObject = o => {
         }
     }
 };
+const drawSelection = () => {
+    if (!State.selectedId) return;
+    const o = State.objects.find(item => item.id === State.selectedId);
+    if (!o || o.visible === false || !o.transform) return;
+
+    const t = o.transform;
+    const pad = 0; // pas di tepi objek
+    const x = t.x - pad,
+        y = t.y - pad,
+        w = t.width + pad * 2,
+        h = t.height + pad * 2;
+
+    // Garis Bounding Box
+    cvCtx.save();
+    cvCtx.lineWidth = 1 / State.zoom; // selalu 1px di layar
+    cvCtx.strokeStyle = '#0D99FF';
+    cvCtx.strokeRect(x, y, w, h);
+
+    // Titik Handle di 4 sudut (8px layar)
+    const handleScreenSize = 7;
+    const hs = handleScreenSize / State.zoom;
+    const half = hs / 2;
+    const corners = [
+        [x, y],
+        [x + w, y],
+        [x + w, y + h],
+        [x, y + h]
+    ];
+
+    cvCtx.fillStyle = '#FFFFFF';
+    corners.forEach(([cx, cy]) => {
+        cvCtx.fillRect(cx - half, cy - half, hs, hs);
+        cvCtx.strokeRect(cx - half, cy - half, hs, hs);
+    });
+
+    cvCtx.restore();
+};
+
 const drawScene = () => {
     cvDirty = false;
     cvCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -82,6 +120,7 @@ const drawScene = () => {
     cvCtx.setTransform(k, 0, 0, k, cvDpr * State.panX, cvDpr * State.panY);
     State.objects.forEach(drawObject);
     if (State.drawing) drawObject(State.drawing); // pratinjau saat drag
+    drawSelection(); // garis seleksi di atas objek
 };
 const requestRender = () => {
     if (cvDirty) return;
@@ -182,4 +221,4 @@ cvEl.addEventListener('auxclick', e => {
 });
 
 /* ---------- render ulang saat data berubah ---------- */
-$(document).on('project:load object:add object:change object:remove', requestRender);
+$(document).on('project:load object:add object:change object:remove selection:change', requestRender);
