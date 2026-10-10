@@ -59,9 +59,42 @@ const drawGrid = () => {
 };
 const drawObject = o => {
     if (!o || o.visible === false || !o.transform) return;
-    if (o.type === 'rectangle') { // [EDIT] tambah tipe lain di sini; rotation & cornerRadius belum digambar
-        const t = o.transform,
-            s = o.style || {};
+    const t = o.transform,
+        s = o.style || {};
+
+    if (o.type === 'frame') {
+        // 1. Gambar latar belakang & border Frame
+        if (s.fill) {
+            cvCtx.fillStyle = s.fill;
+            cvCtx.fillRect(t.x, t.y, t.width, t.height);
+        }
+        if (s.stroke && s.strokeWidth > 0) {
+            cvCtx.lineWidth = s.strokeWidth;
+            cvCtx.strokeStyle = s.stroke;
+            cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+        }
+
+        // 2. Gambar label nama Frame di atas sudut kiri luar Frame
+        cvCtx.save();
+        cvCtx.font = `${Math.max(11, 12 / State.zoom)}px sans-serif`;
+        cvCtx.fillStyle = '#8C8C8C';
+        cvCtx.fillText(o.name || 'Frame', t.x, t.y - (4 / State.zoom));
+        cvCtx.restore();
+
+        // 3. Render anak-anak elemen di dalam Frame (dengan clipping jika clipContent === true)
+        if (Array.isArray(o.children) && o.children.length > 0) {
+            cvCtx.save();
+            if (o.clipContent !== false) {
+                cvCtx.beginPath();
+                cvCtx.rect(t.x, t.y, t.width, t.height);
+                cvCtx.clip();
+            }
+            // Geser origin kanvas ke titik sudut Frame (koordinat lokal anak)
+            cvCtx.translate(t.x, t.y);
+            o.children.forEach(drawObject);
+            cvCtx.restore();
+        }
+    } else if (o.type === 'rectangle') {
         if (s.fill) {
             cvCtx.fillStyle = s.fill;
             cvCtx.fillRect(t.x, t.y, t.width, t.height);
@@ -73,42 +106,68 @@ const drawObject = o => {
         }
     }
 };
+
+// Mencari bounding box absolut dunia dari objek (termasuk objek yang bersarang di dalam frame)
+const getWorldBounds = (objId, list = State.objects, parentOffset = { x: 0, y: 0 }) => {
+    for (const o of list) {
+        if (!o || !o.transform) continue;
+        const absX = parentOffset.x + o.transform.x;
+        const absY = parentOffset.y + o.transform.y;
+        if (o.id === objId) {
+            return { x: absX, y: absY, width: o.transform.width, height: o.transform.height };
+        }
+        if (Array.isArray(o.children) && o.children.length > 0) {
+            const res = getWorldBounds(objId, o.children, { x: absX, y: absY });
+            if (res) return res;
+        }
+    }
+    return null;
+};
+
 const drawSelection = () => {
-    if (!State.selectedId) return;
-    const o = State.objects.find(item => item.id === State.selectedId);
-    if (!o || o.visible === false || !o.transform) return;
+    // 1. Gambar kotak marquee jika sedang drag seleksi di area kosong
+    if (State.marquee) {
+        const m = State.marquee;
+        cvCtx.save();
+        cvCtx.fillStyle = 'rgba(13, 153, 255, 0.12)';
+        cvCtx.strokeStyle = '#0D99FF';
+        cvCtx.lineWidth = Math.max(1 / State.zoom, 1 / (cvDpr * State.zoom));
+        cvCtx.fillRect(m.x, m.y, m.width, m.height);
+        cvCtx.strokeRect(m.x, m.y, m.width, m.height);
+        cvCtx.restore();
+    }
 
-    const t = o.transform;
-    const pad = 0; // pas di tepi objek
-    const x = t.x - pad,
-        y = t.y - pad,
-        w = t.width + pad * 2,
-        h = t.height + pad * 2;
+    // 2. Gambar outline & handle untuk objek terpilih (mendukung objek di dalam frame)
+    if (!State.selectedIds || !State.selectedIds.length) return;
 
-    // Garis Bounding Box
-    cvCtx.save();
-    cvCtx.lineWidth = 1 / State.zoom; // selalu 1px di layar
-    cvCtx.strokeStyle = '#0D99FF';
-    cvCtx.strokeRect(x, y, w, h);
+    const lw = Math.max(1 / State.zoom, 1 / (cvDpr * State.zoom));
+    const handleSize = 6 / State.zoom; // ukuran handle transform dalam satuan dunia
+    const half = handleSize / 2;
 
-    // Titik Handle di 4 sudut (8px layar)
-    const handleScreenSize = 7;
-    const hs = handleScreenSize / State.zoom;
-    const half = hs / 2;
-    const corners = [
-        [x, y],
-        [x + w, y],
-        [x + w, y + h],
-        [x, y + h]
-    ];
+    State.selectedIds.forEach(id => {
+        const bounds = getWorldBounds(id);
+        if (!bounds) return;
 
-    cvCtx.fillStyle = '#FFFFFF';
-    corners.forEach(([cx, cy]) => {
-        cvCtx.fillRect(cx - half, cy - half, hs, hs);
-        cvCtx.strokeRect(cx - half, cy - half, hs, hs);
+        // Bounding box outline
+        cvCtx.save();
+        cvCtx.strokeStyle = '#0D99FF';
+        cvCtx.lineWidth = lw;
+        cvCtx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+        // 4 corner handles
+        cvCtx.fillStyle = '#FFFFFF';
+        const corners = [
+            [bounds.x, bounds.y],
+            [bounds.x + bounds.width, bounds.y],
+            [bounds.x + bounds.width, bounds.y + bounds.height],
+            [bounds.x, bounds.y + bounds.height]
+        ];
+        corners.forEach(([cx, cy]) => {
+            cvCtx.fillRect(cx - half, cy - half, handleSize, handleSize);
+            cvCtx.strokeRect(cx - half, cy - half, handleSize, handleSize);
+        });
+        cvCtx.restore();
     });
-
-    cvCtx.restore();
 };
 
 const drawScene = () => {
@@ -120,7 +179,7 @@ const drawScene = () => {
     cvCtx.setTransform(k, 0, 0, k, cvDpr * State.panX, cvDpr * State.panY);
     State.objects.forEach(drawObject);
     if (State.drawing) drawObject(State.drawing); // pratinjau saat drag
-    drawSelection(); // garis seleksi di atas objek
+    drawSelection(); // [EDIT] gambar outline & transform handles objek yang terpilih
 };
 const requestRender = () => {
     if (cvDirty) return;
@@ -221,4 +280,4 @@ cvEl.addEventListener('auxclick', e => {
 });
 
 /* ---------- render ulang saat data berubah ---------- */
-$(document).on('project:load object:add object:change object:remove selection:change', requestRender);
+$(document).on('project:load object:add object:change object:remove', requestRender);

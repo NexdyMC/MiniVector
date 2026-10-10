@@ -9,9 +9,10 @@ const State = {
     panY: 0,
     tool: 'select', // diisi dari data-tool tombol toolbar
     drawing: null, // objek sementara saat drag (belum masuk objects)
-    selectedId: null, // id objek yang sedang dipilih (mode select)
     nextId: 1, // penghitung id objek
-    objects: [] // daftar objek vektor (skema: Structure-JSON.md)
+    objects: [], // daftar objek vektor (skema: Structure-JSON.md)
+    selectedIds: [], // ID objek terpilih untuk mode select
+    marquee: null // Kotak area seleksi drag {x, y, width, height} dalam satuan dunia
 };
 const newObjectId = () => State.nextId++;
 
@@ -37,7 +38,7 @@ const loadProject = data => {
     const maxId = State.objects.reduce((m, o) => Math.max(m, parseInt(o.id.split('-').pop(), 10) || 0), 0);
     State.nextId = Math.max(1, Math.floor(Number(p.nextId)) || 1, maxId + 1);
     State.drawing = null;
-    State.selectedId = null;
+    State.selectedIds = State.selectedIds.filter(id => State.objects.some(o => o.id === id));
     $(document).trigger('project:load');
     return true;
 };

@@ -58,8 +58,9 @@ $(function() {
     walk(tree, 0);
     $('#layer-list').html(rows.map(([n, d]) => {
       const open = n.children && (n.open || query);
-      return `<li class="layer${n.children ? ' frame' : ''}${open ? ' open' : ''}${n.id === sel ? ' selected' : ''}" data-id="${n.id}" style="--depth:${d}"
-  role="treeitem" aria-level="${d + 1}" aria-selected="${n.id === sel}"${n.children ? ` aria-expanded="${!!open}"` : ''}>` +
+      const isSelected = State.selectedIds ? State.selectedIds.includes(n.id) : n.id === sel;
+      return `<li class="layer${n.children ? ' frame' : ''}${open ? ' open' : ''}${isSelected ? ' selected' : ''}" data-id="${n.id}" style="--depth:${d}"
+  role="treeitem" aria-level="${d + 1}" aria-selected="${isSelected}"${n.children ? ` aria-expanded="${!!open}"` : ''}>` +
         (n.children ? `<button class="twirl" tabindex="-1" aria-label="Buka / tutup ${esc(n.name || '')}">${ico('chev')}</button>` : '<span class="twirl"></span>') +
         ico(ICON[n.type] || 'rect') + `<span class="name">${esc(n.name || '')}</span></li>`;
     }).join('') + '<li class="layer-end" aria-hidden="true"></li>');
@@ -69,36 +70,28 @@ $(function() {
   // Dengarkan project:load, object:add, dan object:change untuk membangun ulang panel
   $(document).on('project:load', () => {
     syncTreeFromState();
-    sel = State.selectedId ? String(State.selectedId) : null;
+    if (!find(sel)) sel = null;
+    State.selectedIds = sel ? [sel] : [];
     render();
   });
   $(document).on('object:add', (e, obj) => {
     syncTreeFromState();
     if (obj && obj.id) {
       sel = String(obj.id);
-      State.selectedId = obj.id;
+      State.selectedIds = [sel];
     }
     render();
   });
   $(document).on('object:change', () => {
     syncTreeFromState();
-    sel = State.selectedId ? String(State.selectedId) : null;
     render();
   });
-  $(document).on('selection:change', (e, obj) => {
-    sel = obj ? String(obj.id) : null;
-    $('#layer-list .layer').removeClass('selected').attr('aria-selected', false);
-    if (sel) {
-      const $el = $(`#layer-list .layer[data-id="${sel}"]`);
-      $el.addClass('selected').attr('aria-selected', true);
-      if ($el.length && $el[0].scrollIntoView) {
-        $el[0].scrollIntoView({ block: 'nearest' });
-      }
-    }
+  $(document).on('selection:change', () => {
+    sel = (State.selectedIds && State.selectedIds.length) ? String(State.selectedIds[State.selectedIds.length - 1]) : null;
+    render();
   });
 
   syncTreeFromState();
-  sel = State.selectedId ? String(State.selectedId) : null;
   render();
 
   // pilih + search + collapse
@@ -111,14 +104,24 @@ $(function() {
       render();
     }
   });
-  $('#layer-list').on('click', '.layer', function() {
+  $('#layer-list').on('click', '.layer', function(e) {
     if (justDragged) return;
-    sel = String($(this).data('id'));
-    State.selectedId = sel;
-    $('#layer-list .layer').removeClass('selected').attr('aria-selected', false);
-    $(this).addClass('selected').attr('aria-selected', true);
-    const obj = (State.objects || []).find(o => String(o.id) === sel);
-    $(document).trigger('selection:change', [obj]);
+    const clickedId = String($(this).data('id'));
+    if (e.shiftKey) {
+      // Multi-select toggle dengan shift
+      const idx = State.selectedIds.indexOf(clickedId);
+      if (idx >= 0) {
+        State.selectedIds.splice(idx, 1);
+      } else {
+        State.selectedIds.push(clickedId);
+      }
+    } else {
+      State.selectedIds = [clickedId];
+    }
+    sel = State.selectedIds.length ? String(State.selectedIds[State.selectedIds.length - 1]) : null;
+    $(document).trigger('selection:change');
+    if (typeof requestRender === 'function') requestRender();
+    render();
   });
   $('#layer-search').on('input', function() {
     query = this.value.trim().toLowerCase();
