@@ -82,7 +82,7 @@ $(function() {
     }
     render();
   });
-  $(document).on('object:change', () => {
+  $(document).on('object:change object:remove', () => {
     syncTreeFromState();
     render();
   });
