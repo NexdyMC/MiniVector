@@ -64,7 +64,9 @@ Setiap elemen di MiniVector memiliki field dasar umum (*Common Fields*):
 
 ---
 
-### A. Tipe: `frame` (Wadah / Container Kanvas Lokal)
+## 5. Structure Json Bagian Tools
+
+### 5.1 Tipe: `frame` (Wadah / Container Kanvas Lokal)
 
 Frame adalah wadah penampung elemen yang memiliki sistem koordinat lokal sendiri dan memotong visual anak elemennya jika keluar batas (*content clipping*).
 
@@ -137,7 +139,7 @@ Frame adalah wadah penampung elemen yang memiliki sistem koordinat lokal sendiri
 
 ---
 
-### B. Tipe: `rectangle` (Bentuk Persegi Panjang)
+### 5.2 Tipe: `rectangle` (Bentuk Persegi Panjang)
 
 ```json
 {
@@ -188,65 +190,99 @@ Frame adalah wadah penampung elemen yang memiliki sistem koordinat lokal sendiri
 
 ---
 
-## 5. Contoh Lengkap File Proyek
+## 6 Structure Json Bagian Property
+properti fill didefinisikan sebagai sebuah atribut berbasis array yang berfungsi layaknya tumpukan lapisan visual (layers) independen untuk mengisi area dalam dari sebuah objek atau shape geometris.
 
+### 6.1 Property Fill Object 
 ```json
 {
-  "schemaVersion": 1,
-  "nextId": 3,
-  "objects": [
+  "fills": [
     {
-      "id": "frame-1",
-      "type": "frame",
-      "name": "Frame 1",
+      "id": "fill_linear",
+      "type": "GRADIENT_LINEAR",
       "visible": true,
-      "locked": false,
-      "open": true,
-      "clipContent": true,
-      "transform": { "x": 100, "y": 100, "width": 300, "height": 200, "rotation": 0, "pivot": { "x": 0.5, "y": 0.5 } },
-      "geometry": { "cornerRadius": [0, 0, 0, 0] },
-      "style": { "fill": "#FFFFFF", "stroke": "#E5E5E5", "strokeWidth": 1 },
-      "children": [
-        {
-          "id": "rect-1",
-          "type": "rectangle",
-          "name": "Rectangle 1",
-          "visible": true,
-          "locked": false,
-          "transform": { "x": 20, "y": 20, "width": 80, "height": 50, "rotation": 0, "pivot": { "x": 0.5, "y": 0.5 } },
-          "geometry": {
-            "isCustomPath": false,
-            "cornerRadius": [0, 0, 0, 0],
-            "nodes": [
-              { "id": "p0", "x": 0, "y": 0 },
-              { "id": "p1", "x": 80, "y": 0 },
-              { "id": "p2", "x": 80, "y": 50 },
-              { "id": "p3", "x": 0, "y": 50 }
-            ]
-          },
-          "style": { "fill": "#0D99FF", "stroke": "#000000", "strokeWidth": 1 }
-        }
+      "opacity": 1.0,
+      "start": { "x": 0, "y": 0 },
+      "end": { "x": 100, "y": 100 },
+      "stops": [
+        { "offset": 0.0, "color": "#FFF000", "opacity": 1.0 },
+        { "offset": 1.0, "color": "#FFFFFF", "opacity": 1.0 }
       ]
     },
     {
-      "id": "rect-2",
-      "type": "rectangle",
-      "name": "Rectangle 2",
+      "id": "fill_radial",
+      "type": "GRADIENT_RADIAL",
       "visible": true,
-      "locked": false,
-      "transform": { "x": 450, "y": 100, "width": 100, "height": 100, "rotation": 0, "pivot": { "x": 0.5, "y": 0.5 } },
-      "geometry": {
-        "isCustomPath": false,
-        "cornerRadius": [0, 0, 0, 0],
-        "nodes": [
-          { "id": "p0", "x": 0, "y": 0 },
-          { "id": "p1", "x": 100, "y": 0 },
-          { "id": "p2", "x": 100, "y": 100 },
-          { "id": "p3", "x": 0, "y": 100 }
-        ]
-      },
-      "style": { "fill": "#D9D9D9", "stroke": "#000000", "strokeWidth": 1 }
+      "opacity": 1.0,
+      "center": { "x": 50, "y": 50 },
+      "radius": { "rx": 50, "ry": 50 },
+      "stops": [
+        { "offset": 0.0, "color": "#FFF000", "opacity": 1.0 },
+        { "offset": 1.0, "color": "#FFFFFF", "opacity": 1.0 }
+      ]
+    },
+    {
+      "id": "fill_angular",
+      "type": "GRADIENT_ANGULAR",
+      "visible": true,
+      "opacity": 1.0,
+      "center": { "x": 50, "y": 50 },
+      "startAngle": 0,
+      "stops": [
+        { "offset": 0.0, "color": "#FFF000", "opacity": 1.0 },
+        { "offset": 0.5, "color": "#FF0000", "opacity": 1.0 },
+        { "offset": 1.0, "color": "#FFF000", "opacity": 1.0 }
+      ]
+    },
+    {
+      "id": "fill_diamond",
+      "type": "GRADIENT_DIAMOND",
+      "visible": true,
+      "opacity": 1.0,
+      "center": { "x": 50, "y": 50 },
+      "size": { "width": 60, "height": 60 },
+      "angle": 0,
+      "stops": [
+        { "offset": 0.0, "color": "#FFF000", "opacity": 1.0 },
+        { "offset": 1.0, "color": "#FFFFFF", "opacity": 1.0 }
+      ]
+    },
+    {
+      "id": "fill_image",
+      "type": "IMAGE",
+      "visible": true,
+      "opacity": 1.0,
+      "scaleMode": "FILL",
+      "source": "https://assets.minivector.app/uploads/sample-photo.jpg",
+      "adjustments": {
+        "exposure": 0.0,
+        "contrast": 0.0,
+        "saturation": 0.0,
+        "temperature": 0.0,
+        "tint": 0.0,
+        "highlights": 0.0,
+        "shadows": 0.0
+      }
     }
   ]
 }
 ```
+
+| Properti | Tipe Data | Wajib | Keterangan |
+| :--- | :--- | :---: | :--- |
+| `fills` | `Array of Objects` | Ya | Wadah utama (berupa tumpukan/layer) yang menampung seluruh konfigurasi pengisian area *shape*. |
+| `id` | `String` | Ya | Identifier unik untuk spesifik layer *fill* (berguna untuk manipulasi atau *reordering* layer di sistem). |
+| `type` | `String` | Ya | Menentukan jenis *fill* (Enum: `SOLID`, `GRADIENT_LINEAR`, `GRADIENT_RADIAL`, `PATTERN`, `IMAGE`, dll). |
+| `visible` | `Boolean` | Ya | Status visibilitas layer. `true` berarti layer ditampilkan (ikon mata terbuka), `false` berarti disembunyikan. |
+| `opacity` | `Number (Float)` | Ya | Opasitas keseluruhan untuk satu layer *fill* ini. Menggunakan skala desimal `0.0` (transparan) hingga `1.0` (solid). |
+| `start` | `Object {x, y}` | Ya* | Koordinat awal garis arah (*handle*) gradien. (*Wajib untuk tipe `GRADIENT_LINEAR`). |
+| `start.x` / `start.y` | `Number` | Ya | Nilai titik koordinat X dan Y absolut/relatif dari awal mula gradien. |
+| `end` | `Object {x, y}` | Ya* | Koordinat akhir garis arah (*handle*) gradien. (*Wajib untuk tipe `GRADIENT_LINEAR`). |
+| `end.x` / `end.y` | `Number` | Ya | Nilai titik koordinat X dan Y dari titik akhir gradien. |
+| `stops` | `Array of Objects` | Ya* | Kumpulan titik henti warna (*color stops*) pembentuk transisi gradien. Minimal butuh 2 objek. (*Wajib untuk semua tipe gradien). |
+| `stops[n].offset` | `Number (Float)` | Ya | Posisi berhentinya warna pada bentangan garis gradien. Skala rasio desimal dari `0.0` hingga `1.0`. |
+| `stops[n].color` | `String` | Ya | Nilai warna pengisi pada *stop* tersebut, biasanya menggunakan format kode *Hexadecimal* (contoh: `#FFF000`). |
+| `stops[n].opacity` | `Number (Float)` | Ya | Opasitas pada titik warna (*stop*) spesifik ini. Menggunakan skala `0.0` hingga `1.0`. |
+
+> **Catatan Implementasi Engine:** 
+> Pastikan nilai offset pada array `stops` selalu diurutkan dari nilai terkecil (`0.0`) ke nilai terbesar (`1.0`) untuk mencegah *error* saat diterjemahkan ke fungsi bawaan Canvas `addColorStop()`.

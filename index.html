@@ -236,16 +236,16 @@
                 <div class="fg-label">Alignment</div>
                 <div class="fg-grid">
                   <div class="fg-seg">
-                    <button class="fg-ib" title="Align left"><i class="fa-solid fa-align-left"></i></button>
-                    <button class="fg-ib" title="Align horizontal center"><i
+                    <button class="fg-ib" data-act="align-left" title="Align left"><i class="fa-solid fa-align-left"></i></button>
+                    <button class="fg-ib" data-act="align-hcenter" title="Align horizontal center"><i
                         class="fa-solid fa-align-center"></i></button>
-                    <button class="fg-ib" title="Align right"><i class="fa-solid fa-align-right"></i></button>
+                    <button class="fg-ib" data-act="align-right" title="Align right"><i class="fa-solid fa-align-right"></i></button>
                   </div>
                   <div class="fg-seg">
-                    <button class="fg-ib" title="Align top"><i class="fa-solid fa-align-left fa-rotate-90"></i></button>
-                    <button class="fg-ib" title="Align vertical center"><i
+                    <button class="fg-ib" data-act="align-top" title="Align top"><i class="fa-solid fa-align-left fa-rotate-90"></i></button>
+                    <button class="fg-ib" data-act="align-vcenter" title="Align vertical center"><i
                         class="fa-solid fa-align-center fa-rotate-90"></i></button>
-                    <button class="fg-ib" title="Align bottom"><i
+                    <button class="fg-ib" data-act="align-bottom" title="Align bottom"><i
                         class="fa-solid fa-align-right fa-rotate-90"></i></button>
                   </div>
                 </div>
@@ -260,9 +260,9 @@
                       style="--fa-rotate-angle:-45deg"></i><input id="prop-rotation" type="number" value="0"><span
                       class="end">°</span></label>
                   <div class="fg-seg">
-                    <button class="fg-ib" title="Putar 90°"><i class="fa-solid fa-rotate-right"></i></button>
-                    <button class="fg-ib" title="Flip horizontal"><i class="fa-solid fa-left-right"></i></button>
-                    <button class="fg-ib" title="Flip vertical"><i class="fa-solid fa-up-down"></i></button>
+                    <button class="fg-ib" data-act="rotate90" title="Putar 90°"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button class="fg-ib" data-act="flip-x" title="Flip horizontal"><i class="fa-solid fa-left-right"></i></button>
+                    <button class="fg-ib" data-act="flip-y" title="Flip vertical"><i class="fa-solid fa-up-down"></i></button>
                   </div>
                 </div>
               </section>
@@ -274,7 +274,7 @@
                 <div class="fg-grid three">
                   <label class="fg-in"><span class="lb">W</span><input id="prop-w" type="number" value="120"></label>
                   <label class="fg-in"><span class="lb">H</span><input id="prop-h" type="number" value="80"></label>
-                  <button class="fg-ib fg-fieldbtn" title="Pertahankan rasio / resize to fit"><i
+                  <button class="fg-ib fg-fieldbtn" data-act="ratio-lock" aria-pressed="false" title="Pertahankan rasio / resize to fit"><i
                       class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
                 </div>
               </section>
@@ -347,16 +347,10 @@
                   <div class="fg-actions">
                     <button class="fg-ib" title="Styles & variables"><i
                         class="fa-solid fa-table-cells-large"></i></button>
-                    <button class="fg-ib" title="Tambah fill"><i class="fa-solid fa-plus"></i></button>
+                    <button class="fg-ib" data-act="fill-add" title="Tambah fill"><i class="fa-solid fa-plus"></i></button>
                   </div>
                 </div>
-                <div class="fg-grid fill">
-                  <div class="fg-color"><input type="color" id="prop-fill" value="#d9d9d9"><input class="hex"
-                      id="prop-fill-hex" value="d9d9d9" maxlength="6" spellcheck="false"><input class="op"
-                      id="prop-fill-opacity" type="number" value="100"><span class="pc">%</span></div>
-                  <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
-                  <button class="fg-ib" title="Hapus"><i class="fa-solid fa-minus"></i></button>
-                </div>
+                <div id="fill-list"></div>
               </section>
 
               <!-- STROKE (accordion) -->
@@ -602,9 +596,11 @@
     </div>
 
     <script src="libs/jquery.min.js"></script>
-
+    
     <!-- js main -->
     <script src="js/variabel.js"></script>
+    <script src="js/colors.js"></script>
+    <script src="js/paint.js"></script>
     <script src="js/property.js"></script>
     <script src="js/layers.js"></script>
     <script src="js/popup.js"></script>
@@ -613,6 +609,7 @@
     <script src="js/canvas.js"></script>
     <script src="js/delete.js"></script>
     <script src="js/geometry.js"></script>
+    <script src="js/clipboard.js"></script>
     <script src="js/main.js"></script>
     <script src="js/redo.js"></script>
     <script src="js/undo.js"></script>
@@ -622,11 +619,14 @@
     <script src="js/tools/rectangle.js"></script>
     <script src="js/tools/circle.js"></script>
     <script src="js/tools/hand.js"></script>
+    <script src="js/tools/line.js"></script>
 
     <!-- panel design -->
     <script src="js/design/frame.js"></script>
     <script src="js/design/size.js"></script>
     <script src="js/design/position.js"></script>
+    <script src="js/design/colorpicker.js"></script>
+    <script src="js/design/fill.js"></script>
 
     <script>
       $(function () {
