@@ -92,6 +92,24 @@ $(document).on('keydown', function(e) {
         e.preventDefault();
         $('#btn-save').trigger('click');
         return;
+      case 'KeyC':
+        if (window.Clipboard) {
+          e.preventDefault();
+          window.Clipboard.copy();
+        }
+        return;
+      case 'KeyV':
+        if (window.Clipboard) {
+          e.preventDefault();
+          window.Clipboard.paste();
+        }
+        return;
+      case 'KeyD':
+        if (window.Clipboard) {
+          e.preventDefault();
+          window.Clipboard.duplicate();
+        }
+        return;
       case 'KeyF':
         e.preventDefault();
         if (SMALL.matches) $('body').addClass('show-left').removeClass('show-right');

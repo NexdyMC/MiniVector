@@ -64,10 +64,7 @@ const drawObject = o => {
 
     if (o.type === 'frame') {
         // 1. Gambar latar belakang & border Frame
-        if (s.fill) {
-            cvCtx.fillStyle = s.fill;
-            cvCtx.fillRect(t.x, t.y, t.width, t.height);
-        }
+        Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); // paint.js: style.fills (atau style.fill lama)
         if (s.stroke && s.strokeWidth > 0) {
             cvCtx.lineWidth = s.strokeWidth;
             cvCtx.strokeStyle = s.stroke;
@@ -95,28 +92,39 @@ const drawObject = o => {
             cvCtx.restore();
         }
     } else if (o.type === 'rectangle') {
-        if (s.fill) {
-            cvCtx.fillStyle = s.fill;
-            cvCtx.fillRect(t.x, t.y, t.width, t.height);
-        }
+        Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); // paint.js: style.fills (atau style.fill lama)
         if (s.stroke && s.strokeWidth > 0) {
             cvCtx.lineWidth = s.strokeWidth; // satuan dunia → ikut membesar/mengecil saat zoom
             cvCtx.strokeStyle = s.stroke;
             cvCtx.strokeRect(t.x, t.y, t.width, t.height);
         }
     } else if (o.type === 'ellipse') {
-        const rx = Math.abs(t.width) / 2,
-            ry = Math.abs(t.height) / 2;
+        const rx = Math.abs(t.width) / 2;
+        const ry = Math.abs(t.height) / 2;
+        const cx = t.x + rx;
+        const cy = t.y + ry;
+
         cvCtx.beginPath();
-        cvCtx.ellipse(t.x + rx, t.y + ry, rx, ry, 0, 0, Math.PI * 2); // kotak pembatas = transform
-        if (s.fill) {
-            cvCtx.fillStyle = s.fill;
-            cvCtx.fill();
-        }
+        cvCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+
+        Paint.fillPath(cvCtx, s, t);
         if (s.stroke && s.strokeWidth > 0) {
             cvCtx.lineWidth = s.strokeWidth;
             cvCtx.strokeStyle = s.stroke;
             cvCtx.stroke();
+        }
+    } else if (o.type === 'line') {
+        const nodes = (o.geometry && o.geometry.nodes) || [];
+        if (nodes.length >= 2) {
+            cvCtx.save();
+            cvCtx.beginPath();
+            cvCtx.moveTo(t.x + nodes[0].x, t.y + nodes[0].y);
+            cvCtx.lineTo(t.x + nodes[1].x, t.y + nodes[1].y);
+            cvCtx.lineWidth = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+            cvCtx.strokeStyle = s.stroke || '#000000';
+            cvCtx.lineCap = 'round';
+            cvCtx.stroke();
+            cvCtx.restore();
         }
     }
 };
