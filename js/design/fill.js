@@ -3,15 +3,20 @@
 //                  design/colorpicker.js (ColorPicker), canvas.js (requestRender).
 // Daftar fill objek terpilih (paling depan di atas): swatch (membuka picker), hex, opasitas %, mata, hapus; tombol + menambah fill.
 // Beberapa objek terpilih dengan fill sama → diedit bersama; fill berbeda → satu baris "Mixed" (memilih warna mengganti semuanya).
-// Data: style.fills (lihat StructureJSON.md bagian 6). Tipe selain SOLID ditampilkan sebagai label, belum bisa diedit.
+// Data: style.fills (lihat StructureJSON.md bagian 6). SOLID dan GRADIENT_* bisa diedit di panel warna;
+// tipe lain (PATTERN, IMAGE) ditampilkan sebagai label saja.
 $(function() {
   const $list = $('#fill-list'),
     $add = $('[data-act="fill-add"]');
   if (!$list.length) return;
-  const LABEL = { GRADIENT_LINEAR: 'Linear', GRADIENT_RADIAL: 'Radial', GRADIENT_ANGULAR: 'Angular', GRADIENT_DIAMOND: 'Diamond', PATTERN: 'Pattern', IMAGE: 'Image' };
+  const LABEL = { ...Paint.GRADIENT_LABEL, GRADIENT_DIAMOND: 'Diamond', PATTERN: 'Pattern', IMAGE: 'Image' };
+  $('<style>').text('.fill-sw-g{display:inline-block;width:22px;height:22px;border-radius:5px;border:1px solid rgba(255,255,255,.25);cursor:pointer;flex:none;box-sizing:border-box}.fill-sw-g:focus-visible{outline:2px solid #0d99ff}').appendTo('head');
   const strip = fills => fills.map(({ id, ...rest }) => rest);
 
-  const targets = () => (State.selectedIds || []).map(id => Geo.find(String(id))).filter(f => f && f.obj);
+  const NO_FILL = ['line']; // tipe yang hanya punya stroke: tidak ikut diedit panel Fill [EDIT] tambah tipe lain di sini
+  const selected = () => (State.selectedIds || []).map(id => Geo.find(String(id))).filter(f => f && f.obj);
+  const targets = () => selected().filter(f => !NO_FILL.includes(f.obj.type));
+  const addTitle = $add.attr('title') || 'Tambah fill';
   const model = () => {
     const ts = targets();
     if (!ts.length) return null;
@@ -23,21 +28,22 @@ $(function() {
   // tampilan satu baris
   const view = (p, mixed) => {
     if (mixed) return { sw: '#808080', hex: 'Mixed', op: '', vis: true, solid: false, ro: true };
-    if (p.type !== 'SOLID') return { sw: '#808080', hex: LABEL[p.type] || p.type, op: Math.round((p.opacity == null ? 1 : p.opacity) * 100), vis: p.visible !== false, solid: false, ro: true };
+    if (p.type !== 'SOLID') return { sw: '#808080', grad: Paint.isGradient(p) ? Paint.previewCss(p) : '', hex: LABEL[p.type] || p.type, op: Math.round((p.opacity == null ? 1 : p.opacity) * 100), vis: p.visible !== false, solid: false, ro: true };
     const c = Color.parseCss(p.color);
     return { sw: c ? Color.toHex(c) : '#000000', hex: c ? Color.toHex(c).slice(1) : '', op: Math.round((p.opacity == null ? 1 : p.opacity) * 100), vis: p.visible !== false, solid: true, ro: false };
   };
   const rowHtml = (v, i) => `
 <div class="fg-grid fill" data-i="${i}">
-  <div class="fg-color"><input type="color" class="fill-sw" value="${v.sw}" aria-label="Pilih warna fill"><input class="hex" value="${v.hex}" maxlength="9" spellcheck="false" aria-label="Kode hex"${v.ro ? ' readonly' : ''}><input class="op" type="number" min="0" max="100" value="${v.op}" aria-label="Opasitas fill (%)"${v.op === '' ? ' disabled' : ''}><span class="pc">%</span></div>
+  <div class="fg-color">${v.grad ? `<span class="fill-sw fill-sw-g" role="button" tabindex="0" aria-label="Edit gradient" style="background:${v.grad}"></span>` : `<input type="color" class="fill-sw" value="${v.sw}" aria-label="Pilih warna fill">`}<input class="hex" value="${v.hex}" maxlength="9" spellcheck="false" aria-label="Kode hex"${v.ro ? ' readonly' : ''}><input class="op" type="number" min="0" max="100" value="${v.op}" aria-label="Opasitas fill (%)"${v.op === '' ? ' disabled' : ''}><span class="pc">%</span></div>
   <button type="button" class="fg-ib" data-act="fill-eye" title="Tampilkan / sembunyikan"${v.op === '' ? ' disabled' : ''}><i class="fa-regular ${v.vis ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
   <button type="button" class="fg-ib" data-act="fill-del" title="Hapus"><i class="fa-solid fa-minus"></i></button>
 </div>`;
 
   let sig = null;
   const refresh = force => { // force=true: timpa juga kolom yang sedang fokus (mis. mengembalikan input tidak valid)
-    const m = model();
-    $add.prop('disabled', !m);
+    const m = model(),
+      strokeOnly = !m && selected().length > 0; // yang terpilih hanya objek tanpa fill (mis. garis)
+    $add.prop('disabled', !m).attr('title', strokeOnly ? 'Objek ini hanya punya stroke, tidak punya fill' : addTitle);
     if (!m) {
       if (sig !== '') $list.empty();
       sig = '';
@@ -57,7 +63,8 @@ $(function() {
         sw = $r.find('.fill-sw')[0],
         hx = $r.find('.hex')[0],
         op = $r.find('.op')[0];
-      if (sw.value !== v.sw) sw.value = v.sw;
+      if (v.grad) sw.style.background = v.grad;
+      else if (sw.value !== v.sw) sw.value = v.sw;
       if (force || document.activeElement !== hx) hx.value = v.hex;
       if (force || document.activeElement !== op) op.value = v.op;
       $r.find('[data-act="fill-eye"] i').attr('class', 'fa-regular ' + (v.vis ? 'fa-eye' : 'fa-eye-slash'));
@@ -100,7 +107,7 @@ $(function() {
     const $row = $(el).closest('.fg-grid'),
       i = +$row.data('i'),
       p = m.mixed ? null : m.fills[m.fills.length - 1 - i];
-    if (p && p.type !== 'SOLID') return; // gradient / pattern / image: tahap berikutnya
+    if (p && p.type !== 'SOLID' && !Paint.isGradient(p)) return; // pattern / image: tahap berikutnya
     const key = m.mixed ? 'mixed' : p.id;
     if (ColorPicker.isOpen() && ColorPicker.key() === key) return ColorPicker.close();
     const base = p || Paint.fillsOf(m.ts[0].obj.style).slice().reverse().find(q => q.type === 'SOLID') || Paint.solid();
@@ -108,23 +115,19 @@ $(function() {
     ColorPicker.open({
       key,
       anchor: $row.find('.fill-sw')[0],
-      color: base.color,
-      opacity: base.opacity,
+      paint: JSON.parse(JSON.stringify(base)),
       background: backgroundFor(m.ts[0]),
-      onChange: ({ color, opacity }, final) => {
+      onChange: (np, final) => {
         if (m.mixed) {
           apply((fills, f) => {
             if (!sessionIds.has(f.obj.id)) sessionIds.set(f.obj.id, Paint.uid());
             fills.length = 0;
-            fills.push({ id: sessionIds.get(f.obj.id), type: 'SOLID', visible: true, opacity, color });
+            fills.push({ ...JSON.parse(JSON.stringify(np)), id: sessionIds.get(f.obj.id) });
           }, final);
         } else {
           apply(fills => {
-            const q = fills[fills.length - 1 - i];
-            if (q && q.type === 'SOLID') {
-              q.color = color;
-              q.opacity = opacity;
-            }
+            const idx = fills.length - 1 - i;
+            if (fills[idx]) fills[idx] = { ...JSON.parse(JSON.stringify(np)), id: fills[idx].id }; // id fill dipertahankan
           }, final);
         }
       }

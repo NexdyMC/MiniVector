@@ -215,7 +215,7 @@
 
         <!-- 3. CENTER -->
         <main id="workspace" class="bg-bg">
-          <canvas id="canvas" class="block absolute inset-0 w-full h-full"></canvas>
+          <canvas id="canvas" class="absolute inset-0 block w-full h-full"></canvas>
           <div id="empty-state"><span>Create a frame or select a tool to start designing</span></div>
           <nav id="toolbar" aria-label="Tools"></nav>
         </main>
@@ -227,7 +227,7 @@
               aria-selected="true">Design</button>
             <button id="tab-code" class="mode-tab" data-mode="code" role="tab" aria-selected="false">Code</button>
           </div>
-          <div class="overflow-y-auto flex-1 min-h-0">
+          <div class="flex-1 min-h-0 overflow-y-auto">
             <div id="view-design">
 
               <!-- POSITION -->
@@ -607,9 +607,11 @@
     <script src="js/zoom.js"></script>
     <script src="js/shortcut.js"></script>
     <script src="js/canvas.js"></script>
+    <script src="js/tools/cursor.js"></script>
+    <script src="js/design/frame.js"></script>
+    <script src="js/tools/rectangle.js"></script>
+    <script src="js/tools/circle.js"></script>
     <script src="js/delete.js"></script>
-    <script src="js/geometry.js"></script>
-    <script src="js/clipboard.js"></script>
     <script src="js/main.js"></script>
     <script src="js/redo.js"></script>
     <script src="js/undo.js"></script>
