@@ -6,6 +6,7 @@ Sumber kebenaran di kode:
 - `js/variabel.js` (`serializeProject`, `loadProject`, `State`)
 - `js/tools/rectangle.js` (bentuk objek `rectangle`)
 - `js/design/frame.js` (bentuk objek `frame`)
+- `js/tools/circle.js` (bentuk objek `ellipse`)
 
 Penanda status: 
 - ✅ sudah dipakai & aktif di kode saat ini
@@ -185,6 +186,49 @@ Frame adalah wadah penampung elemen yang memiliki sistem koordinat lokal sendiri
 | `style.stroke` | string | Warna garis tepi hex / rgba. | ✅ |
 | `style.strokeWidth` | number | Tebal garis (satuan dunia). `0` = tanpa garis. | ✅ |
 
+
+
+### C. Tipe: `ellipse` (Ellipse / Lingkaran)
+
+Dibuat oleh tool Ellipse (tombol `O`). Drag membuat kotak pembatas; ellipse digambar di dalamnya. Menahan **Shift** saat drag mengunci bentuk menjadi lingkaran sempurna (lebar = tinggi). Titik drag di-snap ke grid 1×1, tahan **Ctrl/Cmd** untuk mematikan snap.
+
+```json
+{
+  "id": "ellipse-3",
+  "type": "ellipse",
+  "name": "Ellipse 3",
+  "visible": true,
+  "locked": false,
+  "transform": {
+    "x": 200,
+    "y": 120,
+    "width": 100,
+    "height": 100,
+    "rotation": 0,
+    "pivot": { "x": 0.5, "y": 0.5 }
+  },
+  "geometry": {
+    "isCustomPath": false
+  },
+  "style": {
+    "fill": "#D9D9D9",
+    "stroke": "#000000",
+    "strokeWidth": 1
+  }
+}
+```
+
+| Field | Tipe | Keterangan | Status |
+| :--- | :--- | :--- | :---: |
+| `id` | string | `ellipse-N`, dengan N dari `nextId`. | ✅ |
+| `name` | string | `Ellipse N`. | ✅ |
+| `transform.x`, `transform.y` | number | Pojok kiri-atas kotak pembatas. Di root = koordinat dunia; di dalam frame = koordinat relatif frame. | ✅ |
+| `transform.width`, `height` | number ≥ 0 | Diameter horizontal / vertikal. Sama besar = lingkaran. | ✅ |
+| `transform.rotation`, `transform.pivot` | number, `{x, y}` | Sama seperti Rectangle; renderer belum memutar. | 🔜 |
+| `geometry.isCustomPath` | boolean | `false` = bentuk dihitung dari `width` dan `height`. | 🔜 |
+| `style.fill`, `style.stroke`, `style.strokeWidth` | string, string, number | Sama seperti Rectangle. | ✅ |
+
+> Ellipse belum menyimpan `nodes` dan `cornerRadius`. Titik jangkar (atas, kanan, bawah, kiri) baru ditambahkan saat fitur Node Edit dikerjakan.
 
 ---
 

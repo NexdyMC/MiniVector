@@ -104,6 +104,20 @@ const drawObject = o => {
             cvCtx.strokeStyle = s.stroke;
             cvCtx.strokeRect(t.x, t.y, t.width, t.height);
         }
+    } else if (o.type === 'ellipse') {
+        const rx = Math.abs(t.width) / 2,
+            ry = Math.abs(t.height) / 2;
+        cvCtx.beginPath();
+        cvCtx.ellipse(t.x + rx, t.y + ry, rx, ry, 0, 0, Math.PI * 2); // kotak pembatas = transform
+        if (s.fill) {
+            cvCtx.fillStyle = s.fill;
+            cvCtx.fill();
+        }
+        if (s.stroke && s.strokeWidth > 0) {
+            cvCtx.lineWidth = s.strokeWidth;
+            cvCtx.strokeStyle = s.stroke;
+            cvCtx.stroke();
+        }
     }
 };
 

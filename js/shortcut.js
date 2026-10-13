@@ -72,6 +72,12 @@ $(document).on('keydown', function(e) {
     return;
   }
 
+  if ((e.key === 'Delete' || e.key === 'Backspace') && !ctrl && !e.altKey) {
+    e.preventDefault();
+    deleteSelected(); // delete.js: hapus elemen terpilih
+    return;
+  }
+
   if (ctrl && !e.altKey) {
     switch (e.code) {
       case 'KeyZ':
