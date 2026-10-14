@@ -295,6 +295,7 @@ const drawSelection = () => {
 
     const handleSize = 7 / State.zoom; 
     const half = handleSize / 2;
+    const lw = 1 / State.zoom;
 
     State.selectedIds.forEach(id => {
         const bounds = getWorldBounds(id);
