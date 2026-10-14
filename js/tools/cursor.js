@@ -8,7 +8,10 @@
 // Bergantung pada: variabel.js (State), canvas.js (cvEl, eventToWorld, snapWorld, requestRender).
 (function () {
     const TOOL = 'select';
-    let mode = null, // 'move' (memindah objek) atau 'marquee' (tarik kotak seleksi)
+    let mode = null, // 'move', 'resize', atau 'marquee'
+        activeHandle = null, // 'nw', 'ne', 'se', 'sw', 'n', 's', 'e', 'w'
+        resizeTargetId = null,
+        origBox = null,
         pointerId = null,
         dragStartWorld = null,
         origTransforms = new Map(), // id -> { x, y, parentFrameId }
@@ -79,14 +82,85 @@
         );
     };
 
+    // Normalisasi array seleksi: jika suatu Frame terseleksi, hilangkan anak-anaknya dari selectedIds
+    const normalizeSelection = () => {
+        if (!State.selectedIds || State.selectedIds.length <= 1) return;
+        if (typeof Geo !== 'undefined' && typeof Geo.selection === 'function') {
+            State.selectedIds = Geo.selection().map(f => f.obj.id);
+        }
+    };
+
+    // Deteksi apakah pointer mengenai salah satu dari 8 handle objek terpilih
+    const getHandleAt = (pt) => {
+        if (!State.selectedIds || State.selectedIds.length !== 1) return null;
+        const targetId = State.selectedIds[0];
+        const bounds = getWorldBounds(targetId);
+        if (!bounds) return null;
+
+        // Radius deteksi klik handle (px dunia)
+        const hitRadius = Math.max(8, 12 / State.zoom);
+
+        const handles = [
+            { type: 'nw', x: bounds.x, y: bounds.y, cursor: 'nwse-resize' },
+            { type: 'ne', x: bounds.x + bounds.width, y: bounds.y, cursor: 'nesw-resize' },
+            { type: 'se', x: bounds.x + bounds.width, y: bounds.y + bounds.height, cursor: 'nwse-resize' },
+            { type: 'sw', x: bounds.x, y: bounds.y + bounds.height, cursor: 'nesw-resize' },
+            { type: 'n',  x: bounds.x + bounds.width / 2, y: bounds.y, cursor: 'ns-resize' },
+            { type: 's',  x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height, cursor: 'ns-resize' },
+            { type: 'e',  x: bounds.x + bounds.width, y: bounds.y + bounds.height / 2, cursor: 'ew-resize' },
+            { type: 'w',  x: bounds.x, y: bounds.y + bounds.height / 2, cursor: 'ew-resize' }
+        ];
+
+        for (const h of handles) {
+            if (Math.abs(pt.x - h.x) <= hitRadius && Math.abs(pt.y - h.y) <= hitRadius) {
+                return { ...h, targetId, bounds };
+            }
+        }
+        return null;
+    };
+    window.getHandleAt = getHandleAt;
+
     cvEl.addEventListener('pointerdown', e => {
         if (State.tool !== TOOL || e.button !== 0) return;
 
+        normalizeSelection();
+
         const clickWorld = eventToWorld(e);
-        const hit = hitTest(clickWorld);
+
+        // 1. Prioritaskan Handle Hit-Test jika sudah ada objek terpilih
+        const handleHit = getHandleAt(clickWorld);
+        if (handleHit) {
+            mode = 'resize';
+            activeHandle = handleHit.type;
+            resizeTargetId = handleHit.targetId;
+            pointerId = e.pointerId;
+            try { cvEl.setPointerCapture(e.pointerId); } catch (_) {}
+            dragStartWorld = clickWorld;
+
+            const found = findObjectWithParent(resizeTargetId);
+            if (found && found.obj.transform) {
+                origBox = {
+                    x: found.obj.transform.x,
+                    y: found.obj.transform.y,
+                    width: found.obj.transform.width,
+                    height: found.obj.transform.height
+                };
+            }
+            return;
+        }
+
+        let hit = hitTest(clickWorld);
+
+        // Jika hit adalah anak dari suatu Frame yang sedang diseleksi, gunakan Frame tersebut sebagai hit
+        if (hit) {
+            const hitParent = findObjectWithParent(hit.id);
+            if (hitParent && hitParent.parent && State.selectedIds.includes(hitParent.parent.id)) {
+                hit = hitParent.parent;
+            }
+        }
 
         pointerId = e.pointerId;
-        cvEl.setPointerCapture(e.pointerId);
+        try { cvEl.setPointerCapture(e.pointerId); } catch (_) {}
         dragStartWorld = clickWorld;
         initialSelectedOnDown = [...State.selectedIds];
 
@@ -109,10 +183,12 @@
                 }
             }
 
+            // Normalisasi seleksi agar jika Frame terseleksi, anak-anaknya tidak diseleksi ganda
+            normalizeSelection();
             $(document).trigger('selection:change');
             requestRender();
 
-            // Simpan posisi awal untuk drag move
+            // Simpan posisi awal untuk drag move (hanya untuk elemen root dari seleksi)
             origTransforms.clear();
             const startSnap = snapWorld(clickWorld, e);
             dragStartWorld = startSnap;
@@ -147,12 +223,87 @@
     });
 
     cvEl.addEventListener('pointermove', e => {
-        if (!mode || e.pointerId !== pointerId || !dragStartWorld) return;
+        if (!mode) {
+            if (State.tool === TOOL) {
+                const pt = eventToWorld(e);
+                const handle = getHandleAt(pt);
+                cvEl.style.cursor = handle ? handle.cursor : 'default';
+            }
+            return;
+        }
+
+        if (!dragStartWorld) return;
+        if (pointerId != null && e.pointerId != null && e.pointerId !== pointerId) return;
 
         const currentWorld = eventToWorld(e);
 
+        if (mode === 'resize' && resizeTargetId && origBox) {
+            // Eksekusi resize dari handle mana pun (nw, ne, se, sw, n, s, e, w)
+            const currentSnap = snapWorld(currentWorld, e);
+            const dx = currentSnap.x - dragStartWorld.x;
+            const dy = currentSnap.y - dragStartWorld.y;
+
+            const found = findObjectWithParent(resizeTargetId);
+            if (!found || !found.obj.transform) return;
+
+            const t = found.obj.transform;
+            const MIN_SIZE = 1;
+
+            let newX = origBox.x;
+            let newY = origBox.y;
+            let newW = origBox.width;
+            let newH = origBox.height;
+
+            // X-axis & Width calculations
+            if (activeHandle.includes('e')) {
+                newW = Math.max(MIN_SIZE, origBox.width + dx);
+            } else if (activeHandle.includes('w')) {
+                const potentialW = origBox.width - dx;
+                if (potentialW >= MIN_SIZE) {
+                    newW = potentialW;
+                    newX = origBox.x + dx;
+                } else {
+                    newW = MIN_SIZE;
+                    newX = origBox.x + (origBox.width - MIN_SIZE);
+                }
+            }
+
+            // Y-axis & Height calculations
+            if (activeHandle.includes('s')) {
+                newH = Math.max(MIN_SIZE, origBox.height + dy);
+            } else if (activeHandle.includes('n')) {
+                const potentialH = origBox.height - dy;
+                if (potentialH >= MIN_SIZE) {
+                    newH = potentialH;
+                    newY = origBox.y + dy;
+                } else {
+                    newH = MIN_SIZE;
+                    newY = origBox.y + (origBox.height - MIN_SIZE);
+                }
+            }
+
+            // Terapkan perubahan posisi & ukuran
+            t.x = Math.round(newX);
+            t.y = Math.round(newY);
+            if (typeof Geo !== 'undefined' && typeof Geo.setSize === 'function') {
+                Geo.setSize(found.obj, Math.round(newW), Math.round(newH));
+            } else {
+                t.width = Math.round(newW);
+                t.height = Math.round(newH);
+            }
+
+            // Jika objek teks, beralih ke mode fixed saat ditarik handle horizontalnya
+            if (found.obj.type === 'text' && (activeHandle.includes('e') || activeHandle.includes('w'))) {
+                found.obj.resizing = 'fixed';
+            }
+
+            $(document).trigger('object:change');
+            requestRender();
+            return;
+        }
+
         if (mode === 'move') {
-            // Geser objek yang sedang terseleksi
+            // Geser objek yang sedang terseleksi secara presisi
             const currentSnap = snapWorld(currentWorld, e);
             const dx = currentSnap.x - dragStartWorld.x;
             const dy = currentSnap.y - dragStartWorld.y;
@@ -202,6 +353,7 @@
                 State.selectedIds = enclosedIds;
             }
 
+            normalizeSelection();
             $(document).trigger('selection:change');
         }
 
@@ -213,12 +365,19 @@
 
         const prevMode = mode;
         mode = null;
+        activeHandle = null;
+        resizeTargetId = null;
+        origBox = null;
         pointerId = null;
         dragStartWorld = null;
         State.marquee = null;
 
+        if (prevMode === 'resize') {
+            $(document).trigger('object:change');
+        }
+
         if (prevMode === 'move' && commit && origTransforms.size > 0) {
-            // Auto-Nesting / Reparenting Logic saat pointer up
+            // Auto-Nesting / Reparenting Logic hanya saat pointer dilepas
             const pointerWorld = e ? eventToWorld(e) : null;
 
             if (pointerWorld) {
@@ -226,32 +385,40 @@
                     const found = findObjectWithParent(id);
                     if (!found) return;
 
+                    // Frame itu sendiri tidak boleh dimasukkan ke frame lain dalam drag biasa
+                    if (found.obj.type === 'frame') return;
+
                     const obj = found.obj;
                     const oldParent = found.parent;
-                    const oldParentOffset = oldParent ? { x: oldParent.transform.x, y: oldParent.transform.y } : { x: 0, y: 0 };
-                    const absX = oldParentOffset.x + obj.transform.x;
-                    const absY = oldParentOffset.y + obj.transform.y;
+                    const oldParentId = oldParent ? oldParent.id : null;
+                    const origData = origTransforms.get(id);
+                    if (!origData) return;
 
-                    // Cari apakah kursor berada di dalam Frame baru
+                    // Cari apakah kursor saat ini berada di atas suatu Frame
                     const targetFrame = findTargetFrame(pointerWorld, [id]);
+                    const targetFrameId = targetFrame ? targetFrame.id : null;
 
-                    if (targetFrame && targetFrame.id !== (oldParent ? oldParent.id : null)) {
-                        // 1. MASUK KE DALAM FRAME (Drag-in)
-                        found.arr.splice(found.index, 1); // cabut dari parent lama
-                        if (!Array.isArray(targetFrame.children)) targetFrame.children = [];
+                    // HANYA lakukan reparenting jika Frame tujuan BERBEDA dari induk sebelumnya
+                    if (targetFrameId !== oldParentId) {
+                        const oldParentOffset = oldParent ? { x: oldParent.transform.x, y: oldParent.transform.y } : { x: 0, y: 0 };
+                        const absX = oldParentOffset.x + obj.transform.x;
+                        const absY = oldParentOffset.y + obj.transform.y;
 
-                        // Ubah koordinat menjadi lokal Frame baru
-                        obj.transform.x = absX - targetFrame.transform.x;
-                        obj.transform.y = absY - targetFrame.transform.y;
+                        if (targetFrame) {
+                            // 1. MASUK KE FRAME BARU (Drag-in)
+                            found.arr.splice(found.index, 1);
+                            if (!Array.isArray(targetFrame.children)) targetFrame.children = [];
 
-                        targetFrame.children.push(obj);
-                    } else if (!targetFrame && oldParent) {
-                        // 2. KELUAR DARI FRAME (Drag-out ke root canvas)
-                        found.arr.splice(found.index, 1); // cabut dari frame
-                        // Ubah koordinat kembali ke koordinat dunia kanvas
-                        obj.transform.x = absX;
-                        obj.transform.y = absY;
-                        State.objects.push(obj);
+                            obj.transform.x = absX - targetFrame.transform.x;
+                            obj.transform.y = absY - targetFrame.transform.y;
+                            targetFrame.children.push(obj);
+                        } else if (oldParent) {
+                            // 2. KELUAR DARI FRAME (Drag-out ke root)
+                            found.arr.splice(found.index, 1);
+                            obj.transform.x = absX;
+                            obj.transform.y = absY;
+                            State.objects.push(obj);
+                        }
                     }
                 });
             }
@@ -273,5 +440,16 @@
     $(document).on('tool:change', () => endDrag(false));
     $(document).on('keydown', e => {
         if (e.key === 'Escape') endDrag(false);
+    });
+
+    // Double click untuk edit teks in-place
+    cvEl.addEventListener('dblclick', e => {
+        if (State.tool !== TOOL) return;
+        const pt = eventToWorld(e);
+        const hit = hitTest(pt);
+        if (hit && hit.type === 'text' && typeof window.startTextEditing === 'function') {
+            const found = findObjectWithParent(hit.id);
+            window.startTextEditing(hit, found ? found.parent : null, false);
+        }
     });
 })();

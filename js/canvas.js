@@ -126,6 +126,137 @@ const drawObject = o => {
             cvCtx.stroke();
             cvCtx.restore();
         }
+    } else if (o.type === 'text') {
+        // Jangan render jika sedang diedit secara inline (akan ditimpa overlay editor)
+        if (o._editing) return;
+        
+        cvCtx.save();
+        const fontStyle = o.italic ? 'italic ' : '';
+        const weight = o.fontWeight || '400';
+        const size = o.fontSize || 16;
+        const fontFam = o.fontFamily || 'Inter, sans-serif';
+        cvCtx.font = `${fontStyle}${weight} ${size}px ${fontFam}`;
+        cvCtx.textAlign = o.textAlign || 'left';
+        cvCtx.textBaseline = 'top';
+
+        // Dukungan letterSpacing (jika ada dan didukung canvas)
+        const letterSpacingVal = parseFloat(o.letterSpacing);
+        if (isFinite(letterSpacingVal) && letterSpacingVal !== 0) {
+            try { cvCtx.letterSpacing = `${letterSpacingVal}px`; } catch (_) {}
+        } else {
+            try { cvCtx.letterSpacing = '0px'; } catch (_) {}
+        }
+
+        // Tentukan warna fill: dukung SOLID maupun GRADIENT dari Paint.js
+        const fills = (o.style && Array.isArray(o.style.fills)) ? o.style.fills : [];
+        const topFill = fills.length > 0 ? fills[fills.length - 1] : null;
+
+        if (topFill && topFill.type && topFill.type.startsWith('GRADIENT_')) {
+            // Render text dengan fill gradient memakai paintShape / pattern
+            if (topFill.type === 'GRADIENT_LINEAR') {
+                const s = topFill.start || { x: 0, y: 0.5 },
+                      e = topFill.end || { x: 1, y: 0.5 };
+                const grad = cvCtx.createLinearGradient(
+                    t.x + s.x * t.width, t.y + s.y * t.height,
+                    t.x + e.x * t.width, t.y + e.y * t.height
+                );
+                const st = Paint.sortedStops(topFill);
+                st.forEach(stop => {
+                    const css = Paint.stopCss(stop, topFill.opacity == null ? 1 : topFill.opacity);
+                    if (css) grad.addColorStop(stop.offset, css);
+                });
+                cvCtx.fillStyle = grad;
+            } else if (topFill.type === 'GRADIENT_RADIAL') {
+                const c = topFill.center || { x: 0.5, y: 0.5 };
+                const grad = cvCtx.createRadialGradient(
+                    t.x + c.x * t.width, t.y + c.y * t.height, 0,
+                    t.x + c.x * t.width, t.y + c.y * t.height, Math.max(t.width, t.height) / 2
+                );
+                const st = Paint.sortedStops(topFill);
+                st.forEach(stop => {
+                    const css = Paint.stopCss(stop, topFill.opacity == null ? 1 : topFill.opacity);
+                    if (css) grad.addColorStop(stop.offset, css);
+                });
+                cvCtx.fillStyle = grad;
+            } else {
+                cvCtx.fillStyle = '#000000';
+            }
+        } else if (topFill && topFill.color) {
+            cvCtx.fillStyle = Paint.cssOf(topFill) || topFill.color;
+        } else if (o.style && o.style.fill) {
+            cvCtx.fillStyle = o.style.fill;
+        } else if (o.color) {
+            cvCtx.fillStyle = o.color;
+        } else {
+            cvCtx.fillStyle = '#FFFFFF';
+        }
+
+        const rawContent = o.content || '';
+        const lineHeight = o.lineHeight || (size * 1.25);
+
+        // Word wrap jika mode fixed dan batas lebar ditentukan
+        const lines = [];
+        if (o.resizing === 'fixed' && t.width > 20) {
+            const rawParagraphs = rawContent.split('\n');
+            rawParagraphs.forEach(para => {
+                const words = para.split(' ');
+                let curLine = '';
+                words.forEach(w => {
+                    const testLine = curLine ? (curLine + ' ' + w) : w;
+                    const metrics = cvCtx.measureText(testLine);
+                    if (metrics.width > t.width && curLine) {
+                        lines.push(curLine);
+                        curLine = w;
+                    } else {
+                        curLine = testLine;
+                    }
+                });
+                if (curLine) lines.push(curLine);
+                else if (!words.length || para === '') lines.push('');
+            });
+        } else {
+            lines.push(...rawContent.split('\n'));
+        }
+
+        let renderX = t.x;
+        if (o.textAlign === 'center') renderX = t.x + (t.width / 2);
+        else if (o.textAlign === 'right') renderX = t.x + t.width;
+
+        lines.forEach((line, idx) => {
+            const lineY = t.y + (idx * lineHeight);
+            cvCtx.fillText(line, renderX, lineY);
+
+            // Dekorasi Underline & Strikethrough
+            if (o.underline || o.strikethrough) {
+                const m = cvCtx.measureText(line);
+                let lineStartX = renderX;
+                if (o.textAlign === 'center') lineStartX = renderX - (m.width / 2);
+                else if (o.textAlign === 'right') lineStartX = renderX - m.width;
+
+                cvCtx.save();
+                cvCtx.strokeStyle = cvCtx.fillStyle;
+                cvCtx.lineWidth = Math.max(1, size / 16);
+
+                if (o.underline) {
+                    const uY = lineY + size + 2;
+                    cvCtx.beginPath();
+                    cvCtx.moveTo(lineStartX, uY);
+                    cvCtx.lineTo(lineStartX + m.width, uY);
+                    cvCtx.stroke();
+                }
+
+                if (o.strikethrough) {
+                    const sY = lineY + (size / 2);
+                    cvCtx.beginPath();
+                    cvCtx.moveTo(lineStartX, sY);
+                    cvCtx.lineTo(lineStartX + m.width, sY);
+                    cvCtx.stroke();
+                }
+                cvCtx.restore();
+            }
+        });
+
+        cvCtx.restore();
     }
 };
 
@@ -162,29 +293,34 @@ const drawSelection = () => {
     
     if (!State.selectedIds || !State.selectedIds.length) return;
 
-    const lw = Math.max(1 / State.zoom, 1 / (cvDpr * State.zoom));
-    const handleSize = 6 / State.zoom; 
+    const handleSize = 7 / State.zoom; 
     const half = handleSize / 2;
 
     State.selectedIds.forEach(id => {
         const bounds = getWorldBounds(id);
         if (!bounds) return;
 
-        
+        // Bounding box outline
         cvCtx.save();
         cvCtx.strokeStyle = '#0D99FF';
         cvCtx.lineWidth = lw;
         cvCtx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
-        
+        // 8 Handles ala Figma: 4 Sudut + 4 Sisi Tengah
         cvCtx.fillStyle = '#FFFFFF';
-        const corners = [
+        const handles = [
+            // Sudut: nw, ne, se, sw
             [bounds.x, bounds.y],
             [bounds.x + bounds.width, bounds.y],
             [bounds.x + bounds.width, bounds.y + bounds.height],
-            [bounds.x, bounds.y + bounds.height]
+            [bounds.x, bounds.y + bounds.height],
+            // Sisi: n, s, e, w
+            [bounds.x + bounds.width / 2, bounds.y],
+            [bounds.x + bounds.width / 2, bounds.y + bounds.height],
+            [bounds.x + bounds.width, bounds.y + bounds.height / 2],
+            [bounds.x, bounds.y + bounds.height / 2]
         ];
-        corners.forEach(([cx, cy]) => {
+        handles.forEach(([cx, cy]) => {
             cvCtx.fillRect(cx - half, cy - half, handleSize, handleSize);
             cvCtx.strokeRect(cx - half, cy - half, handleSize, handleSize);
         });

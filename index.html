@@ -28,6 +28,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     crossorigin="anonymous" referrerpolicy="no-referrer">
 
+  <!-- Google Fonts: 20 Fonts (Coding, Neon/Sci-Fi, Script/Handwritten, Modern UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Bungee&family=Caveat:wght@400..700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Dancing+Script:wght@400..700&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Orbitron:wght@400..900&family=Outfit:wght@100..900&family=Pacifico&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Press+Start+2P&family=Russo+One&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400..800&display=swap" rel="stylesheet">
 </head>
 
 <body class="bg-bg text-ink">
@@ -309,34 +313,89 @@
               </section>
 
               <!-- TYPOGRAPHY -->
-              <section class="fg-sec">
+              <section class="fg-sec" id="sec-typography">
                 <div class="fg-head"><span>Typography</span>
                   <div class="fg-actions"><button class="fg-ib" title="Pengaturan teks"><i
                         class="fa-solid fa-ellipsis"></i></button></div>
                 </div>
-                <label class="fg-in"><input id="prop-font" type="text" value="Inter"><i class="fa-solid fa-chevron-down"
-                    style="width:auto"></i></label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <label class="fg-in" style="flex:1;">
+                    <select id="prop-font" class="fg-select" style="flex:1;background:transparent;border:none;color:inherit;outline:none;font:inherit;cursor:pointer">
+                      <optgroup label="Coding / Monospace">
+                        <option value="'Fira Code', monospace">Fira Code</option>
+                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                        <option value="'Space Mono', monospace">Space Mono</option>
+                        <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                      </optgroup>
+                      <optgroup label="Neon / Sci-Fi / Retro">
+                        <option value="'Orbitron', sans-serif">Orbitron</option>
+                        <option value="'Audiowide', cursive">Audiowide</option>
+                        <option value="'Bungee', cursive">Bungee</option>
+                        <option value="'Press Start 2P', monospace">Press Start 2P</option>
+                        <option value="'Russo One', sans-serif">Russo One</option>
+                      </optgroup>
+                      <optgroup label="Italic / Script / Handwritten">
+                        <option value="'Caveat', cursive">Caveat</option>
+                        <option value="'Pacifico', cursive">Pacifico</option>
+                        <option value="'Dancing Script', cursive">Dancing Script</option>
+                        <option value="'Playfair Display', serif">Playfair Display</option>
+                      </optgroup>
+                      <optgroup label="Modern UI Sans">
+                        <option value="Inter, sans-serif" selected>Inter</option>
+                        <option value="'Poppins', sans-serif">Poppins</option>
+                        <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
+                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                        <option value="'Outfit', sans-serif">Outfit</option>
+                        <option value="'DM Sans', sans-serif">DM Sans</option>
+                        <option value="'Syne', sans-serif">Syne</option>
+                        <option value="Roboto, sans-serif">Roboto</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                      </optgroup>
+                      <optgroup id="optgroup-custom-fonts" label="Custom Fonts (Imported)" style="display:none"></optgroup>
+                    </select>
+                  </label>
+                  <button id="btn-import-font" class="fg-ib fg-fieldbtn" title="Import font dari komputer (.ttf, .otf, .woff, .woff2)" style="flex:none;width:var(--ctl);height:var(--ctl)">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                  </button>
+                  <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display:none">
+                </div>
                 <div class="fg-grid" style="margin-top:8px">
-                  <label class="fg-in"><input id="prop-fontweight" type="number" value="400"><i
-                      class="fa-solid fa-chevron-down" style="width:auto"></i></label>
+                  <label class="fg-in">
+                    <select id="prop-fontweight" style="flex:1;background:transparent;border:none;color:inherit;outline:none;font:inherit;cursor:pointer">
+                      <option value="300">Light (300)</option>
+                      <option value="400" selected>Regular (400)</option>
+                      <option value="500">Medium (500)</option>
+                      <option value="600">Semi Bold (600)</option>
+                      <option value="700">Bold (700)</option>
+                      <option value="900">Black (900)</option>
+                    </select>
+                  </label>
                   <label class="fg-in"><i class="fa-solid fa-text-height"></i><input id="prop-fontsize" type="number"
-                      value="16"></label>
+                      value="16" min="6" max="256"></label>
                   <label class="fg-in"><i class="fa-solid fa-arrows-up-down"></i><input id="prop-lineheight" type="text"
                       value="Auto"></label>
                   <label class="fg-in"><i class="fa-solid fa-text-width"></i><input id="prop-letterspacing"
                       type="number" value="0"><span class="end">%</span></label>
                 </div>
                 <div class="fg-grid" style="margin-top:8px">
-                  <div class="fg-seg">
-                    <button class="fg-ib on" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
-                    <button class="fg-ib" title="Rata tengah"><i class="fa-solid fa-align-center"></i></button>
-                    <button class="fg-ib" title="Rata kanan"><i class="fa-solid fa-align-right"></i></button>
-                    <button class="fg-ib" title="Rata kiri-kanan"><i class="fa-solid fa-align-justify"></i></button>
+                  <div class="fg-seg" id="text-align-seg">
+                    <button class="fg-ib on" data-align="left" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
+                    <button class="fg-ib" data-align="center" title="Rata tengah"><i class="fa-solid fa-align-center"></i></button>
+                    <button class="fg-ib" data-align="right" title="Rata kanan"><i class="fa-solid fa-align-right"></i></button>
+                    <button class="fg-ib" data-align="justify" title="Rata kiri-kanan"><i class="fa-solid fa-align-justify"></i></button>
                   </div>
-                  <div class="fg-seg">
-                    <button class="fg-ib" title="Underline"><i class="fa-solid fa-underline"></i></button>
-                    <button class="fg-ib" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
-                    <button class="fg-ib" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                  <div class="fg-seg" id="text-style-seg">
+                    <button class="fg-ib" data-style="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
+                    <button class="fg-ib" data-style="strikethrough" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
+                    <button class="fg-ib" data-style="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                  </div>
+                </div>
+                <div class="fg-grid" style="margin-top:8px">
+                  <div class="fg-seg" id="text-resize-seg" style="width:100%">
+                    <button class="fg-ib on" data-resize="auto" title="Auto Width (kotak memanjang otomatis)" style="flex:1"><i class="fa-solid fa-arrows-left-right"></i> Auto Width</button>
+                    <button class="fg-ib" data-resize="fixed" title="Fixed Width (word wrap baris baru)" style="flex:1"><i class="fa-solid fa-arrows-split-up-and-left fa-rotate-90"></i> Fixed Width</button>
                   </div>
                 </div>
               </section>
@@ -596,44 +655,52 @@
     </div>
 
     <script src="libs/jquery.min.js"></script>
-    
-    <!-- js main -->
+    <script>
+      // Global helpers untuk SVG symbol icon dan text escape yang dibutuhkan popup.js dan komponen lain
+      window.ico = n => `<svg class="ico"><use href="#i-${n}"/></svg>`;
+      window.esc = s => $('<div>').text(s).html();
+    </script>
+    <!-- js main & state -->
     <script src="js/variabel.js"></script>
     <script src="js/colors.js"></script>
     <script src="js/paint.js"></script>
+    <script src="js/geometry.js"></script>
+    <script src="js/clipboard.js"></script>
     <script src="js/property.js"></script>
     <script src="js/layers.js"></script>
     <script src="js/popup.js"></script>
     <script src="js/zoom.js"></script>
     <script src="js/shortcut.js"></script>
     <script src="js/canvas.js"></script>
+    <script src="js/delete.js"></script>
+    <script src="js/undo.js"></script>
+    <script src="js/redo.js"></script>
+
+    <!-- tools -->
     <script src="js/tools/cursor.js"></script>
+    <script src="js/tools/hand.js"></script>
     <script src="js/design/frame.js"></script>
     <script src="js/tools/rectangle.js"></script>
     <script src="js/tools/circle.js"></script>
-    <script src="js/delete.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/redo.js"></script>
-    <script src="js/undo.js"></script>
-
-    <!-- mini vector tools -->
-    <script src="js/tools/cursor.js"></script>
-    <script src="js/tools/rectangle.js"></script>
-    <script src="js/tools/circle.js"></script>
-    <script src="js/tools/hand.js"></script>
     <script src="js/tools/line.js"></script>
+    <script src="js/tools/text.js"></script>
 
     <!-- panel design -->
-    <script src="js/design/frame.js"></script>
     <script src="js/design/size.js"></script>
     <script src="js/design/position.js"></script>
     <script src="js/design/colorpicker.js"></script>
     <script src="js/design/fill.js"></script>
+    <script src="js/design/typography.js"></script>
+
+    <!-- main app init -->
+    <script src="js/main.js"></script>
 
     <script>
+
       $(function () {
-        const ico = n => `<svg class="ico"><use href="#i-${n}"/></svg>`;
-        const esc = s => $('<div>').text(s).html();
+        // Global helpers untuk SVG symbol icon dan text escape yang dibutuhkan popup.js dan komponen lain
+        window.ico = n => `<svg class="ico"><use href="#i-${n}"/></svg>`;
+        window.esc = s => $('<div>').text(s).html();
 
         /* ================= TOOLBAR ================= */
         const tools = [

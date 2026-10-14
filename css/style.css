@@ -175,11 +175,32 @@
     background: var(--c-input); border: 1px solid transparent; border-radius: 6px; }
   .fg-in:hover { border-color: var(--c-line-strong); }
   .fg-in:focus-within { border-color: var(--c-accent); }
-  .fg-in > i, .fg-in > .lb { flex: none; width: 1.2em; text-align: center; color: var(--c-mute); font-size: var(--fs-sm); }
+  .fg-in > i, .fg-in > .lb { flex: none; width: 1.2em; text-align: center; color: var(--c-mute); font-size: var(--fs-sm);
+    cursor: ew-resize; user-select: none; -webkit-user-select: none; }
   .fg-in input { flex: 1; min-width: 0; width: 100%; height: 100%; padding: 0; background: transparent; border: 0; outline: 0;
     font-size: var(--fs); font-weight: 600; appearance: none; -moz-appearance: textfield; }
   .fg-in input::-webkit-outer-spin-button, .fg-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .fg-in .end { flex: none; color: var(--c-mute); font-size: var(--fs-sm); }
+  .fg-select, .fg-in select {
+    background: transparent;
+    color: var(--c-ink);
+    border: 0;
+    outline: 0;
+    font-size: var(--fs);
+    font-weight: 500;
+  }
+  .fg-select optgroup, .fg-in select optgroup {
+    background: var(--c-panel);
+    color: var(--c-mute);
+    font-weight: 700;
+    font-size: var(--fs-sm);
+  }
+  .fg-select option, .fg-in select option {
+    background: var(--c-panel);
+    color: var(--c-ink);
+    font-weight: 400;
+    padding: 6px 10px;
+  }
   .fg-seg { display: flex; align-items: center; height: var(--ctl); padding: 2px; background: var(--c-input); border-radius: 6px; }
   .fg-seg .fg-ib { flex: 1; width: auto; height: 100%; }
   .fg-seg .fg-ib.on { background: rgba(255,255,255,.14); color: #fff; }
@@ -294,4 +315,22 @@
   }
   @media (prefers-reduced-motion: reduce) {
     #left-sidebar, #right-sidebar, .twirl .ico, .fg-acc .fg-chev i { transition: none; }
+  }
+
+  /* Inline Text Editor */
+  #text-inline-editor {
+    position: absolute;
+    display: none;
+    z-index: 50;
+    background: transparent;
+    border: 1px dashed #0D99FF;
+    outline: none;
+    resize: none;
+    overflow: hidden;
+    padding: 0px;
+    margin: 0px;
+    line-height: 1.25;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-word;
   }

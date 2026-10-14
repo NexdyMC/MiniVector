@@ -24,6 +24,7 @@
     });
 
     const shape = (o, a, b) => {
+        if (!o || !o.transform) return;
         const w = r2(Math.abs(a.x - b.x)),
             h = r2(Math.abs(a.y - b.y));
         Object.assign(o.transform, { x: r2(Math.min(a.x, b.x)), y: r2(Math.min(a.y, b.y)), width: w, height: h });
