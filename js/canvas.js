@@ -126,6 +126,137 @@ const drawObject = o => {
             cvCtx.stroke();
             cvCtx.restore();
         }
+    } else if (o.type === 'path') {
+        const nodes = (o.geometry && o.geometry.nodes) || [];
+        if (nodes.length >= 2) {
+            cvCtx.save();
+            cvCtx.beginPath();
+            const startNode = nodes[0];
+            cvCtx.moveTo(t.x + startNode.x, t.y + startNode.y);
+
+            for (let i = 1; i < nodes.length; i++) {
+                const prev = nodes[i - 1];
+                const curr = nodes[i];
+                if (prev.handleOut || curr.handleIn) {
+                    const cp1x = t.x + (prev.handleOut ? prev.handleOut.x : prev.x);
+                    const cp1y = t.y + (prev.handleOut ? prev.handleOut.y : prev.y);
+                    const cp2x = t.x + (curr.handleIn ? curr.handleIn.x : curr.x);
+                    const cp2y = t.y + (curr.handleIn ? curr.handleIn.y : curr.y);
+                    cvCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, t.x + curr.x, t.y + curr.y);
+                } else {
+                    cvCtx.lineTo(t.x + curr.x, t.y + curr.y);
+                }
+            }
+
+            if (o.closed && nodes.length > 2) {
+                const last = nodes[nodes.length - 1];
+                if (last.handleOut || startNode.handleIn) {
+                    const cp1x = t.x + (last.handleOut ? last.handleOut.x : last.x);
+                    const cp1y = t.y + (last.handleOut ? last.handleOut.y : last.y);
+                    const cp2x = t.x + (startNode.handleIn ? startNode.handleIn.x : startNode.x);
+                    const cp2y = t.y + (startNode.handleIn ? startNode.handleIn.y : startNode.y);
+                    cvCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, t.x + startNode.x, t.y + startNode.y);
+                }
+                cvCtx.closePath();
+            }
+
+            // Fill (bila ada)
+            if (s.fills && s.fills.length > 0) {
+                Paint.fillPath(cvCtx, s, t);
+            } else if (s.fill && s.fill !== 'none' && o.closed) {
+                cvCtx.fillStyle = s.fill;
+                cvCtx.fill();
+            }
+
+            // Stroke
+            const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+            if (sw > 0 && s.stroke && s.stroke !== 'none') {
+                cvCtx.lineWidth = sw;
+                cvCtx.strokeStyle = s.stroke;
+                cvCtx.lineCap = s.strokeCap || 'round';
+                cvCtx.lineJoin = s.strokeJoin || 'round';
+                cvCtx.stroke();
+            }
+            cvCtx.restore();
+        }
+    } else if (o.type === 'polygon' || o.type === 'star') {
+        const w = t.width, h = t.height;
+        if (w > 0 && h > 0) {
+            cvCtx.save();
+            const cx = t.x + w / 2;
+            const cy = t.y + h / 2;
+            const rx = w / 2;
+            const ry = h / 2;
+            const g = o.geometry || {};
+            const count = Math.max(3, parseInt(g.pointCount, 10) || (o.type === 'polygon' ? 3 : 5));
+            const radius = Math.max(0, parseFloat(g.cornerRadius) || 0);
+
+            // Bangun titik-titik sudut
+            const pts = [];
+            if (o.type === 'polygon') {
+                for (let i = 0; i < count; i++) {
+                    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / count;
+                    pts.push({
+                        x: cx + rx * Math.cos(angle),
+                        y: cy + ry * Math.sin(angle)
+                    });
+                }
+            } else {
+                // Star: titik luar dan dalam bergantian
+                const ratio = Math.max(0.05, Math.min(0.95, (parseFloat(g.innerRadiusRatio) || 38.2) / 100));
+                const totalPts = count * 2;
+                for (let i = 0; i < totalPts; i++) {
+                    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / totalPts;
+                    const rFactor = (i % 2 === 0) ? 1 : ratio;
+                    pts.push({
+                        x: cx + rx * rFactor * Math.cos(angle),
+                        y: cy + ry * rFactor * Math.sin(angle)
+                    });
+                }
+            }
+
+            cvCtx.beginPath();
+            if (radius > 0 && typeof cvCtx.roundRect === 'function' && pts.length >= 3) {
+                // Gambar poligon dengan lengkungan sudut (fillet/arcTo)
+                for (let i = 0; i < pts.length; i++) {
+                    const p1 = pts[i];
+                    const p2 = pts[(i + 1) % pts.length];
+                    const p0 = pts[(i - 1 + pts.length) % pts.length];
+                    if (i === 0) {
+                        const midX = (p0.x + p1.x) / 2;
+                        const midY = (p0.y + p1.y) / 2;
+                        cvCtx.moveTo(midX, midY);
+                    }
+                    cvCtx.arcTo(p1.x, p1.y, p2.x, p2.y, radius);
+                }
+                cvCtx.closePath();
+            } else {
+                pts.forEach((pt, i) => {
+                    if (i === 0) cvCtx.moveTo(pt.x, pt.y);
+                    else cvCtx.lineTo(pt.x, pt.y);
+                });
+                cvCtx.closePath();
+            }
+
+            // Fills
+            if (s.fills && s.fills.length > 0) {
+                Paint.fillPath(cvCtx, s, t);
+            } else if (s.fill && s.fill !== 'none') {
+                cvCtx.fillStyle = s.fill;
+                cvCtx.fill();
+            }
+
+            // Stroke
+            const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+            if (sw > 0 && s.stroke && s.stroke !== 'none') {
+                cvCtx.lineWidth = sw;
+                cvCtx.strokeStyle = s.stroke;
+                cvCtx.lineCap = s.strokeCap || 'round';
+                cvCtx.lineJoin = s.strokeJoin || 'round';
+                cvCtx.stroke();
+            }
+            cvCtx.restore();
+        }
     } else if (o.type === 'text') {
         // Jangan render jika sedang diedit secara inline (akan ditimpa overlay editor)
         if (o._editing) return;
@@ -339,6 +470,9 @@ const drawScene = () => {
     State.objects.forEach(drawObject);
     if (State.drawing) drawObject(State.drawing); 
     drawSelection(); 
+    if (typeof window.drawPenOverlay === 'function') {
+        window.drawPenOverlay(cvCtx, State.zoom);
+    }
 };
 const requestRender = () => {
     if (cvDirty) return;

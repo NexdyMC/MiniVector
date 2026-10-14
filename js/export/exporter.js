@@ -141,6 +141,66 @@ class Exporter {
         }
       }
 
+      if (o.type === 'path') {
+        const nodes = (o.geometry && o.geometry.nodes) || [];
+        if (nodes.length >= 2) {
+          let d = `M ${x + nodes[0].x} ${y + nodes[0].y}`;
+          for (let i = 1; i < nodes.length; i++) {
+            const prev = nodes[i - 1];
+            const curr = nodes[i];
+            if (prev.handleOut || curr.handleIn) {
+              const cp1x = x + (prev.handleOut ? prev.handleOut.x : prev.x);
+              const cp1y = y + (prev.handleOut ? prev.handleOut.y : prev.y);
+              const cp2x = x + (curr.handleIn ? curr.handleIn.x : curr.x);
+              const cp2y = y + (curr.handleIn ? curr.handleIn.y : curr.y);
+              d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x + curr.x} ${y + curr.y}`;
+            } else {
+              d += ` L ${x + curr.x} ${y + curr.y}`;
+            }
+          }
+          if (o.closed && nodes.length > 2) {
+            const last = nodes[nodes.length - 1];
+            const first = nodes[0];
+            if (last.handleOut || first.handleIn) {
+              const cp1x = x + (last.handleOut ? last.handleOut.x : last.x);
+              const cp1y = y + (last.handleOut ? last.handleOut.y : last.y);
+              const cp2x = x + (first.handleIn ? first.handleIn.x : first.x);
+              const cp2y = y + (first.handleIn ? first.handleIn.y : first.y);
+              d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x + first.x} ${y + first.y} Z`;
+            } else {
+              d += ` Z`;
+            }
+          }
+          return `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw || 1}" stroke-linecap="${s.strokeCap || 'round'}" stroke-linejoin="${s.strokeJoin || 'round'}" />`;
+        }
+      }
+
+      if (o.type === 'polygon' || o.type === 'star') {
+        const cx = x + t.width / 2;
+        const cy = y + t.height / 2;
+        const rx = t.width / 2;
+        const ry = t.height / 2;
+        const g = o.geometry || {};
+        const count = Math.max(3, parseInt(g.pointCount, 10) || (o.type === 'polygon' ? 3 : 5));
+        const pts = [];
+
+        if (o.type === 'polygon') {
+          for (let i = 0; i < count; i++) {
+            const angle = -Math.PI / 2 + (i * 2 * Math.PI) / count;
+            pts.push(`${cx + rx * Math.cos(angle)},${cy + ry * Math.sin(angle)}`);
+          }
+        } else {
+          const ratio = Math.max(0.05, Math.min(0.95, (parseFloat(g.innerRadiusRatio) || 38.2) / 100));
+          const totalPts = count * 2;
+          for (let i = 0; i < totalPts; i++) {
+            const angle = -Math.PI / 2 + (i * 2 * Math.PI) / totalPts;
+            const rFactor = (i % 2 === 0) ? 1 : ratio;
+            pts.push(`${cx + rx * rFactor * Math.cos(angle)},${cy + ry * rFactor * Math.sin(angle)}`);
+          }
+        }
+        return `<polygon points="${pts.join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${sw || 1}" stroke-linejoin="round" />`;
+      }
+
       return '';
     };
 

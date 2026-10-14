@@ -13,7 +13,7 @@ const toolKeys = {
   KeyT: 'text',
   KeyI: 'image'
 };
-const pickTool = name => $(`#toolbar .tool[data-tool="${name}"]`).trigger('click');
+const pickTool = window.pickTool = name => $(`#toolbar .tool[data-tool="${name}"]`).trigger('click');
 const currentTool = () => $('#toolbar .tool.active').data('tool');
 const typing = t => t && (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable);
 const relayout = () => setTimeout(() => $(window).trigger('resize'), 0);

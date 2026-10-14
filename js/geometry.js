@@ -48,6 +48,8 @@ const Geo = (() => {
   };
   // ubah ukuran; titik p0..p3 persegi ikut disesuaikan selama bukan custom path (lihat StructureJSON.md)
   const setSize = (o, w, h) => {
+    const oldW = o.transform.width;
+    const oldH = o.transform.height;
     o.transform.width = w;
     o.transform.height = h;
     const g = o.geometry;
@@ -58,6 +60,21 @@ const Geo = (() => {
         { id: 'p2', x: w, y: h },
         { id: 'p3', x: 0, y: h }
       ];
+    } else if (o.type === 'path' && g && Array.isArray(g.nodes) && oldW > 0 && oldH > 0) {
+      const sx = w / oldW;
+      const sy = h / oldH;
+      g.nodes.forEach(n => {
+        n.x *= sx;
+        n.y *= sy;
+        if (n.handleIn) {
+          n.handleIn.x *= sx;
+          n.handleIn.y *= sy;
+        }
+        if (n.handleOut) {
+          n.handleOut.x *= sx;
+          n.handleOut.y *= sy;
+        }
+      });
     }
   };
 
