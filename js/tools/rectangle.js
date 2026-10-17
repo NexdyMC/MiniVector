@@ -69,7 +69,12 @@
         pointerId = null;
         State.drawing = null;
         State.objects.push(o);
+        State.selectedIds = [o.id];
         $(document).trigger('object:add', [o]);
+        $(document).trigger('selection:change');
+        if (typeof window.pickTool === 'function') {
+            window.pickTool('select');
+        }
         requestRender();
     });
     cvEl.addEventListener('pointercancel', e => {

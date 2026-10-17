@@ -562,7 +562,7 @@
         if (e.key === 'Escape') endDrag(false);
     });
 
-    // Double click untuk edit teks in-place
+    // Double click untuk edit teks in-place atau edit node path (mode custom)
     cvEl.addEventListener('dblclick', e => {
         if (State.tool !== TOOL) return;
         const pt = eventToWorld(e);
@@ -570,6 +570,8 @@
         if (hit && hit.type === 'text' && typeof window.startTextEditing === 'function') {
             const found = findObjectWithParent(hit.id);
             window.startTextEditing(hit, found ? found.parent : null, false);
+        } else if (hit && hit.type === 'path' && typeof window.startPathNodeEditing === 'function') {
+            window.startPathNodeEditing(hit);
         }
     });
 })();

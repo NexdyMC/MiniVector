@@ -135,6 +135,9 @@
         // Trigger sinkronisasi
         $(document).trigger('object:add', [lineObj]);
         $(document).trigger('selection:change');
+        if (typeof window.pickTool === 'function') {
+            window.pickTool('select');
+        }
         requestRender();
     });
 

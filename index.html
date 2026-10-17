@@ -470,14 +470,35 @@
                   </div>
                 </div>
                 <div class="fg-body" id="sec-export" hidden>
-                  <div class="fg-grid">
-                    <label class="fg-in"><i class="fa-solid fa-maximize"></i><input id="export-scale" type="number"
-                        value="1" step="0.25"><span class="end">x</span></label>
-                    <label class="fg-in"><i class="fa-regular fa-image"></i><input type="text" value="PNG"
-                        readonly></label>
+                  <!-- LIVE PREVIEW THUMBNAIL (CANVAS MURNI) -->
+                  <div id="export-preview-box" style="position:relative;width:100%;height:130px;background:#1A1A1A;border:1px solid #444;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:12px;background-image:linear-gradient(45deg,#242424 25%,transparent 25%),linear-gradient(-45deg,#242424 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#242424 75%),linear-gradient(-45deg,transparent 75%,#242424 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0">
+                    <canvas id="export-preview-cv" style="max-width:90%;max-height:90%;box-shadow:0 2px 10px rgba(0,0,0,0.5)"></canvas>
+                    <span id="export-preview-empty" style="font-size:11px;color:#888;display:none">Tidak ada objek terpilih</span>
                   </div>
-                  <button id="btn-export" class="fg-btn" style="margin-top:10px;width:100%"><i
-                      class="fa-solid fa-download" style="margin-right:8px"></i>Export PNG</button>
+
+                  <!-- SCALE & FORMAT -->
+                  <div class="fg-grid" style="margin-bottom:8px">
+                    <label class="fg-in" title="Skala resolusi export"><i class="fa-solid fa-maximize"></i><input id="export-scale" type="number"
+                        value="1" min="0.25" max="4" step="0.25"><span class="end">x</span></label>
+                    <label class="fg-in" title="Format file">
+                      <select id="export-format" style="background:transparent;color:inherit;border:0;width:100%;outline:0;cursor:pointer">
+                        <option value="png" style="background:#2C2C2C">PNG</option>
+                        <option value="jpeg" style="background:#2C2C2C">JPEG</option>
+                        <option value="webp" style="background:#2C2C2C">WEBP</option>
+                        <option value="svg" style="background:#2C2C2C">SVG</option>
+                        <option value="json" style="background:#2C2C2C">JSON</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <!-- CUSTOM WIDTH & HEIGHT -->
+                  <div class="fg-grid" id="export-dim-grid" style="margin-bottom:10px">
+                    <label class="fg-in" title="Lebar output (px)"><span style="font-size:11px;font-weight:700;margin-right:4px">W</span><input id="export-w" type="number" step="1"><span class="end">px</span></label>
+                    <label class="fg-in" title="Tinggi output (px)"><span style="font-size:11px;font-weight:700;margin-right:4px">H</span><input id="export-h" type="number" step="1"><span class="end">px</span></label>
+                  </div>
+
+                  <button id="btn-export" class="fg-btn" style="width:100%"><i
+                      class="fa-solid fa-download" style="margin-right:8px"></i><span id="btn-export-text">Export PNG</span></button>
                 </div>
               </section>
             </div>
@@ -712,11 +733,15 @@
     <script src="js/tools/rectangle.js"></script>
     <script src="js/tools/circle.js"></script>
     <script src="js/tools/line.js"></script>
+    <script src="js/tools/polygon.js"></script>
+    <script src="js/tools/star.js"></script>
+    <script src="js/tools/pen.js"></script>
     <script src="js/tools/text.js"></script>
 
     <!-- panel design -->
     <script src="js/design/size.js"></script>
     <script src="js/design/position.js"></script>
+    <script src="js/design/apperance.js"></script>
     <script src="js/design/colorpicker.js"></script>
     <script src="js/design/fill.js"></script>
     <script src="js/design/typography.js"></script>
@@ -761,6 +786,67 @@
         $('#backdrop').on('click', closeDrawers);
         window.matchMedia('(min-width: 900px)').addEventListener('change', e => {
           if (e.matches) closeDrawers();
+        });
+
+        /* ================= EXPORT HANDLER ================= */
+        const syncPreview = () => {
+          if (window.Exporter && typeof Exporter.updatePreview === 'function') {
+            Exporter.updatePreview();
+          }
+        };
+
+        $('#export-format').on('change', function () {
+          const fmt = $(this).val().toUpperCase();
+          $('#btn-export-text').text(`Export ${fmt}`);
+          const isRaster = ['PNG', 'JPEG', 'WEBP'].includes(fmt);
+          $('#export-dim-grid').toggle(isRaster);
+          syncPreview();
+        });
+
+        $('#export-scale').on('input change', function () {
+          syncPreview();
+        });
+
+        // Kunci rasio saat user mengetik manual di input Width / Height
+        $('#export-w').on('input', function () {
+          const target = window.Exporter && Exporter._getTargets();
+          if (target && target.bounds && target.bounds.width > 0) {
+            const ratio = target.bounds.width / target.bounds.height;
+            const newW = parseFloat($(this).val()) || 1;
+            const newH = Math.round(newW / ratio);
+            $('#export-h').val(newH);
+            const scale = newW / target.bounds.width;
+            $('#export-scale').val(Math.round(scale * 100) / 100);
+          }
+        });
+
+        $('#export-h').on('input', function () {
+          const target = window.Exporter && Exporter._getTargets();
+          if (target && target.bounds && target.bounds.height > 0) {
+            const ratio = target.bounds.width / target.bounds.height;
+            const newH = parseFloat($(this).val()) || 1;
+            const newW = Math.round(newH * ratio);
+            $('#export-w').val(newW);
+            const scale = newH / target.bounds.height;
+            $('#export-scale').val(Math.round(scale * 100) / 100);
+          }
+        });
+
+        $(document).on('selection:change object:change object:add object:remove project:load', syncPreview);
+        $('[aria-controls="sec-export"]').on('click', () => setTimeout(syncPreview, 60));
+
+        $('#btn-export').on('click', function () {
+          if (!window.Exporter) return;
+          const fmt = $('#export-format').val() || 'png';
+          const scale = parseFloat($('#export-scale').val()) || 1;
+
+          if (fmt === 'svg') {
+            Exporter.svg();
+          } else if (fmt === 'json') {
+            Exporter.json();
+          } else {
+            Exporter.raster(fmt, scale);
+          }
         });
       });
     </script>
