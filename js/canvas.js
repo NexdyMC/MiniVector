@@ -329,6 +329,91 @@ const drawSelection = () => {
     });
 };
 
+const drawGuides = () => {
+    const lw = 1 / State.zoom;
+    const dpr = cvDpr || 1;
+
+    // 1. Render Magnet / Snapping Lines
+    if (window.Magnet && Array.isArray(window.Magnet.activeGuides) && window.Magnet.activeGuides.length > 0) {
+        cvCtx.save();
+        cvCtx.strokeStyle = '#FF0055'; // Figma-like bright alignment color
+        cvCtx.lineWidth = lw;
+        cvCtx.setLineDash([4 / State.zoom, 4 / State.zoom]);
+
+        window.Magnet.activeGuides.forEach(g => {
+            cvCtx.beginPath();
+            if (g.type === 'v') {
+                cvCtx.moveTo(g.pos, g.fromY);
+                cvCtx.lineTo(g.pos, g.toY);
+            } else if (g.type === 'h') {
+                cvCtx.moveTo(g.fromX, g.pos);
+                cvCtx.lineTo(g.toX, g.pos);
+            }
+            cvCtx.stroke();
+        });
+        cvCtx.restore();
+    }
+
+    // 2. Render Distance & Padding Measurements
+    if (window.Padding && Array.isArray(window.Padding.activeMeasurements) && window.Padding.activeMeasurements.length > 0) {
+        cvCtx.save();
+        cvCtx.strokeStyle = '#FF0055';
+        cvCtx.lineWidth = lw;
+
+        window.Padding.activeMeasurements.forEach(m => {
+            // Draw measurement line with end caps
+            cvCtx.beginPath();
+            cvCtx.moveTo(m.x1, m.y1);
+            cvCtx.lineTo(m.x2, m.y2);
+            cvCtx.stroke();
+
+            // End caps (tick marks)
+            const capSize = 3 / State.zoom;
+            cvCtx.beginPath();
+            if (m.orientation === 'h') {
+                cvCtx.moveTo(m.x1, m.y1 - capSize);
+                cvCtx.lineTo(m.x1, m.y1 + capSize);
+                cvCtx.moveTo(m.x2, m.y2 - capSize);
+                cvCtx.lineTo(m.x2, m.y2 + capSize);
+            } else {
+                cvCtx.moveTo(m.x1 - capSize, m.y1);
+                cvCtx.lineTo(m.x1 + capSize, m.y1);
+                cvCtx.moveTo(m.x2 - capSize, m.y2);
+                cvCtx.lineTo(m.x2 + capSize, m.y2);
+            }
+            cvCtx.stroke();
+
+            // Badge Teks Jarak (Pixel Pill)
+            const text = `${Math.round(m.distance)}`;
+            cvCtx.font = `600 ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            const textMetrics = cvCtx.measureText(text);
+            const textW = textMetrics.width;
+            const textH = 12 / State.zoom;
+            const padX = 4 / State.zoom;
+            const padY = 2 / State.zoom;
+
+            const badgeX = m.labelX - textW / 2 - padX;
+            const badgeY = m.labelY - textH / 2 - padY;
+            const badgeW = textW + padX * 2;
+            const badgeH = textH + padY * 2;
+            const radius = 3 / State.zoom;
+
+            // Draw rounded pill background
+            cvCtx.fillStyle = '#FF0055';
+            cvCtx.beginPath();
+            cvCtx.roundRect ? cvCtx.roundRect(badgeX, badgeY, badgeW, badgeH, radius) : cvCtx.rect(badgeX, badgeY, badgeW, badgeH);
+            cvCtx.fill();
+
+            // Draw text
+            cvCtx.fillStyle = '#FFFFFF';
+            cvCtx.textAlign = 'center';
+            cvCtx.textBaseline = 'middle';
+            cvCtx.fillText(text, m.labelX, m.labelY);
+        });
+        cvCtx.restore();
+    }
+};
+
 const drawScene = () => {
     cvDirty = false;
     cvCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -339,6 +424,7 @@ const drawScene = () => {
     State.objects.forEach(drawObject);
     if (State.drawing) drawObject(State.drawing); 
     drawSelection(); 
+    drawGuides();
 };
 const requestRender = () => {
     if (cvDirty) return;

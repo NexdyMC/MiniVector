@@ -99,3 +99,34 @@ $('#btn-import-confirm').on('click', function () {
 });
 // cegah browser membuka file bila dilepas di luar dropzone
 $(window).on('dragover drop', e => e.preventDefault());
+
+/* ---- Settings modal initialization & synchronization ---- */
+const initSettingsModal = () => {
+  if (window.Magnet) {
+    $('#setting-magnet-enable').prop('checked', !!window.Magnet.enabled);
+    $('#setting-magnet-threshold').val(window.Magnet.threshold || 6);
+  }
+  if (window.Padding) {
+    $('#setting-padding-enable').prop('checked', !!window.Padding.enabled);
+  }
+};
+
+$('#modal-settings').on('modal:open', initSettingsModal);
+
+$(document).on('change', '#setting-magnet-enable', function () {
+  if (window.Magnet) window.Magnet.setEnabled(this.checked);
+});
+
+$(document).on('input change', '#setting-magnet-threshold', function () {
+  if (window.Magnet) window.Magnet.setThreshold(this.value);
+});
+
+$(document).on('change', '#setting-padding-enable', function () {
+  if (window.Padding) window.Padding.setEnabled(this.checked);
+});
+
+// Run initial sync on document ready
+$(function () {
+  initSettingsModal();
+});
+

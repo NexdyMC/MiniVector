@@ -228,6 +228,37 @@
                 const pt = eventToWorld(e);
                 const handle = getHandleAt(pt);
                 cvEl.style.cursor = handle ? handle.cursor : 'default';
+
+                // Figma-like Alt key measurement saat hover objek lain
+                if (e.altKey && State.selectedIds.length === 1 && window.Padding && window.Padding.enabled) {
+                    const selId = State.selectedIds[0];
+                    const selBounds = getWorldBounds(selId);
+                    const hoveredObj = hitTest(pt);
+
+                    if (selBounds && hoveredObj && hoveredObj.id !== selId) {
+                        const targetBounds = getWorldBounds(hoveredObj.id);
+                        if (targetBounds) {
+                            window.Padding.measureBetween(selBounds, targetBounds);
+                            requestRender();
+                        }
+                    } else if (selBounds && !hoveredObj) {
+                        // Jika hover kanvas kosong dengan Alt dan objek berada dalam Frame, ukur padding frame
+                        const found = findObjectWithParent(selId);
+                        if (found && found.parent) {
+                            const frameBounds = getWorldBounds(found.parent.id);
+                            if (frameBounds) {
+                                window.Padding.measureInsideFrame(selBounds, frameBounds);
+                                requestRender();
+                            }
+                        } else if (window.Padding.activeMeasurements.length > 0) {
+                            window.Padding.clear();
+                            requestRender();
+                        }
+                    }
+                } else if (!e.altKey && window.Padding && window.Padding.activeMeasurements.length > 0) {
+                    window.Padding.clear();
+                    requestRender();
+                }
             }
             return;
         }
@@ -305,8 +336,80 @@
         if (mode === 'move') {
             // Geser objek yang sedang terseleksi secara presisi
             const currentSnap = snapWorld(currentWorld, e);
-            const dx = currentSnap.x - dragStartWorld.x;
-            const dy = currentSnap.y - dragStartWorld.y;
+            let dx = currentSnap.x - dragStartWorld.x;
+            let dy = currentSnap.y - dragStartWorld.y;
+
+            // Integrasi Magnet (Snapping)
+            if (window.Magnet && window.Magnet.enabled && State.selectedIds.length > 0) {
+                // Kumpulkan calon target snapping di canvas selain objek yang sedang diseleksi
+                const candidates = [];
+                const collectCandidates = (list, offset = { x: 0, y: 0 }) => {
+                    list.forEach(o => {
+                        if (!o || o.visible === false || !o.transform) return;
+                        if (State.selectedIds.includes(o.id)) return;
+                        const bx = offset.x + o.transform.x;
+                        const by = offset.y + o.transform.y;
+                        candidates.push({
+                            id: o.id,
+                            x: bx,
+                            y: by,
+                            width: o.transform.width,
+                            height: o.transform.height
+                        });
+                        if (Array.isArray(o.children) && o.children.length > 0) {
+                            collectCandidates(o.children, { x: bx, y: by });
+                        }
+                    });
+                };
+                collectCandidates(State.objects);
+
+                // Hitung bounding box sementara objek pertama yang diseleksi
+                const primaryId = State.selectedIds[0];
+                const orig = origTransforms.get(primaryId);
+                const found = findObjectWithParent(primaryId);
+                if (orig && found && found.obj.transform) {
+                    const parentOffset = found.parent ? { x: found.parent.transform.x, y: found.parent.transform.y } : { x: 0, y: 0 };
+                    const movingBox = {
+                        x: parentOffset.x + orig.x + dx,
+                        y: parentOffset.y + orig.y + dy,
+                        width: found.obj.transform.width,
+                        height: found.obj.transform.height
+                    };
+
+                    const snapRes = window.Magnet.snap(movingBox, candidates, State.zoom);
+                    if (snapRes.snappedX) {
+                        dx += snapRes.deltaX;
+                    }
+                    if (snapRes.snappedY) {
+                        dy += snapRes.deltaY;
+                    }
+
+                    // Ukur jarak realtime ke kandidat terdekat saat digeser
+                    if (window.Padding && window.Padding.enabled && candidates.length > 0) {
+                        // Cari kandidat terdekat
+                        let nearest = null;
+                        let minDist = Infinity;
+                        for (const cand of candidates) {
+                            const dist = Math.hypot(
+                                (cand.x + cand.width / 2) - (movingBox.x + movingBox.width / 2),
+                                (cand.y + cand.height / 2) - (movingBox.y + movingBox.height / 2)
+                            );
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearest = cand;
+                            }
+                        }
+                        if (nearest && minDist < 300 / State.zoom) {
+                            window.Padding.measureBetween(movingBox, nearest);
+                        } else {
+                            window.Padding.clear();
+                        }
+                    }
+                }
+            } else {
+                if (window.Magnet) window.Magnet.clear();
+                if (window.Padding) window.Padding.clear();
+            }
 
             State.selectedIds.forEach(id => {
                 const found = findObjectWithParent(id);
@@ -372,6 +475,9 @@
         dragStartWorld = null;
         State.marquee = null;
 
+        if (window.Magnet) window.Magnet.clear();
+        if (window.Padding) window.Padding.clear();
+
         if (prevMode === 'resize') {
             $(document).trigger('object:change');
         }
@@ -435,6 +541,20 @@
 
     cvEl.addEventListener('pointercancel', e => {
         if (e.pointerId === pointerId) endDrag(false, e);
+    });
+
+    cvEl.addEventListener('pointerleave', () => {
+        if (!mode && window.Padding && window.Padding.activeMeasurements.length > 0) {
+            window.Padding.clear();
+            requestRender();
+        }
+    });
+
+    $(window).on('keyup', e => {
+        if (e.key === 'Alt' && window.Padding && window.Padding.activeMeasurements.length > 0) {
+            window.Padding.clear();
+            requestRender();
+        }
     });
 
     $(document).on('tool:change', () => endDrag(false));
