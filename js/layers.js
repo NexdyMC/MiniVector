@@ -10,9 +10,13 @@ $(function() {
     query = '';
   const ICON = {
     frame: 'frame',
+    group: 'frame',
     rect: 'rect',
     rectangle: 'rect',
-    ellipse: 'ellipse'
+    ellipse: 'ellipse',
+    image: 'image',
+    path: 'pen',
+    text: 'text'
   };
 
   const syncTreeFromState = () => {
@@ -104,8 +108,11 @@ $(function() {
       render();
     }
   });
+  // pilih layer
   $('#layer-list').on('click', '.layer', function(e) {
     if (justDragged) return;
+    if ($(e.target).is('.layer-rename-input, .twirl, .twirl *')) return;
+
     const clickedId = String($(this).data('id'));
     if (e.shiftKey) {
       // Multi-select toggle dengan shift
@@ -122,6 +129,90 @@ $(function() {
     $(document).trigger('selection:change');
     if (typeof requestRender === 'function') requestRender();
     render();
+  });
+
+  // Rename layer dengan Double Click pada layer item (bisa di teks atau barisnya)
+  $('#layer-list').on('dblclick', '.layer', function(e) {
+    if ($(e.target).closest('.twirl').length) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const $layer = $(this);
+    const $nameSpan = $layer.find('.name');
+    if ($layer.find('.layer-rename-input').length) return;
+
+    const id = String($layer.data('id'));
+    window.startLayerRename(id);
+  });
+
+  // Fungsi publik rename layer inline
+  window.startLayerRename = (layerId) => {
+    if (!layerId) return;
+    const r = find(layerId);
+    if (!r) return;
+
+    const $layer = $(`#layer-list .layer[data-id="${layerId}"]`);
+    if (!$layer.length) return;
+
+    const $nameSpan = $layer.find('.name');
+    if ($layer.find('.layer-rename-input').length) return;
+
+    const oldName = r.node.name || '';
+    const $input = $('<input type="text" class="layer-rename-input" spellcheck="false" autocomplete="off">');
+    $input.val(oldName);
+    $nameSpan.hide().after($input);
+    $input.focus().select();
+
+    let finished = false;
+    const finish = (save) => {
+      if (finished) return;
+      finished = true;
+      if (save) {
+        const newName = $input.val().trim();
+        if (newName && newName !== oldName) {
+          r.node.name = newName;
+          commitTreeToState();
+          if (typeof requestRender === 'function') requestRender();
+        }
+      }
+      $input.remove();
+      $nameSpan.show();
+      render();
+    };
+
+    $input.on('keydown', function(ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        finish(true);
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        finish(false);
+      }
+    });
+
+    $input.on('blur', function() {
+      finish(true);
+    });
+  };
+
+  // Klik kanan pada item layer -> Buka Context Menu
+  $('#layer-list').on('contextmenu', '.layer', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = String($(this).data('id'));
+
+    // Seleksi item jika belum terseleksi
+    if (!State.selectedIds || !State.selectedIds.includes(id)) {
+      State.selectedIds = [id];
+      sel = id;
+      $(document).trigger('selection:change');
+      if (typeof requestRender === 'function') requestRender();
+      render();
+    }
+
+    if (window.ContextMenu && typeof window.ContextMenu.show === 'function') {
+      window.ContextMenu.show(e.clientX, e.clientY, id, 'layer');
+    }
   });
   $('#layer-search').on('input', function() {
     query = this.value.trim().toLowerCase();

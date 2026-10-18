@@ -54,6 +54,7 @@
         } else {
             cvEl.style.cursor = '';
         }
+        $(document).trigger('camera:change');
     };
 
     cvEl.addEventListener('pointerup', endPan);

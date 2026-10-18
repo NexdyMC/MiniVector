@@ -57,28 +57,483 @@ const drawGrid = () => {
     cvCtx.stroke();
     cvCtx.restore();
 };
+/* ---------- Image Cache untuk render gambar canvas tanpa lag ---------- */
+const imageCache = new Map();
+const getImageElement = (src) => {
+    if (!src) return null;
+    if (imageCache.has(src)) {
+        return imageCache.get(src);
+    }
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+        if (typeof requestRender === 'function') requestRender();
+    };
+    imageCache.set(src, img);
+    return img;
+};
+
+/* ---------- Stroke Style & Alignment Helper (Figma Style) ---------- */
+const applyStrokeStyle = (ctx, style, box) => {
+    const sw = (style.strokeWidth !== undefined ? style.strokeWidth : 1);
+    ctx.lineWidth = sw;
+
+    // Line cap & join
+    const cap = style.strokeCap || 'round';
+    ctx.lineCap = (cap === 'arrow') ? 'round' : (cap === 'butt' ? 'butt' : 'round');
+    ctx.lineJoin = style.strokeJoin || 'round';
+
+    // Dashed lines
+    if (Array.isArray(style.strokeDashes) && style.strokeDashes.length > 0) {
+        ctx.setLineDash(style.strokeDashes);
+    } else {
+        ctx.setLineDash([]);
+    }
+
+    // Hitung warna / gradient stroke
+    const strokes = Array.isArray(style.strokes) && style.strokes.length > 0 ? style.strokes : null;
+    let strokePaintApplied = false;
+
+    if (strokes) {
+        const top = strokes.slice().reverse().find(p => p.visible !== false);
+        if (top) {
+            if (top.type === 'SOLID') {
+                const c = Color.parseHex(top.color) || Color.parseCss(top.color);
+                if (c) {
+                    const a = (top.opacity == null ? 1 : top.opacity) * c.a;
+                    ctx.strokeStyle = `rgba(${c.r}, ${c.g}, ${c.b}, ${+a.toFixed(4)})`;
+                    strokePaintApplied = true;
+                }
+            } else if (Paint.isGradient(top) && box) {
+                // Gradient stroke
+                const { x, y, width: w, height: h } = box;
+                if (top.type === 'GRADIENT_LINEAR') {
+                    const s = top.start || { x: 0, y: 0.5 }, e = top.end || { x: 1, y: 0.5 };
+                    const g = ctx.createLinearGradient(x + s.x * w, y + s.y * h, x + e.x * w, y + e.y * h);
+                    Paint.sortedStops(top).forEach(st => g.addColorStop(st.offset, Paint.stopCss(st, top.opacity == null ? 1 : top.opacity)));
+                    ctx.strokeStyle = g;
+                    strokePaintApplied = true;
+                }
+            }
+        }
+    }
+
+    if (!strokePaintApplied) {
+        ctx.strokeStyle = style.stroke || '#000000';
+    }
+
+    return sw;
+};
+
+// Gambar ujung panah segitiga (Triangle Arrow ala Figma) di titik akhir (x2, y2) dari garis (x1, y1)
+const drawArrowhead = (ctx, x1, y1, x2, y2, sw, strokeStyle) => {
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const arrowLen = Math.max(10, sw * 3.5);
+    const arrowHalfW = Math.max(5, sw * 2);
+
+    ctx.save();
+    ctx.translate(x2, y2);
+    ctx.rotate(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-arrowLen, -arrowHalfW);
+    ctx.lineTo(-arrowLen * 0.75, 0);
+    ctx.lineTo(-arrowLen, arrowHalfW);
+    ctx.closePath();
+
+    ctx.fillStyle = strokeStyle || '#000000';
+    ctx.fill();
+    ctx.restore();
+};
+
+/* ---------- Effects Rendering Helpers (Figma Style) ---------- */
+// Noise generator cache
+const noiseCanvasCache = new Map();
+const getNoisePattern = (ctx, amount, mode) => {
+    const key = `${amount}_${mode}`;
+    if (noiseCanvasCache.has(key)) return noiseCanvasCache.get(key);
+
+    const size = 128;
+    const nCv = document.createElement('canvas');
+    nCv.width = size;
+    nCv.height = size;
+    const nCtx = nCv.getContext('2d');
+    const imgData = nCtx.createImageData(size, size);
+    const data = imgData.data;
+    const factor = (amount || 15) / 100;
+
+    for (let i = 0; i < data.length; i += 4) {
+        if (Math.random() < factor) {
+            if (mode === 'color') {
+                data[i] = Math.random() * 255;
+                data[i + 1] = Math.random() * 255;
+                data[i + 2] = Math.random() * 255;
+            } else {
+                const val = Math.random() * 255;
+                data[i] = val;
+                data[i + 1] = val;
+                data[i + 2] = val;
+            }
+            data[i + 3] = Math.random() * 180 * factor;
+        } else {
+            data[i + 3] = 0;
+        }
+    }
+    nCtx.putImageData(imgData, 0, 0);
+    const pat = ctx.createPattern(nCv, 'repeat');
+    noiseCanvasCache.set(key, pat);
+    return pat;
+};
+
+// Texture generator cache
+const textureCanvasCache = new Map();
+const getTexturePattern = (ctx, patternType) => {
+    if (textureCanvasCache.has(patternType)) return textureCanvasCache.get(patternType);
+    const size = 64;
+    const tCv = document.createElement('canvas');
+    tCv.width = size;
+    tCv.height = size;
+    const tCtx = tCv.getContext('2d');
+
+    if (patternType === 'dots') {
+        tCtx.fillStyle = 'rgba(255,255,255,0.15)';
+        for (let x = 8; x < size; x += 16) {
+            for (let y = 8; y < size; y += 16) {
+                tCtx.beginPath();
+                tCtx.arc(x, y, 2.5, 0, Math.PI * 2);
+                tCtx.fill();
+            }
+        }
+    } else if (patternType === 'canvas') {
+        tCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+        tCtx.lineWidth = 1;
+        for (let i = 0; i < size; i += 4) {
+            tCtx.beginPath();
+            tCtx.moveTo(0, i);
+            tCtx.lineTo(size, i);
+            tCtx.stroke();
+            tCtx.beginPath();
+            tCtx.moveTo(i, 0);
+            tCtx.lineTo(i, size);
+            tCtx.stroke();
+        }
+    } else if (patternType === 'grunge') {
+        tCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+        tCtx.lineWidth = 1;
+        for (let i = 0; i < 12; i++) {
+            tCtx.beginPath();
+            tCtx.moveTo(Math.random() * size, Math.random() * size);
+            tCtx.lineTo(Math.random() * size, Math.random() * size);
+            tCtx.stroke();
+        }
+    } else {
+        // Paper grain default
+        tCtx.fillStyle = 'rgba(255,255,255,0.06)';
+        for (let i = 0; i < 150; i++) {
+            tCtx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
+        }
+    }
+
+    const pat = ctx.createPattern(tCv, 'repeat');
+    textureCanvasCache.set(patternType, pat);
+    return pat;
+};
+
+// Pasang efek sebelum menggambar shape (Drop shadow, Layer blur)
+const applyEffectsBefore = (ctx, style) => {
+    const effects = Array.isArray(style && style.effects) ? style.effects : [];
+    if (!effects.length) return;
+
+    effects.forEach(fx => {
+        if (fx.visible === false) return;
+        if (fx.type === 'DROP_SHADOW') {
+            const c = Color.parseHex(fx.color) || Color.parseCss(fx.color) || { r: 0, g: 0, b: 0, a: 1 };
+            const op = (fx.opacity == null ? 0.25 : fx.opacity) * c.a;
+            ctx.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
+            ctx.shadowBlur = Math.max(0, fx.blur || 0);
+            ctx.shadowOffsetX = fx.x || 0;
+            ctx.shadowOffsetY = fx.y || 0;
+        } else if (fx.type === 'LAYER_BLUR') {
+            const b = Math.max(0, fx.blur || 0);
+            if (b > 0) {
+                ctx.filter = `blur(${b}px)`;
+            }
+        }
+    });
+};
+
+// Pasang efek sesudah shape digambar (Inner shadow, Noise, Texture, Glass, Shader)
+const applyEffectsAfter = (ctx, style, box, tracePathFn) => {
+    const effects = Array.isArray(style && style.effects) ? style.effects : [];
+    if (!effects.length) return;
+
+    effects.forEach(fx => {
+        if (fx.visible === false) return;
+
+        if (fx.type === 'INNER_SHADOW') {
+            ctx.save();
+            tracePathFn();
+            ctx.clip();
+
+            const c = Color.parseHex(fx.color) || Color.parseCss(fx.color) || { r: 0, g: 0, b: 0, a: 1 };
+            const op = (fx.opacity == null ? 0.25 : fx.opacity) * c.a;
+            const ox = fx.x || 0;
+            const oy = fx.y || 0;
+            const blur = Math.max(0, fx.blur || 0);
+            const spread = fx.spread || 0;
+
+            // Offset besar di luar batas untuk melemparkan bayangan ke dalam
+            const offsetDist = 10000;
+            ctx.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
+            ctx.shadowBlur = blur;
+            ctx.shadowOffsetX = ox;
+            ctx.shadowOffsetY = oy - offsetDist;
+
+            ctx.beginPath();
+            // Outer bounding box besar
+            ctx.rect(box.x - 200, box.y - 200, box.width + 400, box.height + 400);
+            tracePathFn();
+            ctx.closePath();
+
+            ctx.fillStyle = '#000000';
+            ctx.translate(0, offsetDist);
+            ctx.fill('evenodd');
+            ctx.restore();
+        } else if (fx.type === 'NOISE') {
+            ctx.save();
+            tracePathFn();
+            ctx.clip();
+            const pat = getNoisePattern(ctx, fx.amount || 15, fx.mode || 'monochrome');
+            if (pat) {
+                ctx.fillStyle = pat;
+                ctx.fillRect(box.x, box.y, box.width, box.height);
+            }
+            ctx.restore();
+        } else if (fx.type === 'TEXTURE') {
+            ctx.save();
+            tracePathFn();
+            ctx.clip();
+            const pat = getTexturePattern(ctx, fx.pattern || 'paper');
+            if (pat) {
+                ctx.globalAlpha = Math.min(1, Math.max(0, fx.opacity || 0.15));
+                ctx.fillStyle = pat;
+                ctx.fillRect(box.x, box.y, box.width, box.height);
+            }
+            ctx.restore();
+        } else if (fx.type === 'GLASS') {
+            ctx.save();
+            tracePathFn();
+            ctx.clip();
+
+            // Glass specular gradient highlight di bagian atas
+            const g = ctx.createLinearGradient(box.x, box.y, box.x, box.y + box.height);
+            const tint = Color.parseHex(fx.tint || '#FFFFFF') || { r: 255, g: 255, b: 255, a: 1 };
+            const op = Math.min(1, Math.max(0, fx.opacity == null ? 0.2 : fx.opacity));
+            const shine = (fx.specular || 30) / 100;
+
+            g.addColorStop(0, `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${+(op * shine).toFixed(3)})`);
+            g.addColorStop(0.4, `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${+(op * 0.3).toFixed(3)})`);
+            g.addColorStop(1, `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${+(op * 0.1).toFixed(3)})`);
+
+            ctx.fillStyle = g;
+            ctx.fillRect(box.x, box.y, box.width, box.height);
+
+            // Specular border
+            ctx.strokeStyle = `rgba(255, 255, 255, ${+(shine * 0.5).toFixed(2)})`;
+            ctx.lineWidth = 1;
+            tracePathFn();
+            ctx.stroke();
+
+            ctx.restore();
+        } else if (fx.type === 'SHADER') {
+            ctx.save();
+            tracePathFn();
+            ctx.clip();
+
+            const st = fx.shaderType || 'wave';
+            const intensity = (fx.intensity || 20) / 100;
+
+            if (st === 'vignette') {
+                const cx = box.x + box.width / 2;
+                const cy = box.y + box.height / 2;
+                const r = Math.max(box.width, box.height) / 2;
+                const radG = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+                radG.addColorStop(0, 'rgba(0,0,0,0)');
+                radG.addColorStop(1, `rgba(0,0,0,${+intensity.toFixed(2)})`);
+                ctx.fillStyle = radG;
+                ctx.fillRect(box.x, box.y, box.width, box.height);
+            } else if (st === 'chromatic') {
+                ctx.globalCompositeOperation = 'screen';
+                ctx.fillStyle = `rgba(255, 0, 0, ${+(intensity * 0.4).toFixed(2)})`;
+                ctx.fillRect(box.x - 3, box.y, box.width, box.height);
+                ctx.fillStyle = `rgba(0, 0, 255, ${+(intensity * 0.4).toFixed(2)})`;
+                ctx.fillRect(box.x + 3, box.y, box.width, box.height);
+            } else if (st === 'duotone') {
+                ctx.globalCompositeOperation = 'multiply';
+                const dg = ctx.createLinearGradient(box.x, box.y, box.x + box.width, box.y + box.height);
+                dg.addColorStop(0, `rgba(255, 45, 85, ${+intensity.toFixed(2)})`);
+                dg.addColorStop(1, `rgba(13, 153, 255, ${+intensity.toFixed(2)})`);
+                ctx.fillStyle = dg;
+                ctx.fillRect(box.x, box.y, box.width, box.height);
+            } else {
+                // Sine wave lines pattern overlay
+                ctx.strokeStyle = `rgba(13, 153, 255, ${+(intensity * 0.5).toFixed(2)})`;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                const step = 8;
+                for (let y = box.y; y < box.y + box.height; y += step) {
+                    ctx.moveTo(box.x, y);
+                    for (let x = box.x; x < box.x + box.width; x += 10) {
+                        ctx.lineTo(x, y + Math.sin(x * 0.05) * 4);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+    });
+};
+
 const drawObject = o => {
     if (!o || o.visible === false || !o.transform) return;
     const t = o.transform,
         s = o.style || {};
 
-    if (o.type === 'frame') {
-        
-        Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); 
-        if (s.stroke && s.strokeWidth > 0) {
-            cvCtx.lineWidth = s.strokeWidth;
-            cvCtx.strokeStyle = s.stroke;
+    const hasTransform = (t.rotation && t.rotation !== 0) || t.flipX || t.flipY;
+    if (hasTransform) {
+        cvCtx.save();
+        const cx = t.x + t.width / 2;
+        const cy = t.y + t.height / 2;
+        cvCtx.translate(cx, cy);
+        if (t.rotation) {
+            cvCtx.rotate((t.rotation * Math.PI) / 180);
+        }
+        if (t.flipX || t.flipY) {
+            cvCtx.scale(t.flipX ? -1 : 1, t.flipY ? -1 : 1);
+        }
+        cvCtx.translate(-cx, -cy);
+    }
+
+    if (o.type === 'image') {
+        const imgEl = getImageElement(o.src);
+        if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
+            cvCtx.save();
+            const cr = (o.geometry && o.geometry.cornerRadius) || (s && s.cornerRadius) || 0;
+            const radius = Array.isArray(cr) ? cr[0] : (parseFloat(cr) || 0);
+
+            // Jika objek sedang di-crop secara aktif, jangan potong gambar dulu saat rendering objek utama
+            // melainkan gambar akan digambar oleh drawCropOverlay
+            const isBeingCropped = window.CropTool && window.CropTool.isActive() && window.CropTool.getTarget() && window.CropTool.getTarget().id === o.id;
+
+            if (isBeingCropped) {
+                // Di mode crop, canvas.js akan menggambar gambar penuh yang redup dan frame crop di atasnya
+                cvCtx.restore();
+                if (hasTransform) cvCtx.restore();
+                return;
+            }
+
+            if (radius > 0 && typeof cvCtx.roundRect === 'function') {
+                cvCtx.beginPath();
+                cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
+                cvCtx.clip();
+            }
+
+            const c = o.crop;
+            if (c && typeof c.x === 'number' && typeof c.width === 'number' && c.width > 0 && c.height > 0) {
+                // Gambar bagian crop dari gambar asli
+                cvCtx.drawImage(imgEl, c.x, c.y, c.width, c.height, t.x, t.y, t.width, t.height);
+            } else {
+                cvCtx.drawImage(imgEl, t.x, t.y, t.width, t.height);
+            }
+
+            // Stroke jika ada
+            const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+            const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
+            const traceImgBorder = () => {
+                cvCtx.beginPath();
+                if (radius > 0 && typeof cvCtx.roundRect === 'function') {
+                    cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
+                } else {
+                    cvCtx.rect(t.x, t.y, t.width, t.height);
+                }
+            };
+
+            // Pasang efek inner shadow, noise, texture, glass, shader
+            applyEffectsAfter(cvCtx, s, t, traceImgBorder);
+
+            if (hasStroke && sw > 0) {
+                applyStrokeStyle(cvCtx, s, t);
+                const align = s.strokeAlign || 'inside';
+
+                if (align === 'inside') {
+                    traceImgBorder();
+                    cvCtx.clip();
+                    cvCtx.lineWidth = sw * 2;
+                    traceImgBorder();
+                    cvCtx.stroke();
+                } else if (align === 'outside') {
+                    cvCtx.save();
+                    cvCtx.beginPath();
+                    cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                    traceImgBorder();
+                    cvCtx.clip('evenodd');
+                    cvCtx.lineWidth = sw * 2;
+                    traceImgBorder();
+                    cvCtx.stroke();
+                    cvCtx.restore();
+                } else {
+                    traceImgBorder();
+                    cvCtx.stroke();
+                }
+            }
+            cvCtx.restore();
+        } else {
+            // Placeholder saat gambar sedang loading
+            cvCtx.save();
+            cvCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            cvCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            cvCtx.lineWidth = 1;
+            cvCtx.fillRect(t.x, t.y, t.width, t.height);
             cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+            cvCtx.restore();
+        }
+    } else if (o.type === 'frame') {
+        Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); 
+        const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+        const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
+        if (hasStroke && sw > 0) {
+            cvCtx.save();
+            applyStrokeStyle(cvCtx, s, t);
+            const align = s.strokeAlign || 'inside';
+            if (align === 'inside') {
+                cvCtx.beginPath();
+                cvCtx.rect(t.x, t.y, t.width, t.height);
+                cvCtx.clip();
+                cvCtx.lineWidth = sw * 2;
+                cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+            } else if (align === 'outside') {
+                cvCtx.save();
+                cvCtx.beginPath();
+                cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                cvCtx.rect(t.x, t.y, t.width, t.height);
+                cvCtx.clip('evenodd');
+                cvCtx.lineWidth = sw * 2;
+                cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+                cvCtx.restore();
+            } else {
+                cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+            }
+            cvCtx.restore();
         }
 
-        
         cvCtx.save();
         cvCtx.font = `${Math.max(11, 12 / State.zoom)}px sans-serif`;
         cvCtx.fillStyle = '#8C8C8C';
         cvCtx.fillText(o.name || 'Frame', t.x, t.y - (4 / State.zoom));
         cvCtx.restore();
 
-        
         if (Array.isArray(o.children) && o.children.length > 0) {
             cvCtx.save();
             if (o.clipContent !== false) {
@@ -91,12 +546,65 @@ const drawObject = o => {
             o.children.forEach(drawObject);
             cvCtx.restore();
         }
+    } else if (o.type === 'group') {
+        if (Array.isArray(o.children) && o.children.length > 0) {
+            cvCtx.save();
+            cvCtx.translate(t.x, t.y);
+            o.children.forEach(drawObject);
+            cvCtx.restore();
+        }
     } else if (o.type === 'rectangle') {
+        const cr = (o.geometry && o.geometry.cornerRadius) || (s && s.cornerRadius) || 0;
+        const radius = Array.isArray(cr) ? cr[0] : (parseFloat(cr) || 0);
+        const traceRect = () => {
+            cvCtx.beginPath();
+            if (radius > 0 && typeof cvCtx.roundRect === 'function') {
+                cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
+            } else {
+                cvCtx.rect(t.x, t.y, t.width, t.height);
+            }
+        };
+
+        cvCtx.save();
+        applyEffectsBefore(cvCtx, s);
         Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); 
-        if (s.stroke && s.strokeWidth > 0) {
-            cvCtx.lineWidth = s.strokeWidth; 
-            cvCtx.strokeStyle = s.stroke;
-            cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+        cvCtx.restore();
+
+        // Pasang efek inner shadow, noise, texture, glass, shader
+        applyEffectsAfter(cvCtx, s, t, traceRect);
+
+        const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+        const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
+        if (hasStroke && sw > 0) {
+            cvCtx.save();
+            applyStrokeStyle(cvCtx, s, t);
+            const align = s.strokeAlign || 'inside';
+
+            if (align === 'inside') {
+                traceRect();
+                cvCtx.clip();
+                cvCtx.lineWidth = sw * 2;
+                traceRect();
+                cvCtx.stroke();
+            } else if (align === 'outside') {
+                cvCtx.save();
+                cvCtx.beginPath();
+                cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                if (radius > 0 && typeof cvCtx.roundRect === 'function') {
+                    cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
+                } else {
+                    cvCtx.rect(t.x, t.y, t.width, t.height);
+                }
+                cvCtx.clip('evenodd');
+                cvCtx.lineWidth = sw * 2;
+                traceRect();
+                cvCtx.stroke();
+                cvCtx.restore();
+            } else {
+                traceRect();
+                cvCtx.stroke();
+            }
+            cvCtx.restore();
         }
     } else if (o.type === 'ellipse') {
         const rx = Math.abs(t.width) / 2;
@@ -104,26 +612,66 @@ const drawObject = o => {
         const cx = t.x + rx;
         const cy = t.y + ry;
 
-        cvCtx.beginPath();
-        cvCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        const traceEllipse = () => {
+            cvCtx.beginPath();
+            cvCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        };
 
+        cvCtx.save();
+        applyEffectsBefore(cvCtx, s);
+        traceEllipse();
         Paint.fillPath(cvCtx, s, t);
-        if (s.stroke && s.strokeWidth > 0) {
-            cvCtx.lineWidth = s.strokeWidth;
-            cvCtx.strokeStyle = s.stroke;
-            cvCtx.stroke();
+        cvCtx.restore();
+
+        // Pasang efek inner shadow, noise, texture, glass, shader
+        applyEffectsAfter(cvCtx, s, t, traceEllipse);
+
+        const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+        const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
+        if (hasStroke && sw > 0) {
+            cvCtx.save();
+            applyStrokeStyle(cvCtx, s, t);
+            const align = s.strokeAlign || 'inside';
+
+            if (align === 'inside') {
+                traceEllipse();
+                cvCtx.clip();
+                cvCtx.lineWidth = sw * 2;
+                traceEllipse();
+                cvCtx.stroke();
+            } else if (align === 'outside') {
+                cvCtx.save();
+                cvCtx.beginPath();
+                cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                cvCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                cvCtx.clip('evenodd');
+                cvCtx.lineWidth = sw * 2;
+                traceEllipse();
+                cvCtx.stroke();
+                cvCtx.restore();
+            } else {
+                traceEllipse();
+                cvCtx.stroke();
+            }
+            cvCtx.restore();
         }
     } else if (o.type === 'line') {
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length >= 2) {
             cvCtx.save();
+            const sw = applyStrokeStyle(cvCtx, s, t);
+            const x1 = t.x + nodes[0].x, y1 = t.y + nodes[0].y;
+            const x2 = t.x + nodes[1].x, y2 = t.y + nodes[1].y;
+
             cvCtx.beginPath();
-            cvCtx.moveTo(t.x + nodes[0].x, t.y + nodes[0].y);
-            cvCtx.lineTo(t.x + nodes[1].x, t.y + nodes[1].y);
-            cvCtx.lineWidth = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
-            cvCtx.strokeStyle = s.stroke || '#000000';
-            cvCtx.lineCap = 'round';
+            cvCtx.moveTo(x1, y1);
+            cvCtx.lineTo(x2, y2);
             cvCtx.stroke();
+
+            // Arrowhead jika cap === 'arrow'
+            if (s.strokeCap === 'arrow') {
+                drawArrowhead(cvCtx, x1, y1, x2, y2, sw, cvCtx.strokeStyle);
+            }
             cvCtx.restore();
         }
     } else if (o.type === 'path') {
@@ -170,12 +718,17 @@ const drawObject = o => {
 
             // Stroke
             const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
-            if (sw > 0 && s.stroke && s.stroke !== 'none') {
-                cvCtx.lineWidth = sw;
-                cvCtx.strokeStyle = s.stroke;
-                cvCtx.lineCap = s.strokeCap || 'round';
-                cvCtx.lineJoin = s.strokeJoin || 'round';
+            const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
+            if (sw > 0 && hasStroke) {
+                const appliedSw = applyStrokeStyle(cvCtx, s, t);
                 cvCtx.stroke();
+
+                // Arrowhead jika tidak tertutup dan cap === 'arrow'
+                if (!o.closed && s.strokeCap === 'arrow' && nodes.length >= 2) {
+                    const last = nodes[nodes.length - 1];
+                    const prev = nodes[nodes.length - 2];
+                    drawArrowhead(cvCtx, t.x + prev.x, t.y + prev.y, t.x + last.x, t.y + last.y, appliedSw, cvCtx.strokeStyle);
+                }
             }
             cvCtx.restore();
         }
@@ -215,51 +768,82 @@ const drawObject = o => {
                 }
             }
 
-            cvCtx.beginPath();
-            if (radius > 0 && typeof cvCtx.roundRect === 'function' && pts.length >= 3) {
-                // Gambar poligon dengan lengkungan sudut (fillet/arcTo)
-                for (let i = 0; i < pts.length; i++) {
-                    const p1 = pts[i];
-                    const p2 = pts[(i + 1) % pts.length];
-                    const p0 = pts[(i - 1 + pts.length) % pts.length];
-                    if (i === 0) {
-                        const midX = (p0.x + p1.x) / 2;
-                        const midY = (p0.y + p1.y) / 2;
-                        cvCtx.moveTo(midX, midY);
+            const tracePoly = () => {
+                cvCtx.beginPath();
+                if (radius > 0 && typeof cvCtx.roundRect === 'function' && pts.length >= 3) {
+                    for (let i = 0; i < pts.length; i++) {
+                        const p1 = pts[i];
+                        const p2 = pts[(i + 1) % pts.length];
+                        const p0 = pts[(i - 1 + pts.length) % pts.length];
+                        if (i === 0) {
+                            const midX = (p0.x + p1.x) / 2;
+                            const midY = (p0.y + p1.y) / 2;
+                            cvCtx.moveTo(midX, midY);
+                        }
+                        cvCtx.arcTo(p1.x, p1.y, p2.x, p2.y, radius);
                     }
-                    cvCtx.arcTo(p1.x, p1.y, p2.x, p2.y, radius);
+                    cvCtx.closePath();
+                } else {
+                    pts.forEach((pt, i) => {
+                        if (i === 0) cvCtx.moveTo(pt.x, pt.y);
+                        else cvCtx.lineTo(pt.x, pt.y);
+                    });
+                    cvCtx.closePath();
                 }
-                cvCtx.closePath();
-            } else {
-                pts.forEach((pt, i) => {
-                    if (i === 0) cvCtx.moveTo(pt.x, pt.y);
-                    else cvCtx.lineTo(pt.x, pt.y);
-                });
-                cvCtx.closePath();
-            }
+            };
 
-            // Fills
+            tracePoly();
+
+            // Fills dengan efek bayangan luar & layer blur
+            cvCtx.save();
+            applyEffectsBefore(cvCtx, s);
+            tracePoly();
             if (s.fills && s.fills.length > 0) {
                 Paint.fillPath(cvCtx, s, t);
             } else if (s.fill && s.fill !== 'none') {
                 cvCtx.fillStyle = s.fill;
                 cvCtx.fill();
             }
+            cvCtx.restore();
+
+            // Pasang efek inner shadow, noise, texture, glass, shader
+            applyEffectsAfter(cvCtx, s, t, tracePoly);
 
             // Stroke
             const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
-            if (sw > 0 && s.stroke && s.stroke !== 'none') {
-                cvCtx.lineWidth = sw;
-                cvCtx.strokeStyle = s.stroke;
-                cvCtx.lineCap = s.strokeCap || 'round';
-                cvCtx.lineJoin = s.strokeJoin || 'round';
-                cvCtx.stroke();
+            const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
+            if (sw > 0 && hasStroke) {
+                applyStrokeStyle(cvCtx, s, t);
+                const align = s.strokeAlign || 'inside';
+                if (align === 'inside') {
+                    tracePoly();
+                    cvCtx.clip();
+                    cvCtx.lineWidth = sw * 2;
+                    tracePoly();
+                    cvCtx.stroke();
+                } else if (align === 'outside') {
+                    cvCtx.save();
+                    cvCtx.beginPath();
+                    cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                    tracePoly();
+                    cvCtx.clip('evenodd');
+                    cvCtx.lineWidth = sw * 2;
+                    tracePoly();
+                    cvCtx.stroke();
+                    cvCtx.restore();
+                } else {
+                    tracePoly();
+                    cvCtx.stroke();
+                }
             }
             cvCtx.restore();
         }
     } else if (o.type === 'text') {
         // Jangan render jika sedang diedit secara inline (akan ditimpa overlay editor)
-        if (o._editing) return;
+        if (o._editing) {
+            if (hasTransform) cvCtx.restore();
+            return;
+        }
         
         cvCtx.save();
         const fontStyle = o.italic ? 'italic ' : '';
@@ -389,6 +973,10 @@ const drawObject = o => {
 
         cvCtx.restore();
     }
+
+    if (hasTransform) {
+        cvCtx.restore();
+    }
 };
 
 
@@ -398,7 +986,25 @@ const getWorldBounds = (objId, list = State.objects, parentOffset = { x: 0, y: 0
         const absX = parentOffset.x + o.transform.x;
         const absY = parentOffset.y + o.transform.y;
         if (o.id === objId) {
-            return { x: absX, y: absY, width: o.transform.width, height: o.transform.height };
+            // Jika objek bertipe group dan memiliki children, hitung bounding box aktual dari anak-anaknya
+            if (o.type === 'group' && Array.isArray(o.children) && o.children.length > 0) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                o.children.forEach(c => {
+                    if (!c.transform) return;
+                    const cX = absX + c.transform.x;
+                    const cY = absY + c.transform.y;
+                    const cW = c.transform.width;
+                    const cH = c.transform.height;
+                    if (cX < minX) minX = cX;
+                    if (cY < minY) minY = cY;
+                    if (cX + cW > maxX) maxX = cX + cW;
+                    if (cY + cH > maxY) maxY = cY + cH;
+                });
+                if (minX !== Infinity) {
+                    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY, rotation: o.transform.rotation || 0, obj: o };
+                }
+            }
+            return { x: absX, y: absY, width: o.transform.width, height: o.transform.height, rotation: o.transform.rotation || 0, obj: o };
         }
         if (Array.isArray(o.children) && o.children.length > 0) {
             const res = getWorldBounds(objId, o.children, { x: absX, y: absY });
@@ -432,8 +1038,18 @@ const drawSelection = () => {
         const bounds = getWorldBounds(id);
         if (!bounds) return;
 
-        // Bounding box outline
+        const rot = bounds.rotation || 0;
         cvCtx.save();
+
+        if (rot !== 0) {
+            const cx = bounds.x + bounds.width / 2;
+            const cy = bounds.y + bounds.height / 2;
+            cvCtx.translate(cx, cy);
+            cvCtx.rotate((rot * Math.PI) / 180);
+            cvCtx.translate(-cx, -cy);
+        }
+
+        // Bounding box outline
         cvCtx.strokeStyle = '#0D99FF';
         cvCtx.lineWidth = lw;
         cvCtx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -458,6 +1074,125 @@ const drawSelection = () => {
         });
         cvCtx.restore();
     });
+
+    // -------------------------------------------------------------
+    // FITUR: Tidy Up & Interactive Gap Dragging Handles (Ala Figma)
+    // -------------------------------------------------------------
+    if (State.selectedIds.length >= 2 && window.Padding && typeof window.Padding.calculateGapHandles === 'function') {
+        const gapInfo = window.Padding.calculateGapHandles(State.selectedIds);
+        if (gapInfo && gapInfo.handles.length > 0) {
+            cvCtx.save();
+            const pillRadius = 4 / State.zoom;
+
+            gapInfo.handles.forEach(gh => {
+                cvCtx.fillStyle = '#FF0055';
+                cvCtx.strokeStyle = '#FFFFFF';
+                cvCtx.lineWidth = 1.5 / State.zoom;
+
+                if (gh.orientation === 'h') {
+                    // Garis handle vertikal di antara celah horizontal
+                    const hH = Math.min(36 / State.zoom, (gh.y2 - gh.y1) * 0.6);
+                    const hW = 6 / State.zoom;
+                    const hX = gh.x - hW / 2;
+                    const hY = gh.y - hH / 2;
+
+                    cvCtx.beginPath();
+                    cvCtx.roundRect ? cvCtx.roundRect(hX, hY, hW, hH, pillRadius) : cvCtx.rect(hX, hY, hW, hH);
+                    cvCtx.fill();
+                    cvCtx.stroke();
+
+                    // Tampilkan angka jarak jika gap > 0
+                    if (gh.gap >= 0) {
+                        const text = `${Math.round(gh.gap)}`;
+                        cvCtx.font = `bold ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                        const textW = cvCtx.measureText(text).width;
+                        const textH = 12 / State.zoom;
+                        const padX = 4 / State.zoom;
+                        const padY = 2 / State.zoom;
+
+                        const bX = gh.x - textW / 2 - padX;
+                        const bY = hY - textH - padY * 2 - 4 / State.zoom;
+                        const bW = textW + padX * 2;
+                        const bH = textH + padY * 2;
+
+                        cvCtx.fillStyle = '#FF0055';
+                        cvCtx.beginPath();
+                        cvCtx.roundRect ? cvCtx.roundRect(bX, bY, bW, bH, 2.5 / State.zoom) : cvCtx.rect(bX, bY, bW, bH);
+                        cvCtx.fill();
+
+                        cvCtx.fillStyle = '#FFFFFF';
+                        cvCtx.textAlign = 'center';
+                        cvCtx.textBaseline = 'middle';
+                        cvCtx.fillText(text, gh.x, bY + bH / 2);
+                    }
+                } else {
+                    // Garis handle horizontal di antara celah vertikal
+                    const hW = Math.min(36 / State.zoom, (gh.x2 - gh.x1) * 0.6);
+                    const hH = 6 / State.zoom;
+                    const hX = gh.x - hW / 2;
+                    const hY = gh.y - hH / 2;
+
+                    cvCtx.beginPath();
+                    cvCtx.roundRect ? cvCtx.roundRect(hX, hY, hW, hH, pillRadius) : cvCtx.rect(hX, hY, hW, hH);
+                    cvCtx.fill();
+                    cvCtx.stroke();
+
+                    // Tampilkan angka jarak jika gap > 0
+                    if (gh.gap >= 0) {
+                        const text = `${Math.round(gh.gap)}`;
+                        cvCtx.font = `bold ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                        const textW = cvCtx.measureText(text).width;
+                        const textH = 12 / State.zoom;
+                        const padX = 4 / State.zoom;
+                        const padY = 2 / State.zoom;
+
+                        const bX = hX + hW + 6 / State.zoom;
+                        const bY = gh.y - textH / 2 - padY;
+                        const bW = textW + padX * 2;
+                        const bH = textH + padY * 2;
+
+                        cvCtx.fillStyle = '#FF0055';
+                        cvCtx.beginPath();
+                        cvCtx.roundRect ? cvCtx.roundRect(bX, bY, bW, bH, 2.5 / State.zoom) : cvCtx.rect(bX, bY, bW, bH);
+                        cvCtx.fill();
+
+                        cvCtx.fillStyle = '#FFFFFF';
+                        cvCtx.textAlign = 'center';
+                        cvCtx.textBaseline = 'middle';
+                        cvCtx.fillText(text, bX + bW / 2, gh.y);
+                    }
+                }
+            });
+
+            // Tidy Up Button di sudut kanan bawah multi-seleksi jika jarak belum rapi (isEven === false)
+            if (!gapInfo.isEven && typeof Geo !== 'undefined' && typeof Geo.selection === 'function') {
+                const union = Geo.union(Geo.selection());
+                if (union) {
+                    const btnRadius = 9 / State.zoom;
+                    const btnX = union.x + union.width + 14 / State.zoom;
+                    const btnY = union.y + union.height + 14 / State.zoom;
+
+                    cvCtx.fillStyle = '#FF0055';
+                    cvCtx.beginPath();
+                    cvCtx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
+                    cvCtx.fill();
+                    cvCtx.strokeStyle = '#FFFFFF';
+                    cvCtx.lineWidth = 1.5 / State.zoom;
+                    cvCtx.stroke();
+
+                    // Tidy Up Grid Icon (3 baris kecil)
+                    cvCtx.fillStyle = '#FFFFFF';
+                    const barW = 8 / State.zoom;
+                    const barH = 1.5 / State.zoom;
+                    cvCtx.fillRect(btnX - barW / 2, btnY - 4 / State.zoom, barW, barH);
+                    cvCtx.fillRect(btnX - barW / 2, btnY - 0.75 / State.zoom, barW, barH);
+                    cvCtx.fillRect(btnX - barW / 2, btnY + 2.5 / State.zoom, barW, barH);
+                }
+            }
+
+            cvCtx.restore();
+        }
+    }
 };
 
 const drawGuides = () => {
@@ -485,9 +1220,117 @@ const drawGuides = () => {
         cvCtx.restore();
     }
 
+    // 1b. Render Smart Equal Spacing Snapping Guides & Distance Badges
+    if (window.Magnet && Array.isArray(window.Magnet.activeSpacingGuides) && window.Magnet.activeSpacingGuides.length > 0) {
+        cvCtx.save();
+        cvCtx.strokeStyle = '#FF0055';
+        cvCtx.lineWidth = lw;
+
+        window.Magnet.activeSpacingGuides.forEach(sg => {
+            const capSize = 4 / State.zoom;
+
+            sg.segments.forEach(seg => {
+                cvCtx.beginPath();
+                if (sg.orientation === 'h') {
+                    // Garis horizontal antar objek
+                    cvCtx.moveTo(seg.x1, seg.y);
+                    cvCtx.lineTo(seg.x2, seg.y);
+                    cvCtx.stroke();
+
+                    // Ticks / end caps
+                    cvCtx.beginPath();
+                    cvCtx.moveTo(seg.x1, seg.y - capSize);
+                    cvCtx.lineTo(seg.x1, seg.y + capSize);
+                    cvCtx.moveTo(seg.x2, seg.y - capSize);
+                    cvCtx.lineTo(seg.x2, seg.y + capSize);
+                    cvCtx.stroke();
+
+                    // Badge Jarak
+                    const labelX = (seg.x1 + seg.x2) / 2;
+                    const labelY = seg.y;
+                    const text = `${Math.round(sg.gap)}`;
+                    cvCtx.font = `600 ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                    const textMetrics = cvCtx.measureText(text);
+                    const textW = textMetrics.width;
+                    const textH = 12 / State.zoom;
+                    const padX = 4 / State.zoom;
+                    const padY = 2 / State.zoom;
+
+                    const badgeX = labelX - textW / 2 - padX;
+                    const badgeY = labelY - textH / 2 - padY;
+                    const badgeW = textW + padX * 2;
+                    const badgeH = textH + padY * 2;
+                    const radius = 3 / State.zoom;
+
+                    cvCtx.fillStyle = '#FF0055';
+                    cvCtx.beginPath();
+                    cvCtx.roundRect ? cvCtx.roundRect(badgeX, badgeY, badgeW, badgeH, radius) : cvCtx.rect(badgeX, badgeY, badgeW, badgeH);
+                    cvCtx.fill();
+
+                    cvCtx.fillStyle = '#FFFFFF';
+                    cvCtx.textAlign = 'center';
+                    cvCtx.textBaseline = 'middle';
+                    cvCtx.fillText(text, labelX, labelY);
+                } else {
+                    // Garis vertikal antar objek
+                    cvCtx.moveTo(seg.x, seg.y1);
+                    cvCtx.lineTo(seg.x, seg.y2);
+                    cvCtx.stroke();
+
+                    // Ticks / end caps
+                    cvCtx.beginPath();
+                    cvCtx.moveTo(seg.x - capSize, seg.y1);
+                    cvCtx.lineTo(seg.x + capSize, seg.y1);
+                    cvCtx.moveTo(seg.x - capSize, seg.y2);
+                    cvCtx.lineTo(seg.x + capSize, seg.y2);
+                    cvCtx.stroke();
+
+                    // Badge Jarak
+                    const labelX = seg.x;
+                    const labelY = (seg.y1 + seg.y2) / 2;
+                    const text = `${Math.round(sg.gap)}`;
+                    cvCtx.font = `600 ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                    const textMetrics = cvCtx.measureText(text);
+                    const textW = textMetrics.width;
+                    const textH = 12 / State.zoom;
+                    const padX = 4 / State.zoom;
+                    const padY = 2 / State.zoom;
+
+                    const badgeX = labelX - textW / 2 - padX;
+                    const badgeY = labelY - textH / 2 - padY;
+                    const badgeW = textW + padX * 2;
+                    const badgeH = textH + padY * 2;
+                    const radius = 3 / State.zoom;
+
+                    cvCtx.fillStyle = '#FF0055';
+                    cvCtx.beginPath();
+                    cvCtx.roundRect ? cvCtx.roundRect(badgeX, badgeY, badgeW, badgeH, radius) : cvCtx.rect(badgeX, badgeY, badgeW, badgeH);
+                    cvCtx.fill();
+
+                    cvCtx.fillStyle = '#FFFFFF';
+                    cvCtx.textAlign = 'center';
+                    cvCtx.textBaseline = 'middle';
+                    cvCtx.fillText(text, labelX, labelY);
+                }
+            });
+        });
+        cvCtx.restore();
+    }
+
     // 2. Render Distance & Padding Measurements
     if (window.Padding && Array.isArray(window.Padding.activeMeasurements) && window.Padding.activeMeasurements.length > 0) {
         cvCtx.save();
+
+        // 2a. Gambar outline kotak target (Figma style red bounding box outline)
+        if (window.Padding.targetBounds) {
+            const tb = window.Padding.targetBounds;
+            cvCtx.save();
+            cvCtx.strokeStyle = '#FF0055';
+            cvCtx.lineWidth = lw;
+            cvCtx.strokeRect(tb.x, tb.y, tb.width, tb.height);
+            cvCtx.restore();
+        }
+
         cvCtx.strokeStyle = '#FF0055';
         cvCtx.lineWidth = lw;
 
@@ -498,8 +1341,8 @@ const drawGuides = () => {
             cvCtx.lineTo(m.x2, m.y2);
             cvCtx.stroke();
 
-            // End caps (tick marks)
-            const capSize = 3 / State.zoom;
+            // End caps (tick marks pada ujung-ujung pengukuran)
+            const capSize = 3.5 / State.zoom;
             cvCtx.beginPath();
             if (m.orientation === 'h') {
                 cvCtx.moveTo(m.x1, m.y1 - capSize);
@@ -514,20 +1357,20 @@ const drawGuides = () => {
             }
             cvCtx.stroke();
 
-            // Badge Teks Jarak (Pixel Pill)
+            // Badge Teks Jarak (Pixel Pill ala Figma)
             const text = `${Math.round(m.distance)}`;
-            cvCtx.font = `600 ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            cvCtx.font = `bold ${Math.max(10, 11 / State.zoom)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
             const textMetrics = cvCtx.measureText(text);
             const textW = textMetrics.width;
             const textH = 12 / State.zoom;
-            const padX = 4 / State.zoom;
+            const padX = 4.5 / State.zoom;
             const padY = 2 / State.zoom;
 
             const badgeX = m.labelX - textW / 2 - padX;
             const badgeY = m.labelY - textH / 2 - padY;
             const badgeW = textW + padX * 2;
             const badgeH = textH + padY * 2;
-            const radius = 3 / State.zoom;
+            const radius = 2.5 / State.zoom;
 
             // Draw rounded pill background
             cvCtx.fillStyle = '#FF0055';
@@ -555,8 +1398,12 @@ const drawScene = () => {
     State.objects.forEach(drawObject);
     if (State.drawing) drawObject(State.drawing); 
     drawSelection(); 
+    drawGuides();
     if (typeof window.drawPenOverlay === 'function') {
         window.drawPenOverlay(cvCtx, State.zoom);
+    }
+    if (window.CropTool && typeof window.CropTool.drawOverlay === 'function') {
+        window.CropTool.drawOverlay(cvCtx, State.zoom);
     }
 };
 const requestRender = () => {
@@ -591,6 +1438,7 @@ $(document).on('zoom:change', (e, persen, anchor) => {
     State.panY = ay - (ay - State.panY) / prev * next;
     State.zoom = next;
     requestRender();
+    $(document).trigger('camera:change');
 });
 
 /* ---------- wheel: Ctrl+wheel (juga pinch trackpad) = zoom, wheel biasa = geser ---------- */
@@ -612,6 +1460,7 @@ cvEl.addEventListener('wheel', e => {
         State.panX -= dx;
         State.panY -= dy;
         requestRender();
+        $(document).trigger('camera:change');
     }
 }, {
     passive: false
@@ -647,6 +1496,7 @@ const endMiddlePan = e => {
     if (!isMiddlePanning) return;
     isMiddlePanning = false;
     cvEl.style.cursor = '';
+    $(document).trigger('camera:change');
 };
 
 cvEl.addEventListener('pointerup', e => {
@@ -656,6 +1506,87 @@ cvEl.addEventListener('pointercancel', endMiddlePan);
 cvEl.addEventListener('auxclick', e => {
     if (e.button === 1) e.preventDefault(); 
 });
+
+/* ---------- DRAG & DROP GAMBAR KE CANVAS DENGAN VISUAL FEEDBACK ---------- */
+(() => {
+    const overlay = document.getElementById('drag-overlay');
+    let dragCounter = 0;
+
+    const isImageTransfer = e => {
+        const dt = e.dataTransfer;
+        if (!dt) return false;
+        if (dt.types) {
+            for (let i = 0; i < dt.types.length; i++) {
+                if (dt.types[i] === 'Files') return true;
+            }
+        }
+        return false;
+    };
+
+    window.addEventListener('dragenter', e => {
+        if (!isImageTransfer(e)) return;
+        e.preventDefault();
+        dragCounter++;
+        if (overlay) overlay.classList.add('active');
+    });
+
+    window.addEventListener('dragover', e => {
+        if (!isImageTransfer(e)) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        if (overlay && !overlay.classList.contains('active')) {
+            overlay.classList.add('active');
+        }
+    });
+
+    window.addEventListener('dragleave', e => {
+        if (!isImageTransfer(e)) return;
+        e.preventDefault();
+        dragCounter = Math.max(0, dragCounter - 1);
+        if (dragCounter === 0 && overlay) {
+            overlay.classList.remove('active');
+        }
+    });
+
+    window.addEventListener('drop', e => {
+        dragCounter = 0;
+        if (overlay) overlay.classList.remove('active');
+
+        // Jika dilepas di dropzone modal import, biarkan handler dropzone modal bekerja
+        if (e.target && e.target.closest && e.target.closest('#dropzone')) {
+            return;
+        }
+
+        e.preventDefault();
+
+        const dt = e.dataTransfer;
+        if (!dt || !dt.files || !dt.files.length) return;
+
+        // Ambil file gambar pertama yang sesuai
+        const file = Array.from(dt.files).find(f => f.type.startsWith('image/'));
+        if (!file) return;
+
+        // Hitung posisi kursor saat di-drop dalam koordinat world canvas
+        const rect = cvEl.getBoundingClientRect();
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        // Jika dilepas di luar area canvas (misal di sidebar), defaultkan ke tengah viewport
+        let worldDropPos = null;
+        if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+            worldDropPos = eventToWorld(e);
+        }
+
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            if (window.ImageTool && typeof window.ImageTool.placeImageAt === 'function') {
+                window.ImageTool.placeImageAt(dataUrl, file.name, worldDropPos);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+})();
 
 /* ---------- render ulang saat data berubah ---------- */
 $(document).on('project:load object:add object:change object:remove', requestRender);

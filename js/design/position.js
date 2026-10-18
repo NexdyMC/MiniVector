@@ -1,13 +1,16 @@
-/* ================= DESIGN: POSITION (X / Y, alignment) ================= */
+/* ================= DESIGN: POSITION (X / Y, alignment, Rotation, Flip) ================= */
 // Panel kanan → Design → Position. Bergantung pada: variabel.js (State), geometry.js (Geo).
-// Rotation, putar 90° dan flip dikerjakan di tahap berikutnya (belum tersambung).
 // X/Y = posisi pojok kiri-atas relatif terhadap frame induk (objek di root: koordinat dunia).
 // Banyak objek terpilih: X/Y = kotak pembatas seluruh seleksi; mengubahnya menggeser semua objek.
 $(function() {
   const r2 = n => Math.round(n * 100) / 100;
   const $x = $('#prop-x'),
     $y = $('#prop-y'),
-    $align = $('[data-act^="align-"]');
+    $rot = $('#prop-rotation'),
+    $align = $('[data-act^="align-"]'),
+    $rotate90 = $('[data-act="rotate90"]'),
+    $flipX = $('[data-act="flip-x"]'),
+    $flipY = $('[data-act="flip-y"]');
   $x.add($y).attr('step', 'any'); // desimal boleh; panah atas/bawah tetap menambah 1
 
   const model = () => {
@@ -17,20 +20,51 @@ $(function() {
     const same = sel.every(f => f.parent === sel[0].parent);
     return { sel, b: Geo.union(sel), origin: same ? sel[0].origin : { x: 0, y: 0 } };
   };
-  const commit = () => $(document).trigger('object:change'); // simpan JSON + gambar ulang canvas + panel layer
+  const commit = () => {
+    // Jika ada elemen terpilih yang memiliki parent group, perbarui bounds group tersebut
+    const sel = Geo.selection();
+    const groupsToRecalc = new Set();
+    sel.forEach(f => {
+      if (f.parent && f.parent.type === 'group') {
+        groupsToRecalc.add(f.parent);
+      }
+    });
+    if (groupsToRecalc.size > 0 && window.Grouping && typeof window.Grouping.recalculateBounds === 'function') {
+      groupsToRecalc.forEach(grp => window.Grouping.recalculateBounds(grp));
+    }
+    $(document).trigger('object:change'); // simpan JSON + gambar ulang canvas + panel layer
+    if (window.History && typeof window.History.record === 'function') {
+      window.History.record();
+    }
+  };
   const show = ($el, v, force) => {
     if (force || document.activeElement !== $el[0]) $el.val(r2(v)); // jangan timpa angka yang sedang diketik
   };
 
   const refresh = force => {
     const m = model();
-    $x.add($y).prop('disabled', !m);
+    $x.add($y).add($rot).prop('disabled', !m);
+    $rotate90.add($flipX).add($flipY).prop('disabled', !m);
+
     if (m) {
       show($x, m.b.x - m.origin.x, force);
       show($y, m.b.y - m.origin.y, force);
+      // Rotation: tampilkan rotasi objek jika single selection, atau 0 jika multi
+      if (m.sel.length === 1) {
+        show($rot, m.sel[0].obj.transform.rotation || 0, force);
+        $flipX.attr('aria-pressed', !!m.sel[0].obj.transform.flipX);
+        $flipY.attr('aria-pressed', !!m.sel[0].obj.transform.flipY);
+      } else {
+        show($rot, 0, force);
+        $flipX.attr('aria-pressed', false);
+        $flipY.attr('aria-pressed', false);
+      }
     } else {
       $x.val('');
       $y.val('');
+      $rot.val('0');
+      $flipX.attr('aria-pressed', false);
+      $flipY.attr('aria-pressed', false);
     }
     // align butuh acuan: induk frame (satu objek di dalam frame) atau kotak seleksi (lebih dari satu objek)
     $align.prop('disabled', !(m && (m.sel.length > 1 || m.sel[0].parent)));
@@ -54,11 +88,62 @@ $(function() {
   $y.on('change', function() {
     move('y', this.value);
   });
-  $x.add($y).on('keydown', function(e) {
+  $x.add($y).add($rot).on('keydown', function(e) {
     if (e.key === 'Escape') {
       refresh(true);
       this.blur();
     }
+  });
+
+  // ---- Rotation input ----
+  $rot.on('change', function() {
+    const m = model();
+    if (!m) return refresh(true);
+    let deg = parseFloat(this.value);
+    if (!isFinite(deg)) return refresh(true);
+    // Normalisasi -180° s.d. 180° atau 0° s.d. 360°
+    deg = ((deg % 360) + 360) % 360;
+    if (deg > 180) deg -= 360;
+    m.sel.forEach(f => {
+      f.obj.transform.rotation = Math.round(deg);
+    });
+    commit();
+  });
+
+  // ---- Rotate 90 deg button ----
+  $('#view-design').on('click', '[data-act="rotate90"]', function() {
+    const m = model();
+    if (!m) return;
+    m.sel.forEach(f => {
+      let cur = f.obj.transform.rotation || 0;
+      let next = (cur + 90) % 360;
+      if (next > 180) next -= 360;
+      f.obj.transform.rotation = Math.round(next);
+    });
+    commit();
+    refresh(true);
+  });
+
+  // ---- Flip horizontal button ----
+  $('#view-design').on('click', '[data-act="flip-x"]', function() {
+    const m = model();
+    if (!m) return;
+    m.sel.forEach(f => {
+      f.obj.transform.flipX = !f.obj.transform.flipX;
+    });
+    commit();
+    refresh(true);
+  });
+
+  // ---- Flip vertical button ----
+  $('#view-design').on('click', '[data-act="flip-y"]', function() {
+    const m = model();
+    if (!m) return;
+    m.sel.forEach(f => {
+      f.obj.transform.flipY = !f.obj.transform.flipY;
+    });
+    commit();
+    refresh(true);
   });
 
   // ---- alignment ----

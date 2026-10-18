@@ -14,7 +14,13 @@ $(function() {
     const sel = Geo.selection();
     return sel.length === 1 ? sel[0] : null;
   };
-  const commit = () => $(document).trigger('object:change');
+  const commit = () => {
+    const f = single();
+    if (f && f.parent && f.parent.type === 'group' && window.Grouping && typeof window.Grouping.recalculateBounds === 'function') {
+      window.Grouping.recalculateBounds(f.parent);
+    }
+    $(document).trigger('object:change');
+  };
   const show = ($el, v, force) => {
     if (force || document.activeElement !== $el[0]) $el.val(r2(v));
   };

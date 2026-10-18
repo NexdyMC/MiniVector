@@ -36,7 +36,49 @@ const togglePanel = side => {
   }
 };
 
-let prevTool = null; // untuk Space = hand sementara
+// Cegah bentrok shortcut browser bawaan & zoom browser bawaan (Ctrl+Plus, Ctrl+Minus, Ctrl+0, Ctrl+Wheel, Ctrl+B, Ctrl+G)
+window.addEventListener('keydown', function(e) {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (!ctrl) return;
+
+  if (e.code === 'KeyB' || e.code === 'KeyG') {
+    e.preventDefault();
+  }
+
+  // Tangani shortcut zoom canvas: Ctrl + Plus/Equal, Ctrl + Minus, Ctrl + 0
+  if (e.key === '=' || e.key === '+' || e.code === 'NumpadAdd') {
+    e.preventDefault();
+    if (typeof stepZoom === 'function') stepZoom(1);
+  } else if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+    e.preventDefault();
+    if (typeof stepZoom === 'function') stepZoom(-1);
+  } else if (e.key === '0' || e.code === 'Numpad0' || e.code === 'Digit0') {
+    e.preventDefault();
+    if (typeof setZoom === 'function') setZoom(100);
+  }
+}, { capture: true, passive: false });
+
+// Cegah Ctrl + Wheel zoom browser di seluruh window & arahkan ke zoom canvas
+window.addEventListener('wheel', function(e) {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    // Jika event terjadi di luar elemen canvas (misal di workspace), tetap jalankan zoom canvas
+    if (e.target !== document.getElementById('canvas')) {
+      const cvEl = document.getElementById('canvas');
+      if (cvEl && typeof getZoom === 'function' && typeof setZoom === 'function') {
+        const r = cvEl.getBoundingClientRect();
+        const cur = getZoom();
+        const dy = e.deltaY;
+        let next = Math.round(cur * Math.exp(-dy * 0.002));
+        if (next === cur && dy) next = cur + (dy < 0 ? 1 : -1);
+        setZoom(next, {
+          x: e.clientX - r.left,
+          y: e.clientY - r.top
+        });
+      }
+    }
+  }
+}, { capture: true, passive: false });
 
 $(document).on('keydown', function(e) {
   // Popup terbuka: hanya Esc / ? / Tab yang aktif
@@ -56,6 +98,10 @@ $(document).on('keydown', function(e) {
     return;
   }
   if (e.key === 'Escape') {
+    if (window.CropUI && window.CropUI.isOpen()) {
+      $('#crop-btn-cancel').trigger('click');
+      return;
+    }
     if (drag && drag.started) {
       endDrag(false);
       return;
@@ -70,6 +116,12 @@ $(document).on('keydown', function(e) {
     }
     pickTool('select');
     return;
+  }
+  if (e.key === 'Enter') {
+    if (window.CropUI && window.CropUI.isOpen()) {
+      $('#crop-btn-apply').trigger('click');
+      return;
+    }
   }
 
   if ((e.key === 'Delete' || e.key === 'Backspace') && !ctrl && !e.altKey) {
@@ -108,6 +160,18 @@ $(document).on('keydown', function(e) {
         if (window.Clipboard) {
           e.preventDefault();
           window.Clipboard.duplicate();
+        }
+        return;
+      case 'KeyG':
+      case 'KeyB':
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.Grouping) {
+          if (e.shiftKey) {
+            window.Grouping.ungroup();
+          } else {
+            window.Grouping.group();
+          }
         }
         return;
       case 'KeyF':
@@ -180,6 +244,47 @@ $(document).on('keydown', function(e) {
     stepZoom(-1);
     return;
   }
+  // Nudge / Menggeser objek yang sedang diseleksi dengan tombol panah (Arrow keys)
+  if (State.selectedIds && State.selectedIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    e.preventDefault();
+    const step = e.shiftKey ? 10 : 1;
+    let dx = 0, dy = 0;
+    if (e.key === 'ArrowUp') dy = -step;
+    else if (e.key === 'ArrowDown') dy = step;
+    else if (e.key === 'ArrowLeft') dx = -step;
+    else if (e.key === 'ArrowRight') dx = step;
+
+    if (typeof Geo !== 'undefined' && typeof Geo.selection === 'function') {
+      const sel = Geo.selection();
+      sel.forEach(f => {
+        if (f.obj && f.obj.transform) {
+          f.obj.transform.x = Math.round((f.obj.transform.x + dx) * 100) / 100;
+          f.obj.transform.y = Math.round((f.obj.transform.y + dy) * 100) / 100;
+        }
+      });
+    } else {
+      State.selectedIds.forEach(id => {
+        const found = typeof findObjectWithParent === 'function' ? findObjectWithParent(id) : null;
+        if (found && found.obj && found.obj.transform) {
+          found.obj.transform.x = Math.round((found.obj.transform.x + dx) * 100) / 100;
+          found.obj.transform.y = Math.round((found.obj.transform.y + dy) * 100) / 100;
+        }
+      });
+    }
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+
+    // Debounce pencatatan riwayat agar tidak merekam setiap 1px secara berulang saat tombol panah ditekan terus
+    clearTimeout(window._nudgeTimer);
+    window._nudgeTimer = setTimeout(() => {
+      if (window.History && typeof window.History.record === 'function') {
+        window.History.record();
+      }
+    }, 300);
+    return;
+  }
+
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     stepLayer(1);

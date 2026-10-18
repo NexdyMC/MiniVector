@@ -22,6 +22,11 @@ const newObjectId = () => State.nextId++;
 const serializeProject = () => ({
     schemaVersion: SCHEMA_VERSION,
     nextId: State.nextId,
+    camera: {
+        panX: Math.round(State.panX * 100) / 100,
+        panY: Math.round(State.panY * 100) / 100,
+        zoom: Math.round((typeof getZoom === 'function' ? getZoom() : State.zoom * 100))
+    },
     objects: State.objects
 });
 const migrateProject = data => {
@@ -39,12 +44,38 @@ const loadProject = data => {
     State.nextId = Math.max(1, Math.floor(Number(p.nextId)) || 1, maxId + 1);
     State.drawing = null;
     State.selectedIds = State.selectedIds.filter(id => State.objects.some(o => o.id === id));
+
+    // Muat posisi camera (panX, panY, zoom) jika tersimpan di JSON proyek
+    if (p.camera && typeof p.camera === 'object') {
+        if (typeof p.camera.panX === 'number') State.panX = p.camera.panX;
+        if (typeof p.camera.panY === 'number') State.panY = p.camera.panY;
+        if (typeof p.camera.zoom === 'number') {
+            State.zoom = p.camera.zoom / 100;
+            if (typeof setZoom === 'function') {
+                setZoom(p.camera.zoom);
+            }
+        }
+    }
+
     $(document).trigger('project:load');
     return true;
 };
 
-/* ---------- localStorage ---------- */
+/* ---------- localStorage & Camera Save Modes ---------- */
+const STORAGE_KEY_CAMERA_MODE = 'minivector:camera_save_mode'; // 'auto' | 'manual'
+let cameraSaveMode = localStorage.getItem(STORAGE_KEY_CAMERA_MODE) || 'auto';
+
+window.getCameraSaveMode = () => cameraSaveMode;
+window.setCameraSaveMode = mode => {
+    cameraSaveMode = (mode === 'manual') ? 'manual' : 'auto';
+    try {
+        localStorage.setItem(STORAGE_KEY_CAMERA_MODE, cameraSaveMode);
+    } catch (_) {}
+};
+
 let saveTimer = null;
+let cameraTimer = null;
+
 const saveProject = () => {
     saveTimer = null;
     try {
@@ -55,10 +86,24 @@ const saveProject = () => {
         return false;
     }
 };
+
 const scheduleSave = () => {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveProject, 300);
 };
+
+// Auto-save khusus posisi kamera (dipicu saat pan atau zoom berubah)
+const onCameraChange = () => {
+    if (cameraSaveMode === 'auto') {
+        clearTimeout(cameraTimer);
+        cameraTimer = setTimeout(saveProject, 250);
+    }
+};
+
+window.saveCameraNow = () => {
+    saveProject();
+};
+
 const loadFromStorage = () => {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -68,10 +113,14 @@ const loadFromStorage = () => {
         return false;
     }
 };
+
 $(document).on('object:add object:change object:remove', scheduleSave);
+$(document).on('camera:change', onCameraChange);
+
 $(window).on('pagehide', () => {
-    if (saveTimer) {
+    if (saveTimer || cameraTimer) {
         clearTimeout(saveTimer);
+        clearTimeout(cameraTimer);
         saveProject();
     }
 });

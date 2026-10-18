@@ -22,9 +22,20 @@ const History = (() => {
     $('#btn-redo').prop('disabled', !canRedo).attr('aria-disabled', !canRedo);
   };
 
+  let isPointerDown = false;
+  window.addEventListener('pointerdown', () => { isPointerDown = true; }, { capture: true });
+  window.addEventListener('pointerup', () => {
+    if (isPointerDown) {
+      isPointerDown = false;
+      // Catat state saat mouse baru saja dilepas jika ada perubahan
+      setTimeout(record, 10);
+    }
+  }, { capture: true });
+
   // Mencatat kejadian baru ke tumpukan undo
   const record = () => {
-    if (isExecuting || State.drawing) return;
+    // Jangan rekam jika sedang mengeksekusi undo/redo, sedang drag menggambar, atau pointer mouse masih ditekan
+    if (isExecuting || State.drawing || isPointerDown) return;
     const current = snapshot();
 
     // Hindari duplikasi jika tidak ada perubahan objek sama sekali

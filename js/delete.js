@@ -42,11 +42,22 @@ $(function() {
     '.mv-ctx-item kbd{font:inherit;opacity:.6}'
   ).appendTo('head');
   const $menu = $('<div class="mv-ctx-menu" role="menu" aria-label="Menu elemen" hidden>' +
-    '<button type="button" class="mv-ctx-item" role="menuitem"><span class="mv-ctx-label">Hapus</span><kbd>Backspace</kbd></button></div>').appendTo('body');
+    '<button type="button" class="mv-ctx-item" data-act="group" role="menuitem"><span class="mv-ctx-label">Group Selection</span><kbd>Ctrl+G</kbd></button>' +
+    '<button type="button" class="mv-ctx-item" data-act="ungroup" role="menuitem"><span class="mv-ctx-label">Ungroup</span><kbd>Ctrl+Shift+G</kbd></button>' +
+    '<div class="mv-ctx-sep" style="height:1px;background:#444;margin:4px 0"></div>' +
+    '<button type="button" class="mv-ctx-item" data-act="delete" role="menuitem"><span class="mv-ctx-label mv-del-label">Hapus</span><kbd>Backspace</kbd></button></div>').appendTo('body');
   const close = () => $menu.prop('hidden', true);
   const openAt = (x, y) => {
-    const n = (State.selectedIds || []).length;
-    $menu.find('.mv-ctx-label').text(n > 1 ? `Hapus (${n})` : 'Hapus');
+    const sel = typeof Geo !== 'undefined' ? Geo.selection() : [];
+    const n = sel.length;
+    $menu.find('.mv-del-label').text(n > 1 ? `Hapus (${n})` : 'Hapus');
+
+    // Cek apakah ada objek group yang terseleksi
+    const hasGroup = sel.some(f => f.obj && f.obj.type === 'group');
+    $menu.find('[data-act="group"]').toggle(n >= 2);
+    $menu.find('[data-act="ungroup"]').toggle(hasGroup);
+    $menu.find('.mv-ctx-sep').toggle(n >= 2 || hasGroup);
+
     $menu.css({ left: 0, top: 0 }).prop('hidden', false);
     const w = $menu.outerWidth(),
       h = $menu.outerHeight();
@@ -54,7 +65,7 @@ $(function() {
       left: Math.max(4, Math.min(x, window.innerWidth - w - 4)),
       top: Math.max(4, Math.min(y, window.innerHeight - h - 4))
     });
-    $menu.find('.mv-ctx-item')[0].focus();
+    $menu.find('.mv-ctx-item:visible').first().focus();
   };
   const selectOnly = id => {
     State.selectedIds = [id];
@@ -106,9 +117,16 @@ $(function() {
     ensureSelected(String($(this).data('id')));
     openAt(e.clientX, e.clientY);
   });
-  $menu.on('click', '.mv-ctx-item', () => {
+  $menu.on('click', '.mv-ctx-item', function() {
+    const act = $(this).data('act');
     close();
-    deleteSelected();
+    if (act === 'group') {
+      if (window.Grouping) window.Grouping.group();
+    } else if (act === 'ungroup') {
+      if (window.Grouping) window.Grouping.ungroup();
+    } else {
+      deleteSelected();
+    }
   });
   $menu.on('keydown', e => {
     if (e.key === 'Tab') close();

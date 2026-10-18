@@ -38,15 +38,143 @@ $('.modal').on('mousedown', function (e) {
     if (e.target === this && downOnBackdrop) closeModal();
   });
 
-/* ---- Image: 6 kotak dummy ---- */
-$('#image-grid').html(Array.from({
-  length: 6
-}, (_, i) =>
-  `<button class="img-cell" aria-label="Image ${i + 1}">${ico('image')}<span>Image ${i + 1}</span></button>`).join(''));
-$('#image-grid').on('click', '.img-cell', function () {
-  $('#image-grid .img-cell').removeClass('selected');
-  $(this).addClass('selected');
+/* ---- Image: 9 Slot Panel Manager (PNG, JPG, WEBP, SVG) ---- */
+const STORAGE_KEY_SLOTS = 'minivector_image_slots_v1';
+let imageSlots = [];
+
+const loadImageSlots = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SLOTS);
+    imageSlots = raw ? JSON.parse(raw) : [];
+  } catch (_) {
+    imageSlots = [];
+  }
+  // Pastikan tepat 9 slot
+  while (imageSlots.length < 9) {
+    imageSlots.push(null);
+  }
+  if (imageSlots.length > 9) {
+    imageSlots = imageSlots.slice(0, 9);
+  }
+};
+
+const saveImageSlots = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY_SLOTS, JSON.stringify(imageSlots));
+  } catch (err) {
+    console.warn('Storage quota exceeded for image slots:', err);
+  }
+};
+
+const renderImageGrid = () => {
+  const html = imageSlots.map((slot, i) => {
+    if (slot && slot.dataUrl) {
+      return `
+        <div class="img-cell has-image" data-slot="${i}" role="button" tabindex="0" title="Klik untuk tempatkan ke canvas: ${esc(slot.name || 'Image ' + (i + 1))}">
+          <button class="img-del-btn" data-del-slot="${i}" title="Hapus gambar dari slot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <img src="${slot.dataUrl}" alt="${esc(slot.name || '')}">
+        </div>
+      `;
+    } else {
+      return `
+        <button class="img-cell" data-slot="${i}" aria-label="Upload gambar ke Slot ${i + 1}">
+          ${ico('image')}
+          <span class="img-cell-label">Image ${i + 1}</span>
+        </button>
+      `;
+    }
+  }).join('');
+  $('#image-grid').html(html);
+};
+
+loadImageSlots();
+renderImageGrid();
+
+let targetUploadSlot = -1;
+
+$('#image-grid').on('click', '.img-cell', function (e) {
+  // Jangan proses jika tombol delete yang diklik
+  if ($(e.target).closest('.img-del-btn').length > 0) return;
+
+  const slotIdx = parseInt($(this).data('slot'), 10);
+  const slotData = imageSlots[slotIdx];
+
+  if (!slotData || !slotData.dataUrl) {
+    // Slot masih kosong -> buka file picker
+    targetUploadSlot = slotIdx;
+    $('#image-slot-file-input').val('').trigger('click');
+  } else {
+    // Slot sudah terisi -> pilih gambar ini untuk ditaruh ke canvas
+    $('#image-grid .img-cell').removeClass('selected');
+    $(this).addClass('selected');
+
+    if (window.ImageTool && typeof window.ImageTool.prepareImage === 'function') {
+      window.ImageTool.prepareImage(slotData.dataUrl, slotData.name || `Image ${slotIdx + 1}`);
+    }
+    closeModal();
+    if (typeof window.pickTool === 'function') {
+      window.pickTool('image');
+    }
+  }
 });
+
+// Hapus gambar dari slot
+$('#image-grid').on('click', '.img-del-btn', function (e) {
+  e.stopPropagation();
+  e.preventDefault();
+  const slotIdx = parseInt($(this).data('del-slot'), 10);
+  if (slotIdx >= 0 && slotIdx < imageSlots.length) {
+    imageSlots[slotIdx] = null;
+    saveImageSlots();
+    renderImageGrid();
+  }
+});
+
+// Baca file yang dipilih dari file input
+$('#image-slot-file-input').on('change', function () {
+  const file = this.files && this.files[0];
+  if (!file || targetUploadSlot < 0) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const dataUrl = e.target.result;
+    imageSlots[targetUploadSlot] = {
+      name: file.name || `Image ${targetUploadSlot + 1}`,
+      type: file.type,
+      size: file.size,
+      dataUrl: dataUrl
+    };
+    saveImageSlots();
+    renderImageGrid();
+    targetUploadSlot = -1;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Helper publik untuk menyimpan gambar (misal dari paste / drop) ke slot kosong pertama
+window.addImageToSlots = (dataUrl, name = 'Image') => {
+  if (!dataUrl) return -1;
+  // Cari slot kosong pertama
+  let emptyIdx = imageSlots.findIndex(s => !s || !s.dataUrl);
+  if (emptyIdx === -1) {
+    // Jika semua 9 slot penuh, ganti slot pertama (FIFO)
+    emptyIdx = 0;
+  }
+  imageSlots[emptyIdx] = {
+    name: name || `Image ${emptyIdx + 1}`,
+    type: 'image/png',
+    size: 0,
+    dataUrl: dataUrl
+  };
+  saveImageSlots();
+  renderImageGrid();
+  return emptyIdx;
+};
 
 /* ---- Import (dummy) ---- */
 const ACCEPT = /\.(json|svg|png|jpe?g|fig)$/i; // [EDIT] format yang dianggap lolos
@@ -97,8 +225,6 @@ $('#btn-import-confirm').on('click', function () {
   $(this).prop('hidden', true);
   $('#btn-import-done').prop('hidden', false).trigger('focus');
 });
-// cegah browser membuka file bila dilepas di luar dropzone
-$(window).on('dragover drop', e => e.preventDefault());
 
 /* ---- Settings modal initialization & synchronization ---- */
 const initSettingsModal = () => {
@@ -108,6 +234,9 @@ const initSettingsModal = () => {
   }
   if (window.Padding) {
     $('#setting-padding-enable').prop('checked', !!window.Padding.enabled);
+  }
+  if (typeof window.getCameraSaveMode === 'function') {
+    $('#setting-camera-autosave').prop('checked', window.getCameraSaveMode() === 'auto');
   }
 };
 
@@ -123,6 +252,13 @@ $(document).on('input change', '#setting-magnet-threshold', function () {
 
 $(document).on('change', '#setting-padding-enable', function () {
   if (window.Padding) window.Padding.setEnabled(this.checked);
+});
+
+$(document).on('change', '#setting-camera-autosave', function () {
+  const mode = this.checked ? 'auto' : 'manual';
+  if (typeof window.setCameraSaveMode === 'function') {
+    window.setCameraSaveMode(mode);
+  }
 });
 
 // Run initial sync on document ready

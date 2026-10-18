@@ -41,4 +41,6 @@ $zoom.on('change', function () {
       stepZoom(-1);
     }
   });
-setZoom(100);
+
+const initZoomVal = (typeof State !== 'undefined' && State.zoom) ? Math.round(State.zoom * 100) : 100;
+setZoom(initZoomVal);

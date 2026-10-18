@@ -46,7 +46,31 @@ const Clipboard = (() => {
   };
 
   // 2. PASTE (Ctrl+V)
-  const paste = () => {
+  const paste = async () => {
+    // 2a. Cek apakah ada gambar di OS clipboard (Async Clipboard API)
+    if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+      try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find(t => t.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const reader = new FileReader();
+            reader.onload = e => {
+              if (window.ImageTool && typeof window.ImageTool.placeImageAt === 'function') {
+                window.ImageTool.placeImageAt(e.target.result, 'Pasted Image');
+              }
+            };
+            reader.readAsDataURL(blob);
+            return true;
+          }
+        }
+      } catch (_) {
+        // Izin clipboard async diblokir atau tidak didukung -> lanjut ke fallback buffer
+      }
+    }
+
+    // 2b. Fallback ke internal buffer objek MiniVector
     if (!buffer || !buffer.length) return false;
 
     pasteCount++;
@@ -109,5 +133,35 @@ const Clipboard = (() => {
     hasBuffer: () => buffer.length > 0
   };
 })();
+
+// Listener paste event bawaan browser (Ctrl+V) untuk menangkap image blob secara langsung
+window.addEventListener('paste', e => {
+  // Jika fokus sedang di input teks atau textarea biasa, jangan tangkap paste kecuali memang gambar
+  const activeEl = document.activeElement;
+  const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.indexOf('image') !== -1) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file) continue;
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        if (window.ImageTool && typeof window.ImageTool.placeImageAt === 'function') {
+          window.ImageTool.placeImageAt(ev.target.result, file.name || 'Pasted Image');
+        }
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+  }
+
+  // Jika bukan input dan tidak ada image di clipboard, shortcut.js akan memproses buffer MiniVector
+});
 
 window.Clipboard = Clipboard;

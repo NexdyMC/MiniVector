@@ -220,6 +220,136 @@
         <!-- 3. CENTER -->
         <main id="workspace" class="bg-bg">
           <canvas id="canvas" class="absolute inset-0 block w-full h-full"></canvas>
+          <div id="drag-overlay">
+            <div class="drag-overlay-card">
+              <svg class="ico"><use href="#i-image" /></svg>
+              <span>Drop image to place on canvas</span>
+            </div>
+          </div>
+
+          <!-- CONTEXT MENU (RIGHT CLICK FIGMA STYLE) -->
+          <div id="context-menu" class="context-menu" style="display:none;">
+            <div class="ctx-item" data-action="rename">
+              <i class="fa-solid fa-pen-to-square ctx-ico"></i>
+              <span class="ctx-label">Rename</span>
+              <span class="ctx-kbd">Ctrl+R</span>
+            </div>
+            <div class="ctx-item" data-action="crop">
+              <i class="fa-solid fa-crop-simple ctx-ico"></i>
+              <span class="ctx-label">Crop Image</span>
+            </div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" data-action="copy">
+              <i class="fa-regular fa-copy ctx-ico"></i>
+              <span class="ctx-label">Copy</span>
+              <span class="ctx-kbd">Ctrl+C</span>
+            </div>
+            <div class="ctx-item" data-action="paste">
+              <i class="fa-regular fa-paste ctx-ico"></i>
+              <span class="ctx-label">Paste</span>
+              <span class="ctx-kbd">Ctrl+V</span>
+            </div>
+            <div class="ctx-item" data-action="duplicate">
+              <i class="fa-regular fa-clone ctx-ico"></i>
+              <span class="ctx-label">Duplicate</span>
+              <span class="ctx-kbd">Ctrl+D</span>
+            </div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item ctx-danger" data-action="delete">
+              <i class="fa-regular fa-trash-can ctx-ico"></i>
+              <span class="ctx-label">Delete</span>
+              <span class="ctx-kbd">Del</span>
+            </div>
+          </div>
+
+          <!-- FLOATING CROP TOOLBAR (FIGMA STYLE) -->
+          <div id="crop-toolbar" class="crop-toolbar" style="display:none;">
+            <div class="crop-tb-label">Crop</div>
+            <div class="crop-tb-sep"></div>
+            
+            <!-- Scale Slider -->
+            <div class="crop-slider-wrap" title="Scale image">
+              <input type="range" id="crop-scale-slider" class="crop-scale-slider" min="100" max="400" value="100" step="1">
+            </div>
+
+            <!-- Ratio Dropdown Toggle -->
+            <div class="crop-dropdown-wrap">
+              <button id="crop-btn-ratio" class="crop-tb-btn crop-btn-dropdown" title="Aspect Ratio">
+                <svg class="ico-crop" viewBox="0 0 16 16">
+                  <path d="M2 3h12v10H2V3zm1 1v8h10V4H3z" fill="currentColor"/>
+                  <path d="M7 4h2v8H7V4z" fill="currentColor"/>
+                </svg>
+                <i class="fa-solid fa-chevron-down crop-down-icon"></i>
+              </button>
+
+              <!-- Aspect Ratio Popover Menu -->
+              <div id="crop-ratio-menu" class="crop-ratio-menu" style="display:none;">
+                <div class="crop-menu-item active" data-ratio="custom">
+                  <svg class="ico-menu" viewBox="0 0 16 16"><path d="M2 3h12v10H2V3zm1 1v8h10V4H3z" fill="currentColor"/><path d="M7 4h2v8H7V4z" fill="currentColor"/></svg>
+                  <span class="crop-menu-text">Custom</span>
+                </div>
+                <div class="crop-menu-sep"></div>
+                <div class="crop-menu-item" data-ratio="original">
+                  <svg class="ico-menu" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="7" r="1.2" fill="currentColor"/><path d="m3 12 4-3 3 2 3-3" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                  <span class="crop-menu-text">Original</span>
+                </div>
+                <div class="crop-menu-item" data-ratio="1:1">
+                  <i class="fa-solid fa-check crop-check-icon"></i>
+                  <svg class="ico-menu" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                  <span class="crop-menu-text">Square (1:1)</span>
+                </div>
+                <div class="crop-menu-item" data-ratio="circle">
+                  <svg class="ico-menu" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                  <span class="crop-menu-text">Circle (1:1)</span>
+                </div>
+                
+                <!-- Landscape with Submenu -->
+                <div class="crop-menu-item has-sub" data-ratio-group="landscape">
+                  <svg class="ico-menu" viewBox="0 0 16 16"><rect x="2" y="4.5" width="12" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+                  <span class="crop-menu-text">Landscape</span>
+                  <i class="fa-solid fa-chevron-right crop-sub-arrow"></i>
+                  <div class="crop-submenu">
+                    <div class="crop-menu-item" data-ratio="16:9"><span class="crop-menu-text">16:9 (Widescreen)</span></div>
+                    <div class="crop-menu-item" data-ratio="4:3"><span class="crop-menu-text">4:3 (Standard)</span></div>
+                    <div class="crop-menu-item" data-ratio="3:2"><span class="crop-menu-text">3:2 (Photo)</span></div>
+                    <div class="crop-menu-item" data-ratio="2:1"><span class="crop-menu-text">2:1 (Banner)</span></div>
+                  </div>
+                </div>
+
+                <!-- Portrait with Submenu -->
+                <div class="crop-menu-item has-sub" data-ratio-group="portrait">
+                  <svg class="ico-menu" viewBox="0 0 16 16"><rect x="4.5" y="2" width="7" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+                  <span class="crop-menu-text">Portrait</span>
+                  <i class="fa-solid fa-chevron-right crop-sub-arrow"></i>
+                  <div class="crop-submenu">
+                    <div class="crop-menu-item" data-ratio="9:16"><span class="crop-menu-text">9:16 (Story/Reels)</span></div>
+                    <div class="crop-menu-item" data-ratio="3:4"><span class="crop-menu-text">3:4 (Feed)</span></div>
+                    <div class="crop-menu-item" data-ratio="2:3"><span class="crop-menu-text">2:3 (Photo)</span></div>
+                    <div class="crop-menu-item" data-ratio="4:5"><span class="crop-menu-text">4:5 (Post)</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resize to Fit -->
+            <button id="crop-btn-fit" class="crop-tb-btn" title="Resize to Fit (Reset Crop)">
+              <svg class="ico-crop" viewBox="0 0 16 16">
+                <!-- 4 arrows pointing inward -->
+                <path d="M2 5h3V2M2 5l3-3M14 5h-3V2M14 5l-3-3M2 11h3v3M2 11l3 3M14 11h-3v3M14 11l-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <div class="crop-tb-sep"></div>
+
+            <!-- Cancel Button -->
+            <button id="crop-btn-cancel" class="crop-btn-text" title="Cancel Crop (Esc)">Cancel</button>
+
+            <!-- Confirm / Apply Button -->
+            <button id="crop-btn-apply" class="crop-btn-check" title="Apply Crop (Enter)">
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </div>
+
           <div id="empty-state"><span>Create a frame or select a tool to start designing</span></div>
           <nav id="toolbar" aria-label="Tools"></nav>
         </main>
@@ -413,48 +543,87 @@
               </section>
 
               <!-- STROKE (accordion) -->
-              <section class="fg-sec fg-acc">
+              <section class="fg-sec fg-acc" id="sec-stroke-wrap">
                 <div class="fg-head">
-                  <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-stroke">Stroke</button>
+                  <button class="fg-acc-toggle" aria-expanded="true" aria-controls="sec-stroke">Stroke</button>
                   <div class="fg-actions">
-                    <button class="fg-ib fg-add" title="Tambah stroke"><i class="fa-solid fa-plus"></i></button>
+                    <button class="fg-ib" data-act="stroke-add" title="Tambah stroke"><i class="fa-solid fa-plus"></i></button>
                     <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-stroke"
                       aria-label="Buka / tutup Stroke"><i class="fa-solid fa-chevron-right"></i></button>
                   </div>
                 </div>
-                <div class="fg-body" id="sec-stroke" hidden>
-                  <div class="fg-grid fill">
-                    <div class="fg-color"><input type="color" id="prop-stroke" value="#000000"><input class="hex"
-                        id="prop-stroke-hex" value="000000" maxlength="6" spellcheck="false"><input class="op"
-                        id="prop-stroke-opacity" type="number" value="100"><span class="pc">%</span></div>
-                    <button class="fg-ib" title="Tampilkan / sembunyikan"><i class="fa-regular fa-eye"></i></button>
-                    <button class="fg-ib" title="Hapus"><i class="fa-solid fa-minus"></i></button>
-                  </div>
-                  <div class="fg-grid" style="margin-top:8px">
-                    <label class="fg-in"><i class="fa-solid fa-border-all"></i><input id="prop-strokewidth"
-                        type="number" value="1"></label>
-                    <label class="fg-in"><i class="fa-regular fa-square"></i><input type="text" value="Inside"
-                        readonly></label>
+                <div class="fg-body" id="sec-stroke">
+                  <div id="stroke-list"></div>
+                  <div id="stroke-controls-row" class="fg-grid" style="margin-top:8px; display:none; grid-template-columns: 1fr 1fr var(--ctl); gap: 6px; align-items: center;">
+                    <label class="fg-in" title="Stroke Weight / Ketebalan Garis" style="min-width:0;">
+                      <i class="fa-solid fa-border-all"></i>
+                      <input id="prop-strokewidth" type="number" value="1" min="0" max="256" step="1">
+                    </label>
+                    <label class="fg-in" title="Stroke Position (Inside / Center / Outside)" style="min-width:0; padding: 0 4px 0 8px;">
+                      <i class="fa-regular fa-square" style="margin-right:2px;"></i>
+                      <select id="prop-strokealign" class="fg-select" style="width:100%; cursor:pointer;">
+                        <option value="inside">Inside</option>
+                        <option value="center">Center</option>
+                        <option value="outside">Outside</option>
+                      </select>
+                    </label>
+                    <button type="button" class="fg-ib" id="btn-stroke-advanced" title="Advanced Stroke Settings (Dashes, Cap, Join)" style="background:var(--c-input); border-radius:6px;">
+                      <i class="fa-solid fa-ellipsis"></i>
+                    </button>
                   </div>
                 </div>
               </section>
 
               <!-- EFFECTS (accordion) -->
-              <section class="fg-sec fg-acc">
+              <section class="fg-sec fg-acc" id="sec-effects-wrap">
                 <div class="fg-head">
-                  <button class="fg-acc-toggle" aria-expanded="false" aria-controls="sec-effects">Effects</button>
+                  <button class="fg-acc-toggle" aria-expanded="true" aria-controls="sec-effects">Effects</button>
                   <div class="fg-actions">
-                    <button class="fg-ib fg-add" title="Tambah efek"><i class="fa-solid fa-plus"></i></button>
+                    <button class="fg-ib" id="btn-fx-add" data-act="fx-add" title="Tambah efek"><i class="fa-solid fa-plus"></i></button>
                     <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-effects"
                       aria-label="Buka / tutup Effects"><i class="fa-solid fa-chevron-right"></i></button>
                   </div>
                 </div>
-                <div class="fg-body" id="sec-effects" hidden>
-                  <div class="fg-grid">
-                    <label class="fg-in"><i class="fa-solid fa-droplet"></i><input id="prop-blur" type="number"
-                        value="0"></label>
-                    <label class="fg-in"><i class="fa-regular fa-clone"></i><input id="prop-shadow" type="number"
-                        value="0"></label>
+                <div class="fg-body" id="sec-effects">
+                  <div id="effects-list"></div>
+                </div>
+              </section>
+
+              <!-- FRAME PRESETS (accordion) -->
+              <section class="fg-sec fg-acc" id="sec-frame-presets-wrap">
+                <div class="fg-head">
+                  <button class="fg-acc-toggle" aria-expanded="true" aria-controls="sec-frame-presets">Frame Presets</button>
+                  <div class="fg-actions">
+                    <button id="btn-flip-orientation" class="fg-ib" title="Tukar Orientasi (Portrait / Landscape)" style="display:flex;align-items:center;justify-content:center;">
+                      <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                    <button class="fg-ib fg-chev fg-acc-toggle" style="flex:none" aria-controls="sec-frame-presets"
+                      aria-label="Buka / tutup Frame Presets"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                </div>
+                <div class="fg-body" id="sec-frame-presets">
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <!-- Dropdown Kategori & Preset Ukuran -->
+                    <label class="fg-in" style="width:100%;">
+                      <select id="prop-frame-preset-select" class="fg-select" style="flex:1;background:transparent;border:none;color:inherit;outline:none;font:inherit;cursor:pointer;width:100%;">
+                        <option value="" disabled selected>Pilih Preset Ukuran...</option>
+                        <optgroup label="📱 Phone / Mobile" id="preset-group-mobile"></optgroup>
+                        <optgroup label="📱 Tablet" id="preset-group-tablet"></optgroup>
+                        <optgroup label="💻 Laptop" id="preset-group-laptop"></optgroup>
+                        <optgroup label="🖥️ Desktop / Monitor" id="preset-group-desktop"></optgroup>
+                        <optgroup label="📄 Paper (Kertas)" id="preset-group-paper"></optgroup>
+                        <optgroup label="📐 Aspect Ratio" id="preset-group-ratio"></optgroup>
+                      </select>
+                    </label>
+
+                    <!-- Info Ukuran & Switch Cepat Portrait / Landscape -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--c-mute);padding:0 2px;">
+                      <span id="frame-preset-current-info">Ukuran: -</span>
+                      <div class="fg-seg" id="frame-orientation-seg" style="height:24px;">
+                        <button class="fg-ib on" data-orient="portrait" title="Portrait" style="padding:0 8px;font-size:11px;">P</button>
+                        <button class="fg-ib" data-orient="landscape" title="Landscape" style="padding:0 8px;font-size:11px;">L</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -571,6 +740,23 @@
               <input type="checkbox" id="setting-padding-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
             </label>
           </div>
+
+          <div class="field-label" style="margin-top: 20px; margin-bottom: 8px;">Camera & Viewport</div>
+          <p class="field-desc">Atur bagaimana posisi layar (pan & zoom) disimpan.</p>
+
+          <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 12px;">
+            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+              <div>
+                <strong style="display: block; font-size: var(--fs-body);">Auto-Save Camera</strong>
+                <small style="color: var(--c-mute);">Otomatis simpan posisi layar & zoom saat digeser/di-zoom</small>
+              </div>
+              <input type="checkbox" id="setting-camera-autosave" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+            </label>
+
+            <div style="font-size: 11px; color: var(--c-mute); line-height: 1.4; padding: 8px 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--c-line); border-radius: 6px;">
+              Jika <strong>Auto-Save</strong> dinonaktifkan, posisi kamera hanya akan disimpan saat Anda menekan tombol Save manual atau shortcut <strong>Ctrl + S</strong>.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -585,8 +771,9 @@
         </div>
         <div class="modal-body">
           <div class="img-grid" id="image-grid">
-            <!-- [EDIT] 6 kotak dummy; ganti dengan gambar asli -->
+            <!-- 9 Slot Gambar dinamis -->
           </div>
+          <input type="file" id="image-slot-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
         </div>
       </div>
     </div>
@@ -674,8 +861,12 @@
           </div>
           <h3 class="help-h3">File &amp; edit</h3>
           <div class="help-grid">
+            <div class="help-row"><span>Rename</span><span><kbd>Ctrl</kbd>+<kbd>R</kbd></span></div>
             <div class="help-row"><span>Undo</span><span><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></div>
             <div class="help-row"><span>Redo</span><span><kbd>Ctrl</kbd>+<kbd>Y</kbd></span></div>
+            <div class="help-row"><span>Duplicate</span><span><kbd>Ctrl</kbd>+<kbd>D</kbd></span></div>
+            <div class="help-row"><span>Group Selection</span><span><kbd>Ctrl</kbd>+<kbd>B</kbd></span></div>
+            <div class="help-row"><span>Ungroup</span><span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span></div>
             <div class="help-row"><span>Save</span><span><kbd>Ctrl</kbd>+<kbd>S</kbd></span></div>
             <div class="help-row"><span>File baru</span><span><kbd>Alt</kbd>+<kbd>N</kbd></span></div>
             <div class="help-row"><span>Image</span><span><kbd>Alt</kbd>+<kbd>D</kbd></span></div>
@@ -714,6 +905,7 @@
     <script src="js/paint.js"></script>
     <script src="js/geometry.js"></script>
     <script src="js/clipboard.js"></script>
+    <script src="js/group.js"></script>
     <script src="js/property.js"></script>
     <script src="js/layers.js"></script>
     <script src="js/popup.js"></script>
@@ -725,6 +917,8 @@
     <script src="js/delete.js"></script>
     <script src="js/undo.js"></script>
     <script src="js/redo.js"></script>
+    <script src="js/crop.js"></script>
+    <script src="js/context-menu.js"></script>
 
     <!-- tools -->
     <script src="js/tools/cursor.js"></script>
@@ -737,6 +931,7 @@
     <script src="js/tools/star.js"></script>
     <script src="js/tools/pen.js"></script>
     <script src="js/tools/text.js"></script>
+    <script src="js/tools/image.js"></script>
 
     <!-- panel design -->
     <script src="js/design/size.js"></script>
@@ -744,7 +939,10 @@
     <script src="js/design/apperance.js"></script>
     <script src="js/design/colorpicker.js"></script>
     <script src="js/design/fill.js"></script>
+    <script src="js/design/stroke.js"></script>
+    <script src="js/design/effects.js"></script>
     <script src="js/design/typography.js"></script>
+    <script src="js/design/frame-presets.js"></script>
 
     <!-- main app init -->
     <script src="js/main.js"></script>
@@ -775,8 +973,16 @@
           `<button class="tool${t[0] === 'select' ? ' active' : ''}" data-tool="${t[0]}" title="${t[2]}" aria-label="${t[2]}">${ico(t[1])}</button>` :
           '<span class="tool-sep"></span>').join(''));
         $('#toolbar').on('click', '.tool', function () {
+          const toolName = String($(this).data('tool'));
           $('#toolbar .tool').removeClass('active');
           $(this).addClass('active');
+
+          // Jika klik tool 'image', buka modal Image panel agar user bisa memilih/mengunggah gambar
+          if (toolName === 'image' && (!window.ImageTool || !window.ImageTool.hasPendingImage())) {
+            if (typeof openModal === 'function') {
+              openModal('image');
+            }
+          }
         });
 
         /* ================= DRAWER (< 900px) ================= */

@@ -31,12 +31,34 @@ const Geo = (() => {
     return found.filter(f => !covered.has(f.obj.id));
   };
   // kotak pembatas dalam koordinat dunia
-  const bounds = f => ({
-    x: f.origin.x + f.obj.transform.x,
-    y: f.origin.y + f.obj.transform.y,
-    width: f.obj.transform.width,
-    height: f.obj.transform.height
-  });
+  const bounds = f => {
+    const o = f.obj;
+    if (o.type === 'group' && Array.isArray(o.children) && o.children.length > 0) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const baseAbsX = f.origin.x + o.transform.x;
+      const baseAbsY = f.origin.y + o.transform.y;
+      o.children.forEach(c => {
+        if (!c.transform) return;
+        const cX = baseAbsX + c.transform.x;
+        const cY = baseAbsY + c.transform.y;
+        const cW = c.transform.width;
+        const cH = c.transform.height;
+        if (cX < minX) minX = cX;
+        if (cY < minY) minY = cY;
+        if (cX + cW > maxX) maxX = cX + cW;
+        if (cY + cH > maxY) maxY = cY + cH;
+      });
+      if (minX !== Infinity) {
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+      }
+    }
+    return {
+      x: f.origin.x + o.transform.x,
+      y: f.origin.y + o.transform.y,
+      width: o.transform.width,
+      height: o.transform.height
+    };
+  };
   const union = list => {
     if (!list.length) return null;
     const bs = list.map(bounds);

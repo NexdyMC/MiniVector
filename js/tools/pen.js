@@ -69,64 +69,74 @@
         return { x: minX, y: minY, width: w, height: h };
     };
 
+    let isFinishing = false;
+
     /* -------------------------------------------------------------
      * Finalisasi Pembuatan Path Baru
      * ------------------------------------------------------------- */
     const finishPath = (closed = false) => {
-        if (activeNodes.length >= 2) {
-            const b = computeBounds(activeNodes);
-            // Normalisasikan koordinat nodes agar relatif terhadap (b.x, b.y)
-            const localNodes = activeNodes.map(n => ({
-                x: r2(n.x - b.x),
-                y: r2(n.y - b.y),
-                handleIn: n.handleIn ? { x: r2(n.handleIn.x - b.x), y: r2(n.handleIn.y - b.y) } : null,
-                handleOut: n.handleOut ? { x: r2(n.handleOut.x - b.x), y: r2(n.handleOut.y - b.y) } : null
-            }));
+        if (isFinishing) return;
+        isFinishing = true;
 
-            const pathId = `path-${newObjectId()}`;
-            const newObj = {
-                id: pathId,
-                type: 'path',
-                name: `Path ${pathId.split('-').pop()}`,
-                visible: true,
-                locked: false,
-                closed: closed,
-                transform: {
-                    x: r2(b.x),
-                    y: r2(b.y),
-                    width: r2(b.width),
-                    height: r2(b.height),
-                    rotation: 0,
-                    pivot: { x: 0.5, y: 0.5 }
-                },
-                geometry: {
-                    nodes: localNodes
-                },
-                style: {
-                    stroke: '#000000',
-                    strokeWidth: 2,
-                    strokeCap: 'round',
-                    strokeJoin: 'round',
-                    fills: []
-                }
-            };
-
-            State.objects.push(newObj);
-            State.selectedIds = [newObj.id];
-            $(document).trigger('selection:change');
-            $(document).trigger('object:add', [newObj]);
-            if (typeof window.pickTool === 'function') {
-                window.pickTool('select');
-            }
-        }
-
+        const nodesToCommit = [...activeNodes];
         activeNodes = [];
         isDrawing = false;
         isDraggingHandle = false;
         dragNodeIndex = -1;
         currentPointerPos = null;
         isHoveringStart = false;
-        requestRender();
+
+        try {
+            if (nodesToCommit.length >= 2) {
+                const b = computeBounds(nodesToCommit);
+                // Normalisasikan koordinat nodes agar relatif terhadap (b.x, b.y)
+                const localNodes = nodesToCommit.map(n => ({
+                    x: r2(n.x - b.x),
+                    y: r2(n.y - b.y),
+                    handleIn: n.handleIn ? { x: r2(n.handleIn.x - b.x), y: r2(n.handleIn.y - b.y) } : null,
+                    handleOut: n.handleOut ? { x: r2(n.handleOut.x - b.x), y: r2(n.handleOut.y - b.y) } : null
+                }));
+
+                const pathId = `path-${newObjectId()}`;
+                const newObj = {
+                    id: pathId,
+                    type: 'path',
+                    name: `Path ${pathId.split('-').pop()}`,
+                    visible: true,
+                    locked: false,
+                    closed: closed,
+                    transform: {
+                        x: r2(b.x),
+                        y: r2(b.y),
+                        width: r2(b.width),
+                        height: r2(b.height),
+                        rotation: 0,
+                        pivot: { x: 0.5, y: 0.5 }
+                    },
+                    geometry: {
+                        nodes: localNodes
+                    },
+                    style: {
+                        stroke: '#000000',
+                        strokeWidth: 2,
+                        strokeCap: 'round',
+                        strokeJoin: 'round',
+                        fills: []
+                    }
+                };
+
+                State.objects.push(newObj);
+                State.selectedIds = [newObj.id];
+                $(document).trigger('selection:change');
+                $(document).trigger('object:add', [newObj]);
+                if (typeof window.pickTool === 'function') {
+                    window.pickTool('select');
+                }
+            }
+        } finally {
+            isFinishing = false;
+            requestRender();
+        }
     };
 
     const cancelDrawing = () => {
@@ -255,16 +265,18 @@
         // B. JIKA SEDANG MENGGUNAKAN PEN TOOL UNTUK MEMBUAT PATH BARU
         if (State.tool === TOOL) {
             e.preventDefault();
-            cvEl.setPointerCapture(e.pointerId);
 
             // Cek apakah klik pada titik P0 untuk menutup kurva
             if (activeNodes.length >= 2) {
-                const snapThreshSq = Math.pow(Math.max(8, 12 / State.zoom), 2);
+                const snapThreshSq = Math.pow(Math.max(10, 14 / State.zoom), 2);
                 if (distSq(pt, activeNodes[0]) <= snapThreshSq) {
+                    try { cvEl.releasePointerCapture(e.pointerId); } catch (_) {}
                     finishPath(true);
                     return;
                 }
             }
+
+            try { cvEl.setPointerCapture(e.pointerId); } catch (_) {}
 
             // Tambahkan titik baru
             const newNode = {
