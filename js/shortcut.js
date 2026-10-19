@@ -126,7 +126,11 @@ $(document).on('keydown', function(e) {
 
   if ((e.key === 'Delete' || e.key === 'Backspace') && !ctrl && !e.altKey) {
     e.preventDefault();
-    deleteSelected(); // delete.js: hapus elemen terpilih
+    if (typeof window.deleteSelected === 'function') {
+      window.deleteSelected();
+    } else if (typeof deleteSelected === 'function') {
+      deleteSelected();
+    }
     return;
   }
 
@@ -182,6 +186,31 @@ $(document).on('keydown', function(e) {
         return;
     }
     return;
+  }
+
+  if (ctrl && e.altKey) {
+    if (window.BooleanOps) {
+      if (e.code === 'KeyU') {
+        e.preventDefault();
+        window.BooleanOps.union();
+        return;
+      }
+      if (e.code === 'KeyS') {
+        e.preventDefault();
+        window.BooleanOps.subtract();
+        return;
+      }
+      if (e.code === 'KeyI') {
+        e.preventDefault();
+        window.BooleanOps.intersect();
+        return;
+      }
+      if (e.code === 'KeyE') {
+        e.preventDefault();
+        window.BooleanOps.exclude();
+        return;
+      }
+    }
   }
 
   if (e.altKey && !ctrl) {

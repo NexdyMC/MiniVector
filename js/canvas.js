@@ -3,7 +3,29 @@
 
 
 const cvEl = document.getElementById('canvas');
-const cvCtx = cvEl.getContext('2d');
+let cvCtx = cvEl.getContext('2d');
+const defaultCvCtx = cvCtx;
+
+window.setCanvasContext = (newCtx) => {
+    cvCtx = newCtx || defaultCvCtx;
+};
+
+window.renderObjectsToContext = (targetCtx, objectsToRender, options = {}) => {
+    const prevCtx = cvCtx;
+    try {
+        cvCtx = targetCtx;
+        if (options.clipBounds) {
+            // Optional clipping / framing
+        }
+        if (Array.isArray(objectsToRender)) {
+            objectsToRender.forEach(drawObject);
+        } else if (objectsToRender) {
+            drawObject(objectsToRender);
+        }
+    } finally {
+        cvCtx = prevCtx;
+    }
+};
 let cvW = 0,
     cvH = 0,
     cvDpr = 1,
@@ -674,7 +696,7 @@ const drawObject = o => {
             }
             cvCtx.restore();
         }
-    } else if (o.type === 'path') {
+    } else if (o.type === 'path' || o.type === 'vector') {
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length >= 2) {
             cvCtx.save();
@@ -1589,4 +1611,6 @@ cvEl.addEventListener('auxclick', e => {
 })();
 
 /* ---------- render ulang saat data berubah ---------- */
+window.drawObject = drawObject;
+window.getWorldBounds = getWorldBounds;
 $(document).on('project:load object:add object:change object:remove', requestRender);

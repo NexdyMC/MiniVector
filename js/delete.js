@@ -17,7 +17,7 @@ const removeFrom = (list, id, parentId) => { // cabut objek dari array (rekursif
   return null;
 };
 // Hapus semua objek di State.selectedIds. Mengembalikan jumlah objek yang benar-benar terhapus.
-const deleteSelected = () => {
+const deleteSelected = window.deleteSelected = () => {
   if (State.drawing) return 0; // sedang menggambar → abaikan
   const ids = (State.selectedIds || []).map(String);
   if (!ids.length) return 0;
@@ -27,8 +27,16 @@ const deleteSelected = () => {
     if (r) removed.push(r);
   });
   State.selectedIds = [];
-  if (removed.length) $(document).trigger('object:remove', [removed]);
+  if (removed.length) {
+    $(document).trigger('object:remove', [removed]);
+    if (window.History && typeof window.History.record === 'function') {
+      window.History.record();
+    }
+  }
   $(document).trigger('selection:change');
+  if (typeof requestRender === 'function') {
+    requestRender();
+  }
   return removed.length;
 };
 

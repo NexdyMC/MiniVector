@@ -165,6 +165,22 @@
           <button id="btn-import" class="tb-btn" title="Import (Alt+I)" data-open-modal="import"><svg class="ico">
               <use href="#i-import" />
             </svg><span class="lbl">Import</span></button>
+        <div class="flex-1"></div>
+
+        <!-- BOOLEAN OPERATIONS TOOLBAR (FIGMA STYLE) -->
+        <div id="tb-boolean-group" class="tb-group" role="group" aria-label="Boolean Groups" style="display:none;align-items:center;">
+          <button id="btn-bool-union" class="tb-btn" title="Union Selection (Ctrl+Alt+U)" aria-label="Union Selection">
+            <i class="fa-solid fa-object-group"></i>
+          </button>
+          <button id="btn-bool-subtract" class="tb-btn" title="Subtract Selection (Ctrl+Alt+S)" aria-label="Subtract Selection">
+            <i class="fa-solid fa-shapes"></i>
+          </button>
+          <button id="btn-bool-intersect" class="tb-btn" title="Intersect Selection (Ctrl+Alt+I)" aria-label="Intersect Selection">
+            <i class="fa-solid fa-cubes-stacked"></i>
+          </button>
+          <button id="btn-bool-exclude" class="tb-btn" title="Exclude Selection (Ctrl+Alt+E)" aria-label="Exclude Selection">
+            <i class="fa-solid fa-circle-nodes"></i>
+          </button>
         </div>
         <div class="flex-1"></div>
 
@@ -255,6 +271,27 @@
               <span class="ctx-label">Duplicate</span>
               <span class="ctx-kbd">Ctrl+D</span>
             </div>
+            <div class="ctx-sep ctx-boolean-item" style="display:none;"></div>
+            <div class="ctx-item ctx-boolean-item" data-action="boolean-union" style="display:none;">
+              <i class="fa-solid fa-object-group ctx-ico"></i>
+              <span class="ctx-label">Union Selection</span>
+              <span class="ctx-kbd">Ctrl+Alt+U</span>
+            </div>
+            <div class="ctx-item ctx-boolean-item" data-action="boolean-subtract" style="display:none;">
+              <i class="fa-solid fa-shapes ctx-ico"></i>
+              <span class="ctx-label">Subtract Selection</span>
+              <span class="ctx-kbd">Ctrl+Alt+S</span>
+            </div>
+            <div class="ctx-item ctx-boolean-item" data-action="boolean-intersect" style="display:none;">
+              <i class="fa-solid fa-cubes-stacked ctx-ico"></i>
+              <span class="ctx-label">Intersect Selection</span>
+              <span class="ctx-kbd">Ctrl+Alt+I</span>
+            </div>
+            <div class="ctx-item ctx-boolean-item" data-action="boolean-exclude" style="display:none;">
+              <i class="fa-solid fa-circle-nodes ctx-ico"></i>
+              <span class="ctx-label">Exclude Selection</span>
+              <span class="ctx-kbd">Ctrl+Alt+E</span>
+            </div>
             <div class="ctx-sep"></div>
             <div class="ctx-item ctx-danger" data-action="delete">
               <i class="fa-regular fa-trash-can ctx-ico"></i>
@@ -270,7 +307,7 @@
             
             <!-- Scale Slider -->
             <div class="crop-slider-wrap" title="Scale image">
-              <input type="range" id="crop-scale-slider" class="crop-scale-slider" min="100" max="400" value="100" step="1">
+              <input type="range" id="crop-scale-slider" class="crop-scale-slider" min="100" max="400" value="100" step="1" aria-label="Scale image">
             </div>
 
             <!-- Ratio Dropdown Toggle -->
@@ -490,7 +527,7 @@
                   <button id="btn-import-font" class="fg-ib fg-fieldbtn" title="Import font dari komputer (.ttf, .otf, .woff, .woff2)" style="flex:none;width:var(--ctl);height:var(--ctl)">
                     <i class="fa-solid fa-file-arrow-up"></i>
                   </button>
-                  <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display:none">
+                  <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display:none" aria-label="Upload custom font file">
                 </div>
                 <div class="fg-grid" style="margin-top:8px">
                   <label class="fg-in">
@@ -653,12 +690,22 @@
                     <label class="fg-in" title="Format file">
                       <select id="export-format" style="background:transparent;color:inherit;border:0;width:100%;outline:0;cursor:pointer">
                         <option value="png" style="background:#2C2C2C">PNG</option>
-                        <option value="jpeg" style="background:#2C2C2C">JPEG</option>
+                        <option value="jpeg" style="background:#2C2C2C">JPEG (JPG)</option>
                         <option value="webp" style="background:#2C2C2C">WEBP</option>
-                        <option value="svg" style="background:#2C2C2C">SVG</option>
-                        <option value="json" style="background:#2C2C2C">JSON</option>
+                        <option value="svg" style="background:#2C2C2C">SVG (Vector)</option>
+                        <option value="pdf" style="background:#2C2C2C">PDF (Document)</option>
+                        <option value="json" style="background:#2C2C2C">JSON (Project)</option>
                       </select>
                     </label>
+                  </div>
+
+                  <!-- SCALE QUICK PRESETS (ALA FIGMA) -->
+                  <div id="export-scale-presets" class="fg-seg" style="display:flex;width:100%;margin-bottom:10px;height:24px;">
+                    <button type="button" class="fg-ib" data-scale="0.5" style="flex:1;font-size:11px;padding:0">0.5x</button>
+                    <button type="button" class="fg-ib on" data-scale="1" style="flex:1;font-size:11px;padding:0">1x</button>
+                    <button type="button" class="fg-ib" data-scale="2" style="flex:1;font-size:11px;padding:0">2x</button>
+                    <button type="button" class="fg-ib" data-scale="3" style="flex:1;font-size:11px;padding:0">3x</button>
+                    <button type="button" class="fg-ib" data-scale="4" style="flex:1;font-size:11px;padding:0">4x</button>
                   </div>
 
                   <!-- CUSTOM WIDTH & HEIGHT -->
@@ -774,7 +821,7 @@
           <div class="img-grid" id="image-grid">
             <!-- 9 Slot Gambar dinamis -->
           </div>
-          <input type="file" id="image-slot-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+          <input type="file" id="image-slot-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden aria-label="Upload image slot file">
         </div>
       </div>
     </div>
@@ -798,7 +845,7 @@
             <strong>Drop file di sini</strong>
             <small>Didukung: .json .svg .png .jpg .fig (dummy)</small>
           </div>
-          <input id="import-file" type="file" hidden>
+          <input id="import-file" type="file" hidden aria-label="Pilih file proyek untuk diimpor">
 
           <div id="import-result" class="file-chip" hidden>
             <svg class="ico">
@@ -920,6 +967,7 @@
     <script src="js/redo.js"></script>
     <script src="js/crop.js"></script>
     <script src="js/context-menu.js"></script>
+    <script src="js/boolean.js"></script>
 
     <!-- tools -->
     <script src="js/tools/cursor.js"></script>
@@ -978,6 +1026,9 @@
           $('#toolbar .tool').removeClass('active');
           $(this).addClass('active');
 
+          State.tool = toolName;
+          $(document).trigger('tool:change', [toolName]);
+
           // Jika klik tool 'image', buka modal Image panel agar user bisa memilih/mengunggah gambar
           if (toolName === 'image' && (!window.ImageTool || !window.ImageTool.hasPendingImage())) {
             if (typeof openModal === 'function') {
@@ -1003,14 +1054,28 @@
         };
 
         $('#export-format').on('change', function () {
-          const fmt = $(this).val().toUpperCase();
-          $('#btn-export-text').text(`Export ${fmt}`);
+          const val = $(this).val();
+          const fmt = val.toUpperCase();
+          const labelMap = { png: 'PNG', jpeg: 'JPEG', webp: 'WEBP', svg: 'SVG', pdf: 'PDF', json: 'JSON' };
+          $('#btn-export-text').text(`Export ${labelMap[val] || fmt}`);
           const isRaster = ['PNG', 'JPEG', 'WEBP'].includes(fmt);
           $('#export-dim-grid').toggle(isRaster);
+          $('#export-scale-presets').toggle(isRaster);
           syncPreview();
         });
 
+        // Quick Preset Scale Buttons
+        $('#export-scale-presets').on('click', 'button[data-scale]', function () {
+          const s = parseFloat($(this).data('scale')) || 1;
+          $('#export-scale-presets button').removeClass('on');
+          $(this).addClass('on');
+          $('#export-scale').val(s).trigger('input');
+        });
+
         $('#export-scale').on('input change', function () {
+          const val = parseFloat($(this).val()) || 1;
+          $('#export-scale-presets button').removeClass('on');
+          $(`#export-scale-presets button[data-scale="${val}"]`).addClass('on');
           syncPreview();
         });
 
@@ -1049,11 +1114,35 @@
 
           if (fmt === 'svg') {
             Exporter.svg();
+          } else if (fmt === 'pdf') {
+            Exporter.pdf();
           } else if (fmt === 'json') {
             Exporter.json();
           } else {
             Exporter.raster(fmt, scale);
           }
+        });
+
+        /* ================= BOOLEAN TOOLBAR HANDLERS ================= */
+        const updateBooleanToolbar = () => {
+          const count = State.selectedIds ? State.selectedIds.length : 0;
+          $('#tb-boolean-group').toggle(count >= 2);
+        };
+
+        $(document).on('selection:change project:load object:remove', updateBooleanToolbar);
+        updateBooleanToolbar();
+
+        $('#btn-bool-union').on('click', () => {
+          if (window.BooleanOps) window.BooleanOps.union();
+        });
+        $('#btn-bool-subtract').on('click', () => {
+          if (window.BooleanOps) window.BooleanOps.subtract();
+        });
+        $('#btn-bool-intersect').on('click', () => {
+          if (window.BooleanOps) window.BooleanOps.intersect();
+        });
+        $('#btn-bool-exclude').on('click', () => {
+          if (window.BooleanOps) window.BooleanOps.exclude();
         });
       });
     </script>

@@ -20,8 +20,8 @@ window.ContextMenu = (() => {
     if (posX + menuW > window.innerWidth) posX = window.innerWidth - menuW - 10;
     if (posY + menuH > window.innerHeight) posY = window.innerHeight - menuH - 10;
 
-    // Aktifkan / nonaktifkan item berdasarkan ketersediaan target
     const hasTarget = !!currentTargetId;
+    const hasMultiple = (State.selectedIds && State.selectedIds.length >= 2);
     let isImageTarget = false;
     if (currentTargetId) {
       const found = (typeof findObjectWithParent === 'function') ? findObjectWithParent(currentTargetId) : null;
@@ -34,6 +34,9 @@ window.ContextMenu = (() => {
     $menu.find('[data-action="copy"]').toggleClass('disabled', !hasTarget);
     $menu.find('[data-action="duplicate"]').toggleClass('disabled', !hasTarget);
     $menu.find('[data-action="delete"]').toggleClass('disabled', !hasTarget);
+
+    // Boolean items
+    $menu.find('.ctx-boolean-item').toggle(hasMultiple);
 
     const hasClipboard = window.Clipboard && window.Clipboard.hasBuffer();
     $menu.find('[data-action="paste"]').toggleClass('disabled', !hasClipboard);
@@ -105,6 +108,18 @@ window.ContextMenu = (() => {
         break;
       case 'delete':
         if (typeof window.deleteSelected === 'function') window.deleteSelected();
+        break;
+      case 'boolean-union':
+        if (window.BooleanOps) window.BooleanOps.union();
+        break;
+      case 'boolean-subtract':
+        if (window.BooleanOps) window.BooleanOps.subtract();
+        break;
+      case 'boolean-intersect':
+        if (window.BooleanOps) window.BooleanOps.intersect();
+        break;
+      case 'boolean-exclude':
+        if (window.BooleanOps) window.BooleanOps.exclude();
         break;
     }
   });

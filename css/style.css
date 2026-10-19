@@ -1056,3 +1056,42 @@
     cursor: pointer;
     flex: none;
   }
+
+  /* Export Scale Presets (Ala Figma) */
+  #export-scale-presets button {
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.12s ease;
+  }
+  #export-scale-presets button.on {
+    background: #0D99FF !important;
+    color: #ffffff !important;
+    font-weight: 600;
+  }
+
+  /* Boolean Operations Topbar Buttons */
+  #tb-boolean-group {
+    background: var(--c-surface, #242424);
+    border: 1px solid var(--c-border, #383838);
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+  }
+  #tb-boolean-group .tb-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    color: #cccccc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  #tb-boolean-group .tb-btn:hover {
+    background: #0D99FF;
+    color: #ffffff;
+  }

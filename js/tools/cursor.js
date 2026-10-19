@@ -861,7 +861,12 @@
         }
     });
 
-    $(document).on('tool:change', () => endDrag(false));
+    $(document).on('tool:change', (e, newTool) => {
+        endDrag(false);
+        if (newTool === TOOL && typeof cvEl !== 'undefined' && cvEl) {
+            cvEl.style.cursor = 'default';
+        }
+    });
     $(document).on('keydown', e => {
         if (e.key === 'Escape') endDrag(false);
     });
