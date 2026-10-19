@@ -546,6 +546,38 @@
                 }
             }
 
+            // Kunci Rasio Aspek (Proportional Aspect Ratio Lock) jika menekan Shift pada handle sudut (nw, ne, se, sw)
+            if (e.shiftKey && origBox.width > 0 && origBox.height > 0) {
+                const aspect = origBox.width / origBox.height;
+                const isCorner = (activeHandle.includes('n') || activeHandle.includes('s')) &&
+                                 (activeHandle.includes('e') || activeHandle.includes('w'));
+
+                if (isCorner) {
+                    // Gunakan perubahan skala yang paling dominan
+                    const scaleCandidateX = newBoxW / origBox.width;
+                    const scaleCandidateY = newBoxH / origBox.height;
+                    const scale = Math.max(scaleCandidateX, scaleCandidateY);
+
+                    newBoxW = Math.max(MIN_SIZE, origBox.width * scale);
+                    newBoxH = Math.max(MIN_SIZE, origBox.height * scale);
+
+                    if (activeHandle.includes('w')) {
+                        newBoxX = origBox.x + (origBox.width - newBoxW);
+                    }
+                    if (activeHandle.includes('n')) {
+                        newBoxY = origBox.y + (origBox.height - newBoxH);
+                    }
+                } else if (activeHandle === 'e' || activeHandle === 'w') {
+                    // Tarik handle samping kiri/kanan dengan Shift: sesuaikan tinggi proporsional dari tengah
+                    newBoxH = Math.max(MIN_SIZE, newBoxW / aspect);
+                    newBoxY = origBox.y + (origBox.height - newBoxH) / 2;
+                } else if (activeHandle === 'n' || activeHandle === 's') {
+                    // Tarik handle atas/bawah dengan Shift: sesuaikan lebar proporsional dari tengah
+                    newBoxW = Math.max(MIN_SIZE, newBoxH * aspect);
+                    newBoxX = origBox.x + (origBox.width - newBoxW) / 2;
+                }
+            }
+
             const scaleX = origBox.width > 0 ? newBoxW / origBox.width : 1;
             const scaleY = origBox.height > 0 ? newBoxH / origBox.height : 1;
 

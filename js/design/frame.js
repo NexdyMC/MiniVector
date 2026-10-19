@@ -23,11 +23,19 @@
         children: [] // elemen yang berada di dalam frame
     });
 
-    const shape = (o, a, b) => {
+    const shape = (o, a, b, isShift) => {
         if (!o || !o.transform) return;
-        const w = r2(Math.abs(a.x - b.x)),
-            h = r2(Math.abs(a.y - b.y));
-        Object.assign(o.transform, { x: r2(Math.min(a.x, b.x)), y: r2(Math.min(a.y, b.y)), width: w, height: h });
+        let w = Math.abs(a.x - b.x);
+        let h = Math.abs(a.y - b.y);
+        if (isShift) {
+            const side = Math.max(w, h);
+            w = side;
+            h = side;
+            const signX = (b.x < a.x) ? -1 : 1;
+            const signY = (b.y < a.y) ? -1 : 1;
+            b = { x: a.x + signX * side, y: a.y + signY * side };
+        }
+        Object.assign(o.transform, { x: r2(Math.min(a.x, b.x)), y: r2(Math.min(a.y, b.y)), width: r2(w), height: r2(h) });
     };
 
     const cancel = () => {
@@ -44,13 +52,13 @@
         pointerId = e.pointerId;
         cvEl.setPointerCapture(e.pointerId);
         State.drawing = makeFrame();
-        shape(State.drawing, start, start);
+        shape(State.drawing, start, start, e.shiftKey);
         requestRender();
     });
 
     cvEl.addEventListener('pointermove', e => {
         if (!start || e.pointerId !== pointerId) return;
-        shape(State.drawing, start, snapWorld(eventToWorld(e), e));
+        shape(State.drawing, start, snapWorld(eventToWorld(e), e), e.shiftKey);
         requestRender();
     });
 
@@ -58,7 +66,7 @@
         if (!start || e.pointerId !== pointerId) return;
         const o = State.drawing,
             min = MIN_PX / State.zoom;
-        shape(o, start, snapWorld(eventToWorld(e), e));
+        shape(o, start, snapWorld(eventToWorld(e), e), e.shiftKey);
         if (o.transform.width < min || o.transform.height < min) return cancel();
 
         const n = newObjectId();
