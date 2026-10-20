@@ -871,13 +871,62 @@
     <!-- Save -->
     <div class="modal" id="modal-save" role="dialog" aria-modal="true" aria-labelledby="save-title">
       <div class="modal-box">
-        <div class="modal-head"><span id="save-title">Save</span>
+        <div class="modal-head">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg class="ico" style="color:var(--c-accent);"><use href="#i-save" /></svg>
+            <span id="save-title">Save & Export Project</span>
+          </div>
           <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
               <use href="#i-close" />
             </svg></button>
         </div>
-        <div class="modal-body" id="save-body">
-          <!-- [EDIT] isi Save -->
+        <div class="modal-body" id="save-body" style="padding: 20px 22px;">
+          <!-- Nama Proyek -->
+          <div style="margin-bottom: 18px;">
+            <label for="save-project-name" class="field-label" style="display:block;margin-bottom:6px;">Nama Proyek</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="save-project-name" type="text" class="fg-in" style="flex:1;height:36px;padding:0 12px;background:var(--c-input);border:1px solid var(--c-line-strong);border-radius:6px;color:var(--c-ink);font-weight:500;" placeholder="Untitled">
+              <span style="font-size:12px;color:var(--c-mute);font-weight:600;">.json</span>
+            </div>
+            <p class="field-desc" style="margin-top:4px;margin-bottom:0;">File ini berisi seluruh susunan layer, frame, grup, gaya, dan posisi kamera.</p>
+          </div>
+
+          <!-- Status Auto-Save LocalStorage -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--c-line);border-radius:8px;margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;display:inline-block;"></span>
+              <div>
+                <strong style="display:block;font-size:12.5px;color:#fff;">Tersimpan di Browser (Auto-saved)</strong>
+                <span id="save-stats-info" style="font-size:11px;color:var(--c-mute);">0 Objek • LocalStorage aktif</span>
+              </div>
+            </div>
+            <button id="btn-save-local-now" class="btn" style="height:30px;font-size:12px;padding:0 12px;" title="Paksa simpan state sekarang ke browser">
+              Simpan Ulang
+            </button>
+          </div>
+
+          <!-- Opsi Export File Fisik (.json) -->
+          <div style="border-top:1px solid var(--c-line);padding-top:16px;">
+            <div class="field-label" style="margin-bottom:6px;">Pindah Proyek ke PC Lain</div>
+            <p class="field-desc" style="margin-bottom:14px;">Unduh file <strong>.json</strong> proyek Anda sekarang agar dapat dilanjutkan di komputer / browser lain lewat menu <strong>Import (Alt+I)</strong>.</p>
+            
+            <div style="display:flex;gap:10px;">
+              <button id="btn-export-project-json" class="btn btn-primary" style="flex:1;height:40px;font-size:13px;font-weight:600;">
+                <svg class="ico"><use href="#i-download" /></svg>
+                <span>Unduh File Proyek (.json)</span>
+              </button>
+              <button id="btn-copy-project-json" class="btn" style="height:40px;padding:0 14px;" title="Salin seluruh isi JSON ke clipboard">
+                <i class="fa-regular fa-copy"></i>
+                <span class="lbl">Salin JSON</span>
+              </button>
+            </div>
+            <div id="save-copied-feedback" style="display:none;color:#22c55e;font-size:11.5px;margin-top:8px;text-align:center;">
+              <i class="fa-solid fa-check"></i> JSON berhasil disalin ke clipboard!
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" data-close-modal>Tutup</button>
         </div>
       </div>
     </div>
@@ -992,6 +1041,11 @@
     <script src="js/design/effects.js"></script>
     <script src="js/design/typography.js"></script>
     <script src="js/design/frame-presets.js"></script>
+
+    <!-- export & import -->
+    <script src="js/export/exporter.js"></script>
+    <script src="js/export/json.js"></script>
+    <script src="js/import/json.js"></script>
 
     <!-- main app init -->
     <script src="js/main.js"></script>

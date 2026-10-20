@@ -185,7 +185,12 @@ const resetImport = () => {
   $('#btn-import-confirm').prop('hidden', false).prop('disabled', true);
   $('#dropzone').removeClass('dragover');
 };
+let currentImportFile = null;
 const takeFile = f => {
+  if (f) {
+    currentImportFile = f;
+    if (typeof window.setPendingImportFile === 'function') window.setPendingImportFile(f);
+  }
   if (!f) return;
   const ok = ACCEPT.test(f.name);
   $('#import-name').text(f.name);
@@ -221,9 +226,20 @@ $('#import-file').on('change', function () {
   takeFile(this.files[0]);
 });
 $('#btn-import-confirm').on('click', function () {
-  $('#import-success').prop('hidden', false);
-  $(this).prop('hidden', true);
-  $('#btn-import-done').prop('hidden', false).trigger('focus');
+  const self = this;
+  if (currentImportFile && currentImportFile.name.endsWith('.json') && typeof window.executeImportJSON === 'function') {
+    window.executeImportJSON(currentImportFile, function(ok) {
+      if (ok) {
+        $('#import-success').prop('hidden', false).html('<svg class="ico"><use href="#i-check" /></svg>File JSON berhasil dimuat ke kanvas!');
+        $(self).prop('hidden', true);
+        $('#btn-import-done').prop('hidden', false).trigger('focus');
+      }
+    });
+  } else {
+    $('#import-success').prop('hidden', false);
+    $(self).prop('hidden', true);
+    $('#btn-import-done').prop('hidden', false).trigger('focus');
+  }
 });
 
 /* ---- Settings modal initialization & synchronization ---- */

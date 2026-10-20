@@ -29,7 +29,7 @@
      ============================================================ */
   :root {
     --settings-w: 400px; --settings-h: 500px;
-    --save-w: 600px;     --save-h: 400px;
+    --save-w: 560px;     --save-h: auto;
     --import-w: 520px;
     --help-w: 720px;
     --img-cell-w: 200px; --img-cell-h: 160px; --img-gap: 12px;   /* grid Image: 3 kolom x 3 baris (9 slot) */
@@ -269,7 +269,7 @@
   .modal-foot { display: flex; justify-content: flex-end; gap: 8px; flex: none; padding: 12px 18px; border-top: 1px solid var(--c-line); }
 
   #modal-settings .modal-box { --mw: var(--settings-w); --mh: var(--settings-h); }   /* 400 x 500 */
-  #modal-save     .modal-box { --mw: var(--save-w);     --mh: var(--save-h); }       /* 600 x 400 */
+  #modal-save     .modal-box { --mw: var(--save-w);     --mh: auto; }       /* 600 x 400 */
   #modal-import   .modal-box { --mw: var(--import-w); }
   #modal-help     .modal-box { --mw: var(--help-w); }
   #modal-image    .modal-box { width: fit-content; max-width: 100%; }                 /* mengikuti grid */
