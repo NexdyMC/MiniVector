@@ -340,6 +340,160 @@
         snappedX: hasSnapX,
         snappedY: hasSnapY
       };
+    },
+    /**
+     * Menghitung koreksi snap saat me-resize bounding box melalui handle tertentu
+     * @param {Object} box - { x, y, width, height } hasil resize saat ini (sebelum magnet)
+     * @param {string} handle - jenis handle aktif: 'nw', 'ne', 'se', 'sw', 'n', 's', 'e', 'w'
+     * @param {Array<Object>} candidates - daftar kandidat objek lain di kanvas
+     * @param {number} zoom - level zoom
+     * @returns {Object} { x, y, width, height, snappedX, snappedY }
+     */
+    snapResize(box, handle, candidates, zoom = 1) {
+      if (!this.enabled || !candidates || candidates.length === 0) {
+        this.clear();
+        return {
+          x: box.x,
+          y: box.y,
+          width: box.width,
+          height: box.height,
+          snappedX: false,
+          snappedY: false
+        };
+      }
+
+      const worldThreshold = this.threshold / (zoom || 1);
+      const guides = [];
+
+      let newX = box.x;
+      let newY = box.y;
+      let newW = box.width;
+      let newH = box.height;
+
+      let bestDiffX = worldThreshold + 1;
+      let bestGuideX = null;
+      let bestDiffY = worldThreshold + 1;
+      let bestGuideY = null;
+
+      const hasWest = handle.includes('w');
+      const hasEast = handle.includes('e');
+      const hasNorth = handle.includes('n');
+      const hasSouth = handle.includes('s');
+
+      for (const target of candidates) {
+        if (!target) continue;
+
+        const targetXPoints = [
+          { type: 'left', val: target.x },
+          { type: 'center', val: target.x + target.width / 2 },
+          { type: 'right', val: target.x + target.width }
+        ];
+
+        const targetYPoints = [
+          { type: 'top', val: target.y },
+          { type: 'center', val: target.y + target.height / 2 },
+          { type: 'bottom', val: target.y + target.height }
+        ];
+
+        // Sumbu X: Handle Barat (w) menggerakkan sisi kiri (box.x)
+        if (hasWest) {
+          const currentLeft = box.x;
+          for (const tx of targetXPoints) {
+            const diff = Math.abs(currentLeft - tx.val);
+            if (diff <= worldThreshold && diff < bestDiffX) {
+              const proposedW = (box.x + box.width) - tx.val;
+              if (proposedW >= 1) {
+                bestDiffX = diff;
+                newX = tx.val;
+                newW = proposedW;
+                bestGuideX = {
+                  type: 'v',
+                  pos: tx.val,
+                  fromY: Math.min(box.y, target.y) - 20,
+                  toY: Math.max(box.y + box.height, target.y + target.height) + 20
+                };
+              }
+            }
+          }
+        }
+        // Sumbu X: Handle Timur (e) menggerakkan sisi kanan (box.x + box.width)
+        else if (hasEast) {
+          const currentRight = box.x + box.width;
+          for (const tx of targetXPoints) {
+            const diff = Math.abs(currentRight - tx.val);
+            if (diff <= worldThreshold && diff < bestDiffX) {
+              const proposedW = tx.val - box.x;
+              if (proposedW >= 1) {
+                bestDiffX = diff;
+                newW = proposedW;
+                bestGuideX = {
+                  type: 'v',
+                  pos: tx.val,
+                  fromY: Math.min(box.y, target.y) - 20,
+                  toY: Math.max(box.y + box.height, target.y + target.height) + 20
+                };
+              }
+            }
+          }
+        }
+
+        // Sumbu Y: Handle Utara (n) menggerakkan sisi atas (box.y)
+        if (hasNorth) {
+          const currentTop = box.y;
+          for (const ty of targetYPoints) {
+            const diff = Math.abs(currentTop - ty.val);
+            if (diff <= worldThreshold && diff < bestDiffY) {
+              const proposedH = (box.y + box.height) - ty.val;
+              if (proposedH >= 1) {
+                bestDiffY = diff;
+                newY = ty.val;
+                newH = proposedH;
+                bestGuideY = {
+                  type: 'h',
+                  pos: ty.val,
+                  fromX: Math.min(box.x, target.x) - 20,
+                  toX: Math.max(box.x + box.width, target.x + target.width) + 20
+                };
+              }
+            }
+          }
+        }
+        // Sumbu Y: Handle Selatan (s) menggerakkan sisi bawah (box.y + box.height)
+        else if (hasSouth) {
+          const currentBottom = box.y + box.height;
+          for (const ty of targetYPoints) {
+            const diff = Math.abs(currentBottom - ty.val);
+            if (diff <= worldThreshold && diff < bestDiffY) {
+              const proposedH = ty.val - box.y;
+              if (proposedH >= 1) {
+                bestDiffY = diff;
+                newH = proposedH;
+                bestGuideY = {
+                  type: 'h',
+                  pos: ty.val,
+                  fromX: Math.min(box.x, target.x) - 20,
+                  toX: Math.max(box.x + box.width, target.x + target.width) + 20
+                };
+              }
+            }
+          }
+        }
+      }
+
+      if (bestGuideX) guides.push(bestGuideX);
+      if (bestGuideY) guides.push(bestGuideY);
+
+      this.activeGuides = guides;
+      this.activeSpacingGuides = [];
+
+      return {
+        x: newX,
+        y: newY,
+        width: newW,
+        height: newH,
+        snappedX: bestGuideX !== null,
+        snappedY: bestGuideY !== null
+      };
     }
   };
 })();

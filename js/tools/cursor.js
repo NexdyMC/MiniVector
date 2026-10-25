@@ -578,6 +578,41 @@
                 }
             }
 
+            // Integrasi Magnet (Snapping) saat Resize
+            if (window.Magnet && window.Magnet.enabled && !e.ctrlKey && !e.metaKey) {
+                const candidates = [];
+                const collectCandidates = (list, offset = { x: 0, y: 0 }) => {
+                    list.forEach(o => {
+                        if (!o || o.visible === false || !o.transform) return;
+                        if (State.selectedIds.includes(o.id)) return;
+                        const bx = offset.x + o.transform.x;
+                        const by = offset.y + o.transform.y;
+                        candidates.push({
+                            id: o.id,
+                            x: bx,
+                            y: by,
+                            width: o.transform.width,
+                            height: o.transform.height
+                        });
+                        if (Array.isArray(o.children) && o.children.length > 0) {
+                            collectCandidates(o.children, { x: bx, y: by });
+                        }
+                    });
+                };
+                collectCandidates(State.objects);
+
+                if (candidates.length > 0 && typeof window.Magnet.snapResize === 'function') {
+                    const snapBox = { x: newBoxX, y: newBoxY, width: newBoxW, height: newBoxH };
+                    const resizeSnap = window.Magnet.snapResize(snapBox, activeHandle, candidates, State.zoom);
+                    newBoxX = resizeSnap.x;
+                    newBoxY = resizeSnap.y;
+                    newBoxW = resizeSnap.width;
+                    newBoxH = resizeSnap.height;
+                }
+            } else {
+                if (window.Magnet) window.Magnet.clear();
+            }
+
             const scaleX = origBox.width > 0 ? newBoxW / origBox.width : 1;
             const scaleY = origBox.height > 0 ? newBoxH / origBox.height : 1;
 
@@ -616,8 +651,12 @@
                 const found = findObjectWithParent(resizeTargetId);
                 if (found && found.obj.transform) {
                     const t = found.obj.transform;
-                    t.x = Math.round(newBoxX);
-                    t.y = Math.round(newBoxY);
+                    const st = origMultiStates.get(resizeTargetId);
+                    const parentOriginX = (found.parent && st) ? (st.worldX - st.x) : 0;
+                    const parentOriginY = (found.parent && st) ? (st.worldY - st.y) : 0;
+
+                    t.x = Math.round(newBoxX - parentOriginX);
+                    t.y = Math.round(newBoxY - parentOriginY);
                     if (typeof Geo !== 'undefined' && typeof Geo.setSize === 'function') {
                         Geo.setSize(found.obj, Math.round(newBoxW), Math.round(newBoxH));
                     } else {
@@ -913,12 +952,20 @@
             const absY = parentOffset.y + obj.transform.y;
             const w = obj.transform.width;
             const h = obj.transform.height;
+            const rot = obj.transform.rotation || 0;
 
-            const isInside = pt.x >= absX && pt.x <= absX + w && pt.y >= absY && pt.y <= absY + h;
+            let localPt = pt;
+            if (rot !== 0) {
+                const cx = absX + w / 2;
+                const cy = absY + h / 2;
+                localPt = rotatePoint(pt.x, pt.y, cx, cy, (-rot * Math.PI) / 180);
+            }
+
+            const isInside = localPt.x >= absX && localPt.x <= absX + w && localPt.y >= absY && localPt.y <= absY + h;
 
             // Masuk ke children terdalam
             if (Array.isArray(obj.children) && obj.children.length > 0) {
-                const childHit = hitTestDeep(pt, obj.children, { x: absX, y: absY });
+                const childHit = hitTestDeep(localPt, obj.children, { x: absX, y: absY });
                 if (childHit) return childHit;
             }
 
