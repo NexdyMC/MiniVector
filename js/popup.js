@@ -227,7 +227,7 @@ $('#import-file').on('change', function () {
 });
 $('#btn-import-confirm').on('click', function () {
   const self = this;
-  if (currentImportFile && currentImportFile.name.endsWith('.json') && typeof window.executeImportJSON === 'function') {
+  if (currentImportFile && currentImportFile.name.toLowerCase().endsWith('.json') && typeof window.executeImportJSON === 'function') {
     window.executeImportJSON(currentImportFile, function(ok) {
       if (ok) {
         $('#import-success').prop('hidden', false).html('<svg class="ico"><use href="#i-check" /></svg>File JSON berhasil dimuat ke kanvas!');
@@ -235,6 +235,42 @@ $('#btn-import-confirm').on('click', function () {
         $('#btn-import-done').prop('hidden', false).trigger('focus');
       }
     });
+  } else if (currentImportFile && currentImportFile.name.toLowerCase().endsWith('.svg')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const svgText = e.target.result;
+      if (window.SvgVectorImporter && typeof window.SvgVectorImporter.parseSVGToObjects === 'function') {
+        const objects = window.SvgVectorImporter.parseSVGToObjects(svgText, null, currentImportFile.name);
+        if (objects && objects.length > 0) {
+          objects.forEach(obj => State.objects.push(obj));
+          State.selectedIds = objects.map(o => o.id);
+          $(document).trigger('selection:change');
+          $(document).trigger('object:add', [objects[0]]);
+          if (window.History && typeof window.History.record === 'function') window.History.record(true);
+          if (typeof requestRender === 'function') requestRender();
+
+          $('#import-success').prop('hidden', false).html('<svg class="ico"><use href="#i-check" /></svg>Vektor SVG berhasil diimpor sebagai objek vektor native!');
+          $(self).prop('hidden', true);
+          $('#btn-import-done').prop('hidden', false).trigger('focus');
+          return;
+        }
+      }
+      $('#import-success').prop('hidden', false);
+      $(self).prop('hidden', true);
+      $('#btn-import-done').prop('hidden', false).trigger('focus');
+    };
+    reader.readAsText(currentImportFile);
+  } else if (currentImportFile && /\.(png|jpe?g)$/i.test(currentImportFile.name)) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (window.ImageTool && typeof window.ImageTool.placeImageAt === 'function') {
+        window.ImageTool.placeImageAt(e.target.result, currentImportFile.name);
+      }
+      $('#import-success').prop('hidden', false).html('<svg class="ico"><use href="#i-check" /></svg>Gambar berhasil dimuat ke kanvas!');
+      $(self).prop('hidden', true);
+      $('#btn-import-done').prop('hidden', false).trigger('focus');
+    };
+    reader.readAsDataURL(currentImportFile);
   } else {
     $('#import-success').prop('hidden', false);
     $(self).prop('hidden', true);

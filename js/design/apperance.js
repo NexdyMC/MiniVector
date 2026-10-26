@@ -18,6 +18,11 @@ $(function () {
     const $countInputWrap = $count.closest('.fg-in');
     const $ratioInputWrap = $ratio.closest('.fg-in');
 
+    const targets = () => {
+        const sel = Geo.selection();
+        return sel.map(f => f.obj).filter(Boolean);
+    };
+
     const single = () => {
         const sel = Geo.selection();
         return sel.length === 1 ? sel[0].obj : null;
@@ -29,11 +34,13 @@ $(function () {
     };
 
     const refresh = force => {
+        const selObjs = targets();
         const obj = single();
 
-        if (!obj) {
+        if (selObjs.length === 0) {
             $opacity.val('').prop('disabled', true);
             $radius.val('').prop('disabled', true);
+            $('#btn-corner-matrix').prop('disabled', true);
             $count.val('').prop('disabled', true);
             $ratio.val('').prop('disabled', true);
             $countLabel.add($countInputWrap).css('opacity', '0.35');
@@ -41,28 +48,43 @@ $(function () {
             return;
         }
 
-        // 1. Opacity
+        // 1. Opacity (Mendukung multi-selection)
         $opacity.prop('disabled', false);
-        const curOpacity = obj.opacity !== undefined ? obj.opacity : 1;
+        const firstOpacity = selObjs[0].opacity !== undefined ? selObjs[0].opacity : 1;
+        const allSameOpacity = selObjs.every(o => (o.opacity !== undefined ? o.opacity : 1) === firstOpacity);
         if (force || document.activeElement !== $opacity[0]) {
-            $opacity.val(Math.round(curOpacity * 100));
+            $opacity.val(allSameOpacity ? Math.round(firstOpacity * 100) : '');
+            $opacity.attr('placeholder', allSameOpacity ? '' : 'Mixed');
         }
 
-        // 2. Corner Radius
-        const geom = obj.geometry || {};
-        $radius.prop('disabled', false);
-        let curRadius = 0;
-        if (Array.isArray(geom.cornerRadius)) {
-            curRadius = geom.cornerRadius[0] || 0;
-        } else if (geom.cornerRadius !== undefined) {
-            curRadius = geom.cornerRadius;
-        }
-        if (force || document.activeElement !== $radius[0]) {
-            $radius.val(curRadius);
+        // 2. Corner Radius (Mendukung multi-selection)
+        const canHaveRadius = selObjs.some(o => o.type === 'rectangle' || o.type === 'frame' || o.type === 'polygon' || o.type === 'star');
+        $radius.prop('disabled', !canHaveRadius);
+        $('#btn-corner-matrix').prop('disabled', !canHaveRadius);
+
+        if (canHaveRadius) {
+            const getObjRadius = o => {
+                const geom = o.geometry || {};
+                const sty = o.style || {};
+                const cr = geom.cornerRadius !== undefined ? geom.cornerRadius : sty.cornerRadius;
+                if (Array.isArray(cr)) return cr[0] || 0;
+                if (cr !== undefined) return parseFloat(cr) || 0;
+                return 0;
+            };
+            const firstRad = getObjRadius(selObjs[0]);
+            const allSameRad = selObjs.every(o => getObjRadius(o) === firstRad);
+
+            if (force || document.activeElement !== $radius[0]) {
+                $radius.val(allSameRad ? firstRad : '');
+                $radius.attr('placeholder', allSameRad ? '' : 'Mixed');
+            }
+        } else {
+            $radius.val('').attr('placeholder', '');
         }
 
         // 3. Count & Ratio (Khusus Polygon & Star)
-        if (obj.type === 'star') {
+        if (obj && obj.type === 'star') {
+            const geom = obj.geometry || {};
             $count.prop('disabled', false);
             $ratio.prop('disabled', false);
             $countLabel.add($countInputWrap).css('opacity', '1');
@@ -74,7 +96,8 @@ $(function () {
             if (force || document.activeElement !== $ratio[0]) {
                 $ratio.val(geom.innerRadiusRatio !== undefined ? geom.innerRadiusRatio : 38.2);
             }
-        } else if (obj.type === 'polygon') {
+        } else if (obj && obj.type === 'polygon') {
+            const geom = obj.geometry || {};
             $count.prop('disabled', false);
             $ratio.prop('disabled', true);
             $countLabel.add($countInputWrap).css('opacity', '1');
@@ -85,7 +108,7 @@ $(function () {
             }
             $ratio.val('');
         } else {
-            // Objek selain Polygon / Star
+            // Objek selain Polygon / Star atau Multi-selection
             $count.prop('disabled', true).val('');
             $ratio.prop('disabled', true).val('');
             $countLabel.add($countInputWrap).css('opacity', '0.35');
@@ -100,27 +123,34 @@ $(function () {
      * ------------------------------------------------------------- */
     // A. Opacity
     $opacity.on('input change', function () {
-        const obj = single();
-        if (!obj) return;
+        const selObjs = targets();
+        if (!selObjs.length) return;
         let val = parseFloat($(this).val());
         if (!isFinite(val)) val = 100;
         val = Math.max(0, Math.min(100, val)) / 100;
-        obj.opacity = val;
+        selObjs.forEach(obj => {
+            obj.opacity = val;
+        });
         commit();
     });
 
     // B. Corner Radius
     $radius.on('input change', function () {
-        const obj = single();
-        if (!obj) return;
+        const selObjs = targets();
+        if (!selObjs.length) return;
         let val = Math.max(0, parseFloat($(this).val()) || 0);
-        if (!obj.geometry) obj.geometry = {};
+        selObjs.forEach(obj => {
+            if (!obj.geometry) obj.geometry = {};
+            if (!obj.style) obj.style = {};
 
-        if (obj.type === 'rectangle' || obj.type === 'frame') {
-            obj.geometry.cornerRadius = [val, val, val, val];
-        } else {
-            obj.geometry.cornerRadius = val;
-        }
+            if (obj.type === 'rectangle' || obj.type === 'frame') {
+                obj.geometry.cornerRadius = [val, val, val, val];
+                obj.style.cornerRadius = [val, val, val, val];
+            } else {
+                obj.geometry.cornerRadius = val;
+                obj.style.cornerRadius = val;
+            }
+        });
         commit();
     });
 

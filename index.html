@@ -298,6 +298,27 @@
               <span class="ctx-label">Delete</span>
               <span class="ctx-kbd">Del</span>
             </div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" data-action="bring-forward">
+              <i class="fa-solid fa-layer-group ctx-ico"></i>
+              <span class="ctx-label">Bring Forward</span>
+              <span class="ctx-kbd">Ctrl+]</span>
+            </div>
+            <div class="ctx-item" data-action="send-backward">
+              <i class="fa-solid fa-layer-group ctx-ico"></i>
+              <span class="ctx-label">Send Backward</span>
+              <span class="ctx-kbd">Ctrl+[</span>
+            </div>
+            <div class="ctx-item" data-action="bring-front">
+              <i class="fa-solid fa-angles-up ctx-ico"></i>
+              <span class="ctx-label">Bring to Front</span>
+              <span class="ctx-kbd">Ctrl+Shift+]</span>
+            </div>
+            <div class="ctx-item" data-action="send-back">
+              <i class="fa-solid fa-angles-down ctx-ico"></i>
+              <span class="ctx-label">Send to Back</span>
+              <span class="ctx-kbd">Ctrl+Shift+[</span>
+            </div>
           </div>
 
           <!-- FLOATING CROP TOOLBAR (FIGMA STYLE) -->
@@ -406,19 +427,18 @@
               <section class="fg-sec">
                 <div class="fg-head"><span>Position</span></div>
                 <div class="fg-label">Alignment</div>
-                <div class="fg-grid">
-                  <div class="fg-seg">
-                    <button class="fg-ib" data-act="align-left" title="Align left"><i class="fa-solid fa-align-left"></i></button>
-                    <button class="fg-ib" data-act="align-hcenter" title="Align horizontal center"><i
-                        class="fa-solid fa-align-center"></i></button>
-                    <button class="fg-ib" data-act="align-right" title="Align right"><i class="fa-solid fa-align-right"></i></button>
+                <div class="fg-grid" style="display:flex;gap:4px;">
+                  <div class="fg-seg" style="flex:1;">
+                    <button class="fg-ib" data-act="align-left" title="Align left"><span class="ico-svg ico-align-left"></span></button>
+                    <button class="fg-ib" data-act="align-hcenter" title="Align horizontal center"><span class="ico-svg ico-align-hcenter"></span></button>
+                    <button class="fg-ib" data-act="align-right" title="Align right"><span class="ico-svg ico-align-right"></span></button>
+                    <button class="fg-ib" data-act="distribute-h" title="Distribute horizontal spacing"><span class="ico-svg ico-distribute-h"></span></button>
                   </div>
-                  <div class="fg-seg">
-                    <button class="fg-ib" data-act="align-top" title="Align top"><i class="fa-solid fa-align-left fa-rotate-90"></i></button>
-                    <button class="fg-ib" data-act="align-vcenter" title="Align vertical center"><i
-                        class="fa-solid fa-align-center fa-rotate-90"></i></button>
-                    <button class="fg-ib" data-act="align-bottom" title="Align bottom"><i
-                        class="fa-solid fa-align-right fa-rotate-90"></i></button>
+                  <div class="fg-seg" style="flex:1;">
+                    <button class="fg-ib" data-act="align-top" title="Align top"><span class="ico-svg ico-align-top"></span></button>
+                    <button class="fg-ib" data-act="align-vcenter" title="Align vertical center"><span class="ico-svg ico-align-vcenter"></span></button>
+                    <button class="fg-ib" data-act="align-bottom" title="Align bottom"><span class="ico-svg ico-align-bottom"></span></button>
+                    <button class="fg-ib" data-act="distribute-v" title="Distribute vertical spacing"><span class="ico-svg ico-distribute-v"></span></button>
                   </div>
                 </div>
                 <div class="fg-label">Position</div>
@@ -432,7 +452,7 @@
                       style="--fa-rotate-angle:-45deg"></i><input id="prop-rotation" type="number" value="0"><span
                       class="end">°</span></label>
                   <div class="fg-seg">
-                    <button class="fg-ib" data-act="rotate90" title="Putar 90°"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button class="fg-ib" data-act="rotate90" title="Putar 90°"><span class="ico-svg ico-rotate-cw"></span></button>
                     <button class="fg-ib" data-act="flip-x" title="Flip horizontal"><i class="fa-solid fa-left-right"></i></button>
                     <button class="fg-ib" data-act="flip-y" title="Flip vertical"><i class="fa-solid fa-up-down"></i></button>
                   </div>
@@ -448,6 +468,158 @@
                   <label class="fg-in"><span class="lb">H</span><input id="prop-h" type="number" value="80"></label>
                   <button class="fg-ib fg-fieldbtn" data-act="ratio-lock" aria-pressed="false" title="Pertahankan rasio / resize to fit"><i
                       class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+                </div>
+              </section>
+
+              <!-- AUTO LAYOUT & DISPLAY (NONE | FLEX | GRID) -->
+              <section class="fg-sec" id="sec-auto-layout" style="display: none;">
+                <div class="fg-head">
+                  <span>Layout Display</span>
+                </div>
+
+                <!-- Segmented Control: None | Flex | Grid -->
+                <div class="fg-seg" style="width: 100%; margin-bottom: 8px;">
+                  <button class="fg-ib" data-display-mode="none" title="None (Canvas Bebas)">None</button>
+                  <button class="fg-ib on" data-display-mode="flex" title="Flex (Alur 1 Dimensi)">Flex</button>
+                  <button class="fg-ib" data-display-mode="grid" title="Grid (Matriks 2 Dimensi)">Grid</button>
+                </div>
+
+                <!-- 1. KONTROL KHUSUS FLEX -->
+                <div id="layout-flex-controls" style="margin-top: 6px;">
+                  <!-- Flow Direction & Hug Content Toggle -->
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                    <div class="fg-seg" style="flex: 1;">
+                      <button class="fg-ib on" data-layout-act="dir-col" title="Alur Vertikal (Column)">
+                        <i class="fa-solid fa-arrow-down"></i>
+                      </button>
+                      <button class="fg-ib" data-layout-act="dir-row" title="Alur Horizontal (Row)">
+                        <i class="fa-solid fa-arrow-right"></i>
+                      </button>
+                    </div>
+                    <button class="fg-ib" id="btn-layout-hug" title="Hug Contents (Otomatis menyesuaikan ukuran anak)" style="border: 1px solid var(--c-line); width: auto; padding: 0 8px; font-size: 11px;">
+                      <i class="fa-solid fa-compress"></i> Hug
+                    </button>
+                  </div>
+
+                  <!-- Alignment Grid 3x3 & Spacing / Gap -->
+                  <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                    <!-- Kotak 9 Titik Penyejajaran Ala Figma -->
+                    <div id="layout-align-box" style="width: 68px; height: 68px; flex: none; background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 3px; gap: 2px;">
+                      <button class="layout-align-dot on" data-align="top-left" title="Top Left"></button>
+                      <button class="layout-align-dot" data-align="top-center" title="Top Center"></button>
+                      <button class="layout-align-dot" data-align="top-right" title="Top Right"></button>
+                      <button class="layout-align-dot" data-align="center-left" title="Center Left"></button>
+                      <button class="layout-align-dot" data-align="center" title="Center"></button>
+                      <button class="layout-align-dot" data-align="center-right" title="Center Right"></button>
+                      <button class="layout-align-dot" data-align="bottom-left" title="Bottom Left"></button>
+                      <button class="layout-align-dot" data-align="bottom-center" title="Bottom Center"></button>
+                      <button class="layout-align-dot" data-align="bottom-right" title="Bottom Right"></button>
+                    </div>
+
+                    <!-- Input Gap Antar Elemen -->
+                    <div style="flex: 1; min-width: 0;">
+                      <div class="fg-label" style="margin: 0 0 4px;">Gap</div>
+                      <label class="fg-in" style="width: 100%;">
+                        <i class="fa-solid fa-arrows-split-up-and-left" style="font-size: 11px;"></i>
+                        <input id="layout-gap" type="number" value="8" min="0" style="width: 100%;">
+                        <span class="end">px</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. KONTROL KHUSUS GRID (2 DIMENSI) -->
+                <div id="layout-grid-controls" style="display: none; margin-top: 6px;">
+                  <!-- Columns & Toggle Guides -->
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                    <div style="flex: 1;">
+                      <div class="fg-label" style="margin: 0 0 4px;">Columns</div>
+                      <label class="fg-in" style="width: 100%;">
+                        <i class="fa-solid fa-table-columns" style="font-size: 11px;"></i>
+                        <input id="grid-columns" type="number" value="3" min="1" max="12" style="width: 100%;">
+                      </label>
+                    </div>
+                    <div style="flex: none; align-self: flex-end;">
+                      <button class="fg-ib on" id="btn-toggle-grid-guides" title="Tampilkan / Sembunyikan Garis Panduan Grid Putus-putus" style="border: 1px solid var(--c-line); width: auto; padding: 0 8px; font-size: 11px; height: var(--ctl);">
+                        <i class="fa-solid fa-border-all"></i> Guides
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Row Gap & Column Gap -->
+                  <div class="fg-grid" style="margin-bottom: 8px;">
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Col Gap</div>
+                      <label class="fg-in" style="width: 100%;">
+                        <i class="fa-solid fa-arrows-left-right" style="font-size: 11px;"></i>
+                        <input id="grid-col-gap" type="number" value="12" min="0">
+                        <span class="end">px</span>
+                      </label>
+                    </div>
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Row Gap</div>
+                      <label class="fg-in" style="width: 100%;">
+                        <i class="fa-solid fa-arrows-up-down" style="font-size: 11px;"></i>
+                        <input id="grid-row-gap" type="number" value="12" min="0">
+                        <span class="end">px</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PADDING UMUM (Bisa Dipakai Flex & Grid) -->
+                <div id="layout-padding-container" style="margin-top: 6px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <div class="fg-label" style="margin: 0;">Padding</div>
+                    <button class="fg-ib" id="btn-toggle-padding-sides" title="Padding per sisi (Top, Right, Bottom, Left)" style="width: 22px; height: 22px; font-size: 11px;">
+                      <i class="fa-solid fa-sliders"></i>
+                    </button>
+                  </div>
+
+                  <!-- Mode Padding Simple (Horizontal & Vertical) -->
+                  <div id="padding-simple-grid" class="fg-grid" style="margin-bottom: 4px;">
+                    <label class="fg-in" title="Padding Horizontal (Kiri & Kanan)">
+                      <i class="fa-solid fa-arrows-left-right" style="font-size: 11px;"></i>
+                      <input id="layout-pad-h" type="number" value="16" min="0">
+                      <span class="end">px</span>
+                    </label>
+                    <label class="fg-in" title="Padding Vertikal (Atas & Bawah)">
+                      <i class="fa-solid fa-arrows-up-down" style="font-size: 11px;"></i>
+                      <input id="layout-pad-v" type="number" value="16" min="0">
+                      <span class="end">px</span>
+                    </label>
+                  </div>
+
+                  <!-- Mode Padding 4 Sisi Independen (Expander) -->
+                  <div id="padding-detailed-grid" style="display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px;">
+                    <label class="fg-in" title="Padding Top"><span class="lb" style="font-size: 10px;">T</span><input id="layout-pad-top" type="number" value="16" min="0"></label>
+                    <label class="fg-in" title="Padding Right"><span class="lb" style="font-size: 10px;">R</span><input id="layout-pad-right" type="number" value="16" min="0"></label>
+                    <label class="fg-in" title="Padding Bottom"><span class="lb" style="font-size: 10px;">B</span><input id="layout-pad-bottom" type="number" value="16" min="0"></label>
+                    <label class="fg-in" title="Padding Left"><span class="lb" style="font-size: 10px;">L</span><input id="layout-pad-left" type="number" value="16" min="0"></label>
+                  </div>
+                </div>
+              </section>
+
+              <!-- GRID ITEM PLACEMENT (Col Span & Row Span) -->
+              <section class="fg-sec" id="sec-grid-item-placement" style="display: none;">
+                <div class="fg-head">
+                  <span>Grid Item Placement</span>
+                </div>
+                <div class="fg-grid" style="margin-bottom: 4px;">
+                  <div>
+                    <div class="fg-label" style="margin: 0 0 4px;">Col Span</div>
+                    <label class="fg-in" style="width: 100%;" title="Berapa banyak kolom yang ditempati elemen ini">
+                      <i class="fa-solid fa-arrows-left-right" style="font-size: 11px;"></i>
+                      <input id="grid-item-colspan" type="number" value="1" min="1" max="12">
+                    </label>
+                  </div>
+                  <div>
+                    <div class="fg-label" style="margin: 0 0 4px;">Row Span</div>
+                    <label class="fg-in" style="width: 100%;" title="Berapa banyak baris yang ditempati elemen ini">
+                      <i class="fa-solid fa-arrows-up-down" style="font-size: 11px;"></i>
+                      <input id="grid-item-rowspan" type="number" value="1" min="1" max="12">
+                    </label>
+                  </div>
                 </div>
               </section>
 
@@ -467,7 +639,7 @@
                       value="100"><span class="end">%</span></label>
                   <label class="fg-in"><i class="fa-solid fa-vector-square"></i><input id="prop-radius" type="number"
                       value="0"></label>
-                  <button class="fg-ib fg-fieldbtn" title="Radius per sudut"><i
+                  <button class="fg-ib fg-fieldbtn" id="btn-corner-matrix" title="Radius per sudut & Border Sides Matrix"><i
                       class="fa-solid fa-sliders"></i></button>
                   <div class="fg-label">Count</div>
                   <div class="fg-label">Ratio</div>
@@ -486,67 +658,92 @@
                   <div class="fg-actions"><button class="fg-ib" title="Pengaturan teks"><i
                         class="fa-solid fa-ellipsis"></i></button></div>
                 </div>
-                <div style="display:flex;gap:6px;align-items:center;">
-                  <label class="fg-in" style="flex:1;">
-                    <select id="prop-font" class="fg-select" style="flex:1;background:transparent;border:none;color:inherit;outline:none;font:inherit;cursor:pointer">
-                      <optgroup label="Coding / Monospace">
-                        <option value="'Fira Code', monospace">Fira Code</option>
-                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                        <option value="'Space Mono', monospace">Space Mono</option>
-                        <option value="'Source Code Pro', monospace">Source Code Pro</option>
-                        <option value="'Courier New', monospace">Courier New</option>
-                      </optgroup>
-                      <optgroup label="Neon / Sci-Fi / Retro">
-                        <option value="'Orbitron', sans-serif">Orbitron</option>
-                        <option value="'Audiowide', cursive">Audiowide</option>
-                        <option value="'Bungee', cursive">Bungee</option>
-                        <option value="'Press Start 2P', monospace">Press Start 2P</option>
-                        <option value="'Russo One', sans-serif">Russo One</option>
-                      </optgroup>
-                      <optgroup label="Italic / Script / Handwritten">
-                        <option value="'Caveat', cursive">Caveat</option>
-                        <option value="'Pacifico', cursive">Pacifico</option>
-                        <option value="'Dancing Script', cursive">Dancing Script</option>
-                        <option value="'Playfair Display', serif">Playfair Display</option>
-                      </optgroup>
-                      <optgroup label="Modern UI Sans">
-                        <option value="Inter, sans-serif" selected>Inter</option>
-                        <option value="'Poppins', sans-serif">Poppins</option>
-                        <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
-                        <option value="'Montserrat', sans-serif">Montserrat</option>
-                        <option value="'Outfit', sans-serif">Outfit</option>
-                        <option value="'DM Sans', sans-serif">DM Sans</option>
-                        <option value="'Syne', sans-serif">Syne</option>
-                        <option value="Roboto, sans-serif">Roboto</option>
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="'Segoe UI', sans-serif">Segoe UI</option>
-                      </optgroup>
-                      <optgroup id="optgroup-custom-fonts" label="Custom Fonts (Imported)" style="display:none"></optgroup>
-                    </select>
-                  </label>
+
+                <!-- Font Family: Modern Custom Dropdown -->
+                <div style="display:flex;gap:6px;align-items:center;position:relative;">
+                  <div class="mv-custom-select-wrap" id="wrap-font-family" style="flex:1;">
+                    <div class="mv-custom-select-trigger" id="trigger-font-family" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="label-font-family">Inter</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                    <div class="mv-custom-select-menu" id="menu-font-family" role="listbox">
+                      <div class="mv-custom-select-group-label">Coding / Monospace</div>
+                      <div class="mv-custom-select-item" data-val="'Fira Code', monospace" style="font-family:'Fira Code', monospace">Fira Code</div>
+                      <div class="mv-custom-select-item" data-val="'JetBrains Mono', monospace" style="font-family:'JetBrains Mono', monospace">JetBrains Mono</div>
+                      <div class="mv-custom-select-item" data-val="'Space Mono', monospace" style="font-family:'Space Mono', monospace">Space Mono</div>
+                      <div class="mv-custom-select-item" data-val="'Source Code Pro', monospace" style="font-family:'Source Code Pro', monospace">Source Code Pro</div>
+                      <div class="mv-custom-select-item" data-val="'Courier New', monospace" style="font-family:'Courier New', monospace">Courier New</div>
+
+                      <div class="mv-custom-select-group-label">Neon / Sci-Fi / Retro</div>
+                      <div class="mv-custom-select-item" data-val="'Orbitron', sans-serif" style="font-family:'Orbitron', sans-serif">Orbitron</div>
+                      <div class="mv-custom-select-item" data-val="'Audiowide', cursive" style="font-family:'Audiowide', cursive">Audiowide</div>
+                      <div class="mv-custom-select-item" data-val="'Bungee', cursive" style="font-family:'Bungee', cursive">Bungee</div>
+                      <div class="mv-custom-select-item" data-val="'Press Start 2P', monospace" style="font-family:'Press Start 2P', monospace">Press Start 2P</div>
+                      <div class="mv-custom-select-item" data-val="'Russo One', sans-serif" style="font-family:'Russo One', sans-serif">Russo One</div>
+
+                      <div class="mv-custom-select-group-label">Italic / Script / Handwritten</div>
+                      <div class="mv-custom-select-item" data-val="'Caveat', cursive" style="font-family:'Caveat', cursive">Caveat</div>
+                      <div class="mv-custom-select-item" data-val="'Pacifico', cursive" style="font-family:'Pacifico', cursive">Pacifico</div>
+                      <div class="mv-custom-select-item" data-val="'Dancing Script', cursive" style="font-family:'Dancing Script', cursive">Dancing Script</div>
+                      <div class="mv-custom-select-item" data-val="'Playfair Display', serif" style="font-family:'Playfair Display', serif">Playfair Display</div>
+
+                      <div class="mv-custom-select-group-label">Modern UI Sans</div>
+                      <div class="mv-custom-select-item selected" data-val="Inter, sans-serif" style="font-family:Inter, sans-serif">Inter</div>
+                      <div class="mv-custom-select-item" data-val="'Poppins', sans-serif" style="font-family:'Poppins', sans-serif">Poppins</div>
+                      <div class="mv-custom-select-item" data-val="'Plus Jakarta Sans', sans-serif" style="font-family:'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</div>
+                      <div class="mv-custom-select-item" data-val="'Montserrat', sans-serif" style="font-family:'Montserrat', sans-serif">Montserrat</div>
+                      <div class="mv-custom-select-item" data-val="'Outfit', sans-serif" style="font-family:'Outfit', sans-serif">Outfit</div>
+                      <div class="mv-custom-select-item" data-val="'DM Sans', sans-serif" style="font-family:'DM Sans', sans-serif">DM Sans</div>
+                      <div class="mv-custom-select-item" data-val="'Syne', sans-serif" style="font-family:'Syne', sans-serif">Syne</div>
+                      <div class="mv-custom-select-item" data-val="Roboto, sans-serif" style="font-family:Roboto, sans-serif">Roboto</div>
+                      <div class="mv-custom-select-item" data-val="Arial, sans-serif" style="font-family:Arial, sans-serif">Arial</div>
+                      <div class="mv-custom-select-item" data-val="'Segoe UI', sans-serif" style="font-family:'Segoe UI', sans-serif">Segoe UI</div>
+
+                      <div class="mv-custom-select-group-label" id="group-custom-fonts" style="display:none">Custom Fonts</div>
+                      <div id="items-custom-fonts"></div>
+                    </div>
+                  </div>
+                  <!-- Hidden native select for backward-compatibility if needed -->
+                  <select id="prop-font" style="display:none"></select>
                   <button id="btn-import-font" class="fg-ib fg-fieldbtn" title="Import font dari komputer (.ttf, .otf, .woff, .woff2)" style="flex:none;width:var(--ctl);height:var(--ctl)">
                     <i class="fa-solid fa-file-arrow-up"></i>
                   </button>
                   <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display:none" aria-label="Upload custom font file">
                 </div>
+
+                <!-- Font Weight & Size / LineHeight / LetterSpacing -->
                 <div class="fg-grid" style="margin-top:8px">
-                  <label class="fg-in">
-                    <select id="prop-fontweight" style="flex:1;background:transparent;border:none;color:inherit;outline:none;font:inherit;cursor:pointer">
-                      <option value="300">Light (300)</option>
-                      <option value="400" selected>Regular (400)</option>
-                      <option value="500">Medium (500)</option>
-                      <option value="600">Semi Bold (600)</option>
-                      <option value="700">Bold (700)</option>
-                      <option value="900">Black (900)</option>
-                    </select>
-                  </label>
-                  <label class="fg-in"><i class="fa-solid fa-text-height"></i><input id="prop-fontsize" type="number"
-                      value="16" min="6" max="256"></label>
+                  <div class="mv-custom-select-wrap" id="wrap-font-weight" style="flex:1;">
+                    <div class="mv-custom-select-trigger" id="trigger-font-weight" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="label-font-weight">Regular</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                    <div class="mv-custom-select-menu" id="menu-font-weight" role="listbox">
+                      <div class="mv-custom-select-item" data-val="100">Thin</div>
+                      <div class="mv-custom-select-item" data-val="200">Extra Light</div>
+                      <div class="mv-custom-select-item" data-val="300">Light</div>
+                      <div class="mv-custom-select-item selected" data-val="400">Regular</div>
+                      <div class="mv-custom-select-item" data-val="500">Medium</div>
+                      <div class="mv-custom-select-item" data-val="600">Semi Bold</div>
+                      <div class="mv-custom-select-item" data-val="700">Bold</div>
+                      <div class="mv-custom-select-item" data-val="800">Extra Bold</div>
+                      <div class="mv-custom-select-item" data-val="900">Black</div>
+                      <div class="mv-custom-select-item" data-val="950">Extra Black</div>
+                      <div class="mv-custom-select-item" data-val="1000">Ultra Black</div>
+                    </div>
+                  </div>
+                  <!-- Hidden native select for weight -->
+                  <select id="prop-fontweight" style="display:none"></select>
+
+                  <label class="fg-in"><i class="fa-solid fa-text-height"></i><input id="prop-fontsize" type="text"
+                      value="16" placeholder="16" autocomplete="off"></label>
                   <label class="fg-in"><i class="fa-solid fa-arrows-up-down"></i><input id="prop-lineheight" type="text"
                       value="Auto"></label>
                   <label class="fg-in"><i class="fa-solid fa-text-width"></i><input id="prop-letterspacing"
                       type="number" value="0"><span class="end">%</span></label>
                 </div>
+
+                <!-- Text Align & Style -->
                 <div class="fg-grid" style="margin-top:8px">
                   <div class="fg-seg" id="text-align-seg">
                     <button class="fg-ib on" data-align="left" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
@@ -560,10 +757,18 @@
                     <button class="fg-ib" data-style="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
                   </div>
                 </div>
-                <div class="fg-grid" style="margin-top:8px">
-                  <div class="fg-seg" id="text-resize-seg" style="width:100%">
-                    <button class="fg-ib on" data-resize="auto" title="Auto Width (kotak memanjang otomatis)" style="flex:1"><i class="fa-solid fa-arrows-left-right"></i> Auto Width</button>
-                    <button class="fg-ib" data-resize="fixed" title="Fixed Width (word wrap baris baru)" style="flex:1"><i class="fa-solid fa-arrows-split-up-and-left fa-rotate-90"></i> Fixed Width</button>
+
+                <!-- Resizing & Vertical Align (Sejajar Simetris Ala Figma) -->
+                <div class="fg-grid" style="margin-top:8px; display:flex; gap:8px;">
+                  <div class="fg-seg" id="text-resize-seg" style="flex:1" title="Text Resizing">
+                    <button class="fg-ib on" data-resize="auto" title="Auto Width (kotak pas melebar)"><i class="fa-solid fa-arrows-left-right"></i></button>
+                    <button class="fg-ib" data-resize="auto-height" title="Auto Height (word wrap, tinggi otomatis)"><i class="fa-solid fa-arrows-up-down"></i></button>
+                    <button class="fg-ib" data-resize="fixed" title="Fixed Size (ukuran kotak tetap)"><i class="fa-solid fa-arrows-split-up-and-left fa-rotate-90"></i></button>
+                  </div>
+                  <div class="fg-seg" id="text-valign-seg" style="flex:1" title="Vertical Align">
+                    <button class="fg-ib on" data-valign="top" title="Align Top (Atas)"><i class="fa-solid fa-arrow-up"></i></button>
+                    <button class="fg-ib" data-valign="middle" title="Align Middle (Tengah)"><i class="fa-solid fa-arrows-to-dot"></i></button>
+                    <button class="fg-ib" data-valign="bottom" title="Align Bottom (Bawah)"><i class="fa-solid fa-arrow-down"></i></button>
                   </div>
                 </div>
               </section>
@@ -592,7 +797,7 @@
                 </div>
                 <div class="fg-body" id="sec-stroke">
                   <div id="stroke-list"></div>
-                  <div id="stroke-controls-row" class="fg-grid" style="margin-top:8px; display:none; grid-template-columns: 1fr 1fr var(--ctl); gap: 6px; align-items: center;">
+                  <div id="stroke-controls-row" class="fg-grid" style="margin-top:8px; display:none; grid-template-columns: 1fr 1fr var(--ctl) var(--ctl); gap: 6px; align-items: center;">
                     <label class="fg-in" title="Stroke Weight / Ketebalan Garis" style="min-width:0;">
                       <i class="fa-solid fa-border-all"></i>
                       <input id="prop-strokewidth" type="number" value="1" min="0" max="256" step="1">
@@ -605,6 +810,7 @@
                         <option value="outside">Outside</option>
                       </select>
                     </label>
+                    <button type="button" class="fg-ib" id="btn-stroke-matrix" title="Custom Border Sides & Corner Radius Matrix" style="background:var(--c-input); border-radius:6px;"><i class="fa-solid fa-border-none"></i></button>
                     <button type="button" class="fg-ib" id="btn-stroke-advanced" title="Advanced Stroke Settings (Dashes, Cap, Join)" style="background:var(--c-input); border-radius:6px;">
                       <i class="fa-solid fa-ellipsis"></i>
                     </button>
@@ -721,23 +927,370 @@
             </div>
 
             <div id="view-code" hidden>
-              <div class="code-block">
-                <div class="code-title">HTML</div>
-                <pre id="code-html">&lt;div class="rectangle-106"&gt;&lt;/div&gt;</pre>
+              <!-- State saat tidak ada objek terpilih -->
+              <div id="code-inspector-empty" style="padding: 24px 16px; text-align: center; color: var(--c-mute); font-size: var(--fs-sm);">
+                <i class="fa-solid fa-code" style="font-size: 28px; margin-bottom: 8px; opacity: 0.5;"></i>
+                <p>Pilih objek atau frame di kanvas untuk menginspeksi dan mengedit properti kode.</p>
               </div>
-              <div class="code-block">
-                <div class="code-title">CSS</div>
-                <pre id="code-css">.rectangle-106 {
-  display: block;
-  position: absolute;
-  width: 120px;
-  height: 80px;
-  background: #D9D9D9;
-  border: 1px solid #000000;
-  border-radius: 10px;
-  opacity: 1;
-  transform: rotate(-33.94deg);
-}</pre>
+
+              <!-- Konten Inspector Properti Code -->
+              <div id="code-inspector-content" style="display: none;">
+
+                <!-- 1. KELOMPOK STATIS: ELEMENT & TAG -->
+                <!-- 1b. FLEXBOX / AUTO-LAYOUT CONTROLS (Khusus Frame) -->
+                <section class="fg-sec" id="code-sec-layout" style="display: none;">
+                  <div class="fg-head"><span>Flexbox & Auto-Layout</span></div>
+                  
+                  <!-- Baris 1: Direction (flex-row vs flex-col) -->
+                  <div class="fg-label" style="margin-top: 4px;">Direction</div>
+                  <div class="fg-seg" style="width: 100%; margin-bottom: 6px;">
+                    <button type="button" class="fg-ib" data-code-act="flex-dir" data-dir="row" title="flex-row (Horizontal)" style="flex: 1; height: 26px; font-size: 11px;">
+                      <i class="fa-solid fa-arrow-right"></i> Row
+                    </button>
+                    <button type="button" class="fg-ib on" data-code-act="flex-dir" data-dir="column" title="flex-col (Vertical)" style="flex: 1; height: 26px; font-size: 11px;">
+                      <i class="fa-solid fa-arrow-down"></i> Col
+                    </button>
+                  </div>
+
+                  <!-- Baris 2: Justify Content & Align Items -->
+                  <div class="fg-grid" style="margin-bottom: 6px;">
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Justify</div>
+                      <select id="code-select-justify" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                        <option value="flex-start">justify-start</option>
+                        <option value="center">justify-center</option>
+                        <option value="flex-end">justify-end</option>
+                        <option value="space-between">justify-between</option>
+                        <option value="space-around">justify-around</option>
+                        <option value="space-evenly">justify-evenly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Align</div>
+                      <select id="code-select-align" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                        <option value="flex-start">items-start</option>
+                        <option value="center">items-center</option>
+                        <option value="flex-end">items-end</option>
+                        <option value="stretch">items-stretch</option>
+                        <option value="baseline">items-baseline</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Baris 3: Gap Spacing (Input + Tailwind Preset) -->
+                  <div class="fg-label">Gap Spacing</div>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                    <label class="fg-in" style="flex: 1; min-width: 0;">
+                      <i class="fa-solid fa-arrows-split-up-and-left" style="font-size: 11px;"></i>
+                      <input id="code-layout-gap" type="number" value="8" min="0" max="256" step="1" style="width: 100%;">
+                      <span class="end">px</span>
+                    </label>
+                    <select id="code-select-gap" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="custom">Custom (Bebas)</option>
+                      <option value="0" data-px="0">gap-0 (0px)</option>
+                      <option value="4" data-px="4">gap-1 (4px)</option>
+                      <option value="8" data-px="8">gap-2 (8px)</option>
+                      <option value="12" data-px="12">gap-3 (12px)</option>
+                      <option value="16" data-px="16">gap-4 (16px)</option>
+                      <option value="20" data-px="20">gap-5 (20px)</option>
+                      <option value="24" data-px="24">gap-6 (24px)</option>
+                      <option value="32" data-px="32">gap-8 (32px)</option>
+                      <option value="40" data-px="40">gap-10 (40px)</option>
+                      <option value="48" data-px="48">gap-12 (48px)</option>
+                    </select>
+                  </div>
+                </section>
+
+                <section class="fg-sec">
+                  <div class="fg-head"><span>HTML Element</span></div>
+                  <div class="fg-label" style="margin-top: 4px;">Semantic Tag</div>
+                  <select id="code-html-tag" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer;">
+                    <option value="div">&lt;div&gt; (Container)</option>
+                    <option value="section">&lt;section&gt; (Section)</option>
+                    <option value="article">&lt;article&gt; (Article Card)</option>
+                    <option value="header">&lt;header&gt; (Header)</option>
+                    <option value="footer">&lt;footer&gt; (Footer)</option>
+                    <option value="nav">&lt;nav&gt; (Navigation)</option>
+                    <option value="button">&lt;button&gt; (Button)</option>
+                    <option value="span">&lt;span&gt; (Inline)</option>
+                    <option value="p">&lt;p&gt; (Paragraph)</option>
+                  </select>
+                </section>
+
+                <!-- 2. KELOMPOK STATIS: DIMENSIONS (Width & Height 2 Baris: Input + Unit, lalu Tailwind Select) -->
+                <section class="fg-sec">
+                  <div class="fg-head"><span>Dimensions</span></div>
+                  
+                  <!-- WIDTH -->
+                  <div class="fg-label" style="margin-top: 4px;">Width</div>
+                  <!-- Baris 1: [input : number] [unit : px, rem, em, %] -->
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                    <label class="fg-in" style="flex: 1; min-width: 0;">
+                      <span class="lb">W</span>
+                      <input id="code-prop-w" type="number" value="120" min="0" step="any" style="width: 100%;">
+                    </label>
+                    <select id="code-unit-w" class="fg-select" style="width: 72px; flex: none; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="px" selected>px</option>
+                      <option value="rem">rem</option>
+                      <option value="em">em</option>
+                      <option value="%">%</option>
+                    </select>
+                  </div>
+                  <!-- Baris 2: [select : Custom / Tailwind Preset] -->
+                  <div style="margin-bottom: 12px;">
+                    <select id="code-select-w" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="custom">Custom (Bebas)</option>
+                      <option value="full">w-full (100%)</option>
+                      <option value="auto">w-auto (auto)</option>
+                      <option value="16" data-px="16">w-4 (1rem / 16px)</option>
+                      <option value="24" data-px="24">w-6 (1.5rem / 24px)</option>
+                      <option value="32" data-px="32">w-8 (2rem / 32px)</option>
+                      <option value="40" data-px="40">w-10 (2.5rem / 40px)</option>
+                      <option value="48" data-px="48">w-12 (3rem / 48px)</option>
+                      <option value="64" data-px="64">w-16 (4rem / 64px)</option>
+                      <option value="80" data-px="80">w-20 (5rem / 80px)</option>
+                      <option value="96" data-px="96">w-24 (6rem / 96px)</option>
+                      <option value="128" data-px="128">w-32 (8rem / 128px)</option>
+                      <option value="160" data-px="160">w-40 (10rem / 160px)</option>
+                      <option value="192" data-px="192">w-48 (12rem / 192px)</option>
+                      <option value="256" data-px="256">w-64 (16rem / 256px)</option>
+                      <option value="320" data-px="320">w-80 (20rem / 320px)</option>
+                      <option value="384" data-px="384">w-96 (24rem / 384px)</option>
+                    </select>
+                  </div>
+
+                  <!-- HEIGHT -->
+                  <div class="fg-label">Height</div>
+                  <!-- Baris 1: [input : number] [unit : px, rem, em, %] -->
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                    <label class="fg-in" style="flex: 1; min-width: 0;">
+                      <span class="lb">H</span>
+                      <input id="code-prop-h" type="number" value="80" min="0" step="any" style="width: 100%;">
+                    </label>
+                    <select id="code-unit-h" class="fg-select" style="width: 72px; flex: none; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="px" selected>px</option>
+                      <option value="rem">rem</option>
+                      <option value="em">em</option>
+                      <option value="%">%</option>
+                    </select>
+                  </div>
+                  <!-- Baris 2: [select : Custom / Tailwind Preset] -->
+                  <div>
+                    <select id="code-select-h" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="custom">Custom (Bebas)</option>
+                      <option value="full">h-full (100%)</option>
+                      <option value="auto">h-auto (auto)</option>
+                      <option value="16" data-px="16">h-4 (1rem / 16px)</option>
+                      <option value="24" data-px="24">h-6 (1.5rem / 24px)</option>
+                      <option value="32" data-px="32">h-8 (2rem / 32px)</option>
+                      <option value="40" data-px="40">h-10 (2.5rem / 40px)</option>
+                      <option value="48" data-px="48">h-12 (3rem / 48px)</option>
+                      <option value="64" data-px="64">h-16 (4rem / 64px)</option>
+                      <option value="80" data-px="80">h-20 (5rem / 80px)</option>
+                      <option value="96" data-px="96">h-24 (6rem / 96px)</option>
+                      <option value="128" data-px="128">h-32 (8rem / 128px)</option>
+                      <option value="160" data-px="160">h-40 (10rem / 160px)</option>
+                      <option value="192" data-px="192">h-48 (12rem / 192px)</option>
+                      <option value="256" data-px="256">h-64 (16rem / 256px)</option>
+                    </select>
+                  </div>
+                </section>
+
+                <!-- 2b. BORDER RADIUS (Rounded Tailwind Sync) -->
+                <section class="fg-sec" id="code-sec-radius">
+                  <div class="fg-head"><span>Border Radius</span></div>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                    <label class="fg-in" style="flex: 1; min-width: 0;">
+                      <i class="fa-solid fa-vector-square" style="font-size: 11px;"></i>
+                      <input id="code-prop-radius" type="number" value="0" min="0" step="any" style="width: 100%;">
+                      <span class="end">px</span>
+                    </label>
+                    <select id="code-select-radius" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="custom">Custom (Bebas)</option>
+                      <option value="0" data-px="0">rounded-none (0px)</option>
+                      <option value="2" data-px="2">rounded-sm (2px)</option>
+                      <option value="4" data-px="4">rounded (4px)</option>
+                      <option value="6" data-px="6">rounded-md (6px)</option>
+                      <option value="8" data-px="8">rounded-lg (8px)</option>
+                      <option value="12" data-px="12">rounded-xl (12px)</option>
+                      <option value="16" data-px="16">rounded-2xl (16px)</option>
+                      <option value="24" data-px="24">rounded-3xl (24px)</option>
+                      <option value="9999" data-px="9999">rounded-full (Pill)</option>
+                    </select>
+                  </div>
+                </section>
+
+                <!-- 2c. BORDER & SIDES (Tailwind Border Sync) -->
+                <section class="fg-sec" id="code-sec-border">
+                  <div class="fg-head"><span>Border & Sides</span></div>
+                  <!-- Baris 1: Border Width Input & Tailwind Preset Dropdown -->
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                    <label class="fg-in" style="flex: 1; min-width: 0;">
+                      <i class="fa-solid fa-border-all" style="font-size: 11px;"></i>
+                      <input id="code-prop-border-width" type="number" value="0" min="0" max="256" step="1" style="width: 100%;">
+                      <span class="end">px</span>
+                    </label>
+                    <select id="code-select-border-width" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="custom">Custom (Bebas)</option>
+                      <option value="0" data-px="0">border-0 (0px)</option>
+                      <option value="1" data-px="1">border (1px)</option>
+                      <option value="2" data-px="2">border-2 (2px)</option>
+                      <option value="4" data-px="4">border-4 (4px)</option>
+                      <option value="8" data-px="8">border-8 (8px)</option>
+                    </select>
+                  </div>
+
+                  <!-- Baris 2: Sisi Border (All vs Individual Sides) -->
+                  <div class="fg-label" style="margin-top: 6px;">Border Sides</div>
+                  <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                    <button type="button" class="fg-ib code-bdr-side-btn on" data-side="all" style="flex: 1; height: 26px; font-size: 11px;">All</button>
+                    <button type="button" class="fg-ib code-bdr-side-btn" data-side="top" style="flex: 1; height: 26px; font-size: 11px;" title="Top Border">T</button>
+                    <button type="button" class="fg-ib code-bdr-side-btn" data-side="right" style="flex: 1; height: 26px; font-size: 11px;" title="Right Border">R</button>
+                    <button type="button" class="fg-ib code-bdr-side-btn" data-side="bottom" style="flex: 1; height: 26px; font-size: 11px;" title="Bottom Border">B</button>
+                    <button type="button" class="fg-ib code-bdr-side-btn" data-side="left" style="flex: 1; height: 26px; font-size: 11px;" title="Left Border">L</button>
+                  </div>
+
+                  <!-- Baris 3: Border Style (Solid, Dashed, Dotted) -->
+                  <div class="fg-label">Border Style</div>
+                  <select id="code-select-border-style" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                    <option value="solid">border-solid</option>
+                    <option value="dashed">border-dashed</option>
+                    <option value="dotted">border-dotted</option>
+                  </select>
+                </section>
+
+                <!-- 2d. TYPOGRAPHY & TEXT FORMATTING (Khusus Teks) -->
+                <section class="fg-sec" id="code-sec-typography" style="display: none;">
+                  <div class="fg-head"><span>Typography & Text</span></div>
+                  
+                  <!-- Baris 1: Font Size (Input px + Tailwind Preset) -->
+                  <div class="fg-label">Font Size</div>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                    <label class="fg-in" style="flex: 1; min-width: 0;">
+                      <i class="fa-solid fa-text-height" style="font-size: 11px;"></i>
+                      <input id="code-prop-fontsize" type="number" value="16" min="6" max="256" step="1" style="width: 100%;">
+                      <span class="end">px</span>
+                    </label>
+                    <select id="code-select-fontsize" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                      <option value="custom">Custom (Bebas)</option>
+                      <option value="12" data-px="12">text-xs (12px)</option>
+                      <option value="14" data-px="14">text-sm (14px)</option>
+                      <option value="16" data-px="16">text-base (16px)</option>
+                      <option value="18" data-px="18">text-lg (18px)</option>
+                      <option value="20" data-px="20">text-xl (20px)</option>
+                      <option value="24" data-px="24">text-2xl (24px)</option>
+                      <option value="30" data-px="30">text-3xl (30px)</option>
+                      <option value="36" data-px="36">text-4xl (36px)</option>
+                      <option value="48" data-px="48">text-5xl (48px)</option>
+                      <option value="60" data-px="60">text-6xl (60px)</option>
+                    </select>
+                  </div>
+
+                  <!-- Baris 2: Font Weight & Text Align -->
+                  <div class="fg-grid" style="margin-bottom: 6px;">
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Weight</div>
+                      <select id="code-select-fontweight" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                        <option value="300">font-light (300)</option>
+                        <option value="400">font-normal (400)</option>
+                        <option value="500">font-medium (500)</option>
+                        <option value="600">font-semibold (600)</option>
+                        <option value="700">font-bold (700)</option>
+                        <option value="800">font-extrabold (800)</option>
+                        <option value="900">font-black (900)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Alignment</div>
+                      <div class="fg-seg" id="code-text-align-seg" style="height: var(--ctl);">
+                        <button type="button" class="fg-ib on" data-align="left" title="text-left" style="flex: 1;"><i class="fa-solid fa-align-left"></i></button>
+                        <button type="button" class="fg-ib" data-align="center" title="text-center" style="flex: 1;"><i class="fa-solid fa-align-center"></i></button>
+                        <button type="button" class="fg-ib" data-align="right" title="text-right" style="flex: 1;"><i class="fa-solid fa-align-right"></i></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Baris 3: Line Height (Leading) & Letter Spacing (Tracking) -->
+                  <div class="fg-grid" style="margin-bottom: 6px;">
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Leading</div>
+                      <select id="code-select-leading" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                        <option value="normal">leading-normal</option>
+                        <option value="none">leading-none (1)</option>
+                        <option value="tight">leading-tight (1.25)</option>
+                        <option value="snug">leading-snug (1.375)</option>
+                        <option value="relaxed">leading-relaxed (1.625)</option>
+                        <option value="loose">leading-loose (2)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Tracking</div>
+                      <select id="code-select-tracking" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
+                        <option value="normal">tracking-normal</option>
+                        <option value="tighter">tracking-tighter (-0.05em)</option>
+                        <option value="tight">tracking-tight (-0.025em)</option>
+                        <option value="wide">tracking-wide (0.025em)</option>
+                        <option value="wider">tracking-wider (0.05em)</option>
+                        <option value="widest">tracking-widest (0.1em)</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 3. KELOMPOK DINAMIS: POSITION (Toggle [+] / [-] Absolute) -->
+                <section class="fg-sec" id="code-sec-position">
+                  <div class="fg-head">
+                    <span>Position (Absolute)</span>
+                    <div class="fg-actions">
+                      <button id="code-btn-toggle-position" class="fg-ib" title="Tambah / Hapus Absolute Position">
+                        <i class="fa-solid fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="code-sec-position-body" style="display: none;">
+                    <div class="fg-label">Coordinates (px)</div>
+                    <div class="fg-grid">
+                      <label class="fg-in"><span class="lb">Top</span><input id="code-pos-top" type="number" placeholder="auto"></label>
+                      <label class="fg-in"><span class="lb">Left</span><input id="code-pos-left" type="number" placeholder="auto"></label>
+                    </div>
+                    <div class="fg-label">Z-Index</div>
+                    <div class="fg-grid">
+                      <label class="fg-in"><span class="lb">Z</span><input id="code-pos-zindex" type="number" value="1"></label>
+                      <span></span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 4. LIVE CODE SNIPPETS (Tailwind & CSS) -->
+                <section class="fg-sec" style="border-bottom: none;">
+                  <!-- Export Format Selector Segmented Control -->
+                  <div class="fg-label" style="margin: 0 0 4px;">Export Format</div>
+                  <div class="fg-seg" id="code-export-format-seg" style="width: 100%; margin-bottom: 10px;">
+                    <button type="button" class="fg-ib on" data-format="html" title="HTML + Tailwind CSS" style="flex: 1; height: 26px; font-size: 11px;">HTML</button>
+                    <button type="button" class="fg-ib" data-format="react" title="React JSX (className)" style="flex: 1; height: 26px; font-size: 11px;">React (JSX)</button>
+                    <button type="button" class="fg-ib" data-format="vue" title="Vue SFC Template" style="flex: 1; height: 26px; font-size: 11px;">Vue</button>
+                  </div>
+
+                  <div class="fg-head">
+                    <span id="code-tailwind-label">Tailwind CSS (HTML)</span>
+                    <button class="fg-ib" data-copy-target="code-tailwind" title="Salin Tailwind Class" style="width: auto; padding: 0 6px; font-size: 11px;">
+                      <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                  </div>
+                  <div class="code-block" style="padding: 0; border: none; margin-bottom: 12px;">
+                    <pre id="code-tailwind" style="max-height: 140px; white-space: pre-wrap; font-size: 11px;"></pre>
+                  </div>
+
+                  <div class="fg-head">
+                    <span>Pure CSS</span>
+                    <button class="fg-ib" data-copy-target="code-css" title="Salin Pure CSS" style="width: auto; padding: 0 6px; font-size: 11px;">
+                      <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                  </div>
+                  <div class="code-block" style="padding: 0; border: none;">
+                    <pre id="code-css" style="max-height: 160px; white-space: pre-wrap; font-size: 11px;"></pre>
+                  </div>
+                </section>
               </div>
             </div>
           </div>
@@ -1008,6 +1561,7 @@
     <script src="js/popup.js"></script>
     <script src="js/zoom.js"></script>
     <script src="js/shortcut.js"></script>
+    <script src="js/import/svg.js"></script>
     <script src="js/canvas.js"></script>
     <script src="js/magnet.js"></script>
     <script src="js/padding.js"></script>
@@ -1032,12 +1586,14 @@
     <script src="js/tools/image.js"></script>
 
     <!-- panel design -->
+    <script src="js/design/layout.js"></script>
     <script src="js/design/size.js"></script>
     <script src="js/design/position.js"></script>
     <script src="js/design/apperance.js"></script>
     <script src="js/design/colorpicker.js"></script>
     <script src="js/design/fill.js"></script>
     <script src="js/design/stroke.js"></script>
+    <script src="js/design/matrix-box.js"></script>
     <script src="js/design/effects.js"></script>
     <script src="js/design/typography.js"></script>
     <script src="js/design/frame-presets.js"></script>
@@ -1046,6 +1602,11 @@
     <script src="js/export/exporter.js"></script>
     <script src="js/export/json.js"></script>
     <script src="js/import/json.js"></script>
+
+    <!-- code mode inspector -->
+    <script src="js/code/css.js"></script>
+    <script src="js/code/tailwind.js"></script>
+    <script src="js/code/layout.js"></script>
 
     <!-- main app init -->
     <script src="js/main.js"></script>

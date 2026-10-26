@@ -336,6 +336,13 @@ class Exporter {
       }
 
       if (o.type === 'vector' || o.type === 'path') {
+        if (o.geometry && o.geometry.pathData) {
+          const vb = o.geometry.viewBox || { x: 0, y: 0, width: w, height: h };
+          const sx = w / (vb.width || w);
+          const sy = h / (vb.height || h);
+          const transformMatrix = `translate(${x}, ${y}) scale(${sx}, ${sy}) translate(${-vb.x}, ${-vb.y})`;
+          return `<path d="${o.geometry.pathData}" ${fillAttr} ${strokeAttr} transform="${transformMatrix}" />`;
+        }
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length > 1) {
           let d = `M ${x + nodes[0].x} ${y + nodes[0].y}`;

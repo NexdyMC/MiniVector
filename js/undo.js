@@ -10,13 +10,13 @@ const History = (() => {
 
   // Snapshot representasi data objek dan seleksi
   const snapshot = () => ({
-    objects: JSON.parse(JSON.stringify(State.objects)),
+    objects: JSON.parse(JSON.stringify(State.objects || [])),
     nextId: State.nextId,
     selectedIds: [...(State.selectedIds || [])]
   });
 
   const updateUI = () => {
-    const canUndo = undoStack.length > 0;
+    const canUndo = undoStack.length > 0 || ((State.objects || []).length > 0);
     const canRedo = redoStack.length > 0;
     $('#btn-undo').prop('disabled', !canUndo).attr('aria-disabled', !canUndo);
     $('#btn-redo').prop('disabled', !canRedo).attr('aria-disabled', !canRedo);
@@ -33,9 +33,9 @@ const History = (() => {
   }, { capture: true });
 
   // Mencatat kejadian baru ke tumpukan undo
-  const record = () => {
-    // Jangan rekam jika sedang mengeksekusi undo/redo, sedang drag menggambar, atau pointer mouse masih ditekan
-    if (isExecuting || State.drawing || isPointerDown) return;
+  const record = (force = false) => {
+    // Jangan rekam jika sedang mengeksekusi undo/redo, sedang drag menggambar, atau pointer mouse masih ditekan (kecuali force)
+    if (isExecuting || State.drawing || (isPointerDown && !force)) return;
     const current = snapshot();
 
     // Hindari duplikasi jika tidak ada perubahan objek sama sekali
@@ -59,9 +59,9 @@ const History = (() => {
   const applyState = snap => {
     isExecuting = true;
     try {
-      State.objects = JSON.parse(JSON.stringify(snap.objects));
-      State.nextId = snap.nextId;
-      State.selectedIds = snap.selectedIds.filter(id => {
+      State.objects = JSON.parse(JSON.stringify(snap.objects || []));
+      State.nextId = snap.nextId !== undefined ? snap.nextId : State.nextId;
+      State.selectedIds = (snap.selectedIds || []).filter(id => {
         // Pastikan objek yang diseleksi masih ada
         const exists = (list, searchId) => {
           for (const o of list) {
@@ -85,10 +85,32 @@ const History = (() => {
   };
 
   const undo = () => {
-    if (!undoStack.length || isExecuting) return false;
+    if (isExecuting) return false;
     const current = snapshot();
-    const prev = undoStack.pop();
+    const curJson = JSON.stringify(current.objects);
 
+    // Jika snapshot paling atas di undoStack persis sama dengan kondisi saat ini,
+    // singkirkan agar kita bisa mundur ke langkah sebelumnya
+    while (undoStack.length > 0 && JSON.stringify(undoStack[undoStack.length - 1].objects) === curJson) {
+      undoStack.pop();
+    }
+
+    if (!undoStack.length) {
+      // Tidak ada state sebelumnya di tumpukan; jika saat ini ada objek di kanvas,
+      // tindakan undo mengembalikan kanvas ke state kosong
+      if (current.objects && current.objects.length > 0) {
+        redoStack.push(current);
+        applyState({
+          objects: [],
+          nextId: State.nextId,
+          selectedIds: []
+        });
+        return true;
+      }
+      return false;
+    }
+
+    const prev = undoStack.pop();
     redoStack.push(current);
     applyState(prev);
     return true;
@@ -111,8 +133,16 @@ const History = (() => {
   };
 
   // Event listeners
-  $(document).on('object:add object:change object:remove', record);
-  $(document).on('project:load', clear);
+  $(document).on('object:add object:change object:remove', () => record());
+  $(document).on('project:load', () => {
+    clear();
+    setTimeout(() => {
+      if (undoStack.length === 0 && State.objects && State.objects.length > 0) {
+        undoStack.push(snapshot());
+      }
+      updateUI();
+    }, 50);
+  });
 
   // Sambungkan ke tombol navigasi topbar
   $(function () {
@@ -124,15 +154,22 @@ const History = (() => {
       e.preventDefault();
       redo();
     });
-    updateUI();
+
+    // Baseline awal
+    setTimeout(() => {
+      if (undoStack.length === 0 && State.objects && State.objects.length > 0) {
+        undoStack.push(snapshot());
+      }
+      updateUI();
+    }, 100);
   });
 
   return {
-    record,
+    record: (force) => record(force),
     undo,
     redo,
     clear,
-    canUndo: () => undoStack.length > 0,
+    canUndo: () => undoStack.length > 0 || ((State.objects || []).length > 0),
     canRedo: () => redoStack.length > 0
   };
 })();

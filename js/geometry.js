@@ -82,7 +82,26 @@ const Geo = (() => {
         { id: 'p2', x: w, y: h },
         { id: 'p3', x: 0, y: h }
       ];
-    } else if (o.type === 'path' && g && Array.isArray(g.nodes) && oldW > 0 && oldH > 0) {
+    } else if (o.type === 'text') {
+      // Objek teks: sesuaikan lebar dan hitung ulang tinggi sesuai wrapping baris
+      o.resizing = 'fixed'; // Tarik manual mengaktifkan mode fixed width
+      if (typeof window.measureTextDimensions === 'function') {
+        const dims = window.measureTextDimensions(
+          o.content,
+          o.fontSize || 16,
+          o.fontFamily || 'Inter, sans-serif',
+          o.fontWeight || '400',
+          o.lineHeight,
+          o.letterSpacing || 0,
+          !!o.italic,
+          w
+        );
+        // Jika handle yang ditarik bukan hanya tinggi, sesuaikan tinggi proporsional teks
+        if (h <= oldH || h === oldH) {
+          o.transform.height = dims.height;
+        }
+      }
+    } else if ((o.type === 'path' || o.type === 'vector') && g && Array.isArray(g.nodes) && oldW > 0 && oldH > 0) {
       const sx = w / oldW;
       const sy = h / oldH;
       g.nodes.forEach(n => {

@@ -134,6 +134,15 @@ $(document).on('keydown', function(e) {
     return;
   }
 
+  // Shortcut Shift + A untuk Auto Layout Wrap ala Figma
+  if (e.shiftKey && (e.code === 'KeyA' || e.key === 'A') && !ctrl && !e.altKey) {
+    if (window.LayoutEngine && typeof window.LayoutEngine.wrapSelectionInAutoLayout === 'function') {
+      e.preventDefault();
+      window.LayoutEngine.wrapSelectionInAutoLayout();
+      return;
+    }
+  }
+
   if (ctrl && !e.altKey) {
     switch (e.code) {
       case 'KeyZ':
@@ -176,6 +185,28 @@ $(document).on('keydown', function(e) {
           } else {
             window.Grouping.group();
           }
+        }
+        return;
+      case 'BracketRight':
+        e.preventDefault();
+        if (window.Layers) {
+          if (e.shiftKey) {
+            window.Layers.bringToFront();
+          } else {
+            window.Layers.bringForward();
+          }
+          if (window.History && typeof window.History.record === "function") window.History.record();
+        }
+        return;
+      case 'BracketLeft':
+        e.preventDefault();
+        if (window.Layers) {
+          if (e.shiftKey) {
+            window.Layers.sendToBack();
+          } else {
+            window.Layers.sendBackward();
+          }
+          if (window.History && typeof window.History.record === "function") window.History.record();
         }
         return;
       case 'KeyF':

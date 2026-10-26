@@ -16,6 +16,7 @@ $(function() {
     ellipse: 'ellipse',
     image: 'image',
     path: 'pen',
+    vector: 'pen',
     text: 'text'
   };
 
@@ -86,7 +87,7 @@ $(function() {
     }
     render();
   });
-  $(document).on('object:change object:remove', () => {
+  $(document).on('object:change object:remove history:change', () => {
     syncTreeFromState();
     render();
   });
@@ -236,17 +237,29 @@ $(function() {
   const moveNode = (id, drop) => {
     const src = find(id);
     if (!src) return;
+    const oldParent = src.parent;
     src.arr.splice(src.index, 1); // cabut dulu, cari target SETELAH itu
-    if (drop.pos === 'end') tree.push(src.node);
-    else if (drop.pos === 'inside') {
+    let newParent = null;
+    if (drop.pos === 'end') {
+      tree.push(src.node);
+    } else if (drop.pos === 'inside') {
       const t = find(drop.ref).node;
       t.children.unshift(src.node);
       t.open = true;
+      newParent = t;
     } else {
       const t = find(drop.ref);
       t.arr.splice(t.index + (drop.pos === 'after' ? 1 : 0), 0, src.node);
+      newParent = t.parent;
     }
     sel = id;
+
+    // Terapkan auto-layout jika ada elemen frame yang urutannya berubah
+    if (window.LayoutEngine && typeof window.LayoutEngine.applyAutoLayout === 'function') {
+      if (oldParent && oldParent.type === 'frame') window.LayoutEngine.applyAutoLayout(oldParent);
+      if (newParent && newParent.type === 'frame') window.LayoutEngine.applyAutoLayout(newParent);
+    }
+
     commitTreeToState();
     render();
   };
@@ -258,8 +271,85 @@ $(function() {
     if (i < 0 || i >= r.arr.length) return;
     r.arr.splice(r.index, 1);
     r.arr.splice(i, 0, r.node);
+    if (window.LayoutEngine && r.parent && r.parent.type === "frame") {
+      window.LayoutEngine.applyAutoLayout(r.parent);
+    }
     commitTreeToState();
     render();
+  };
+
+  // Reordering functions ala Figma:
+  // Pada tree MiniVector, index 0 adalah objek paling depan.
+  // Bring Forward (Ctrl + ]): Pindah lebih ke depan (index - 1)
+  const bringForward = (id) => {
+    const targetId = id || sel || (State.selectedIds && State.selectedIds[State.selectedIds.length - 1]);
+    if (!targetId) return;
+    const r = find(String(targetId));
+    if (!r || r.index <= 0) return;
+    r.arr.splice(r.index, 1);
+    r.arr.splice(r.index - 1, 0, r.node);
+    if (window.LayoutEngine && r.parent && r.parent.type === "frame") {
+      window.LayoutEngine.applyAutoLayout(r.parent);
+    }
+    commitTreeToState();
+    if (typeof requestRender === "function") requestRender();
+    render();
+  };
+
+  // Send Backward (Ctrl + [): Pindah lebih ke belakang (index + 1)
+  const sendBackward = (id) => {
+    const targetId = id || sel || (State.selectedIds && State.selectedIds[State.selectedIds.length - 1]);
+    if (!targetId) return;
+    const r = find(String(targetId));
+    if (!r || r.index >= r.arr.length - 1) return;
+    r.arr.splice(r.index, 1);
+    r.arr.splice(r.index + 1, 0, r.node);
+    if (window.LayoutEngine && r.parent && r.parent.type === "frame") {
+      window.LayoutEngine.applyAutoLayout(r.parent);
+    }
+    commitTreeToState();
+    if (typeof requestRender === "function") requestRender();
+    render();
+  };
+
+  // Bring to Front (Ctrl + Shift + ]): Pindah ke paling depan (index 0)
+  const bringToFront = (id) => {
+    const targetId = id || sel || (State.selectedIds && State.selectedIds[State.selectedIds.length - 1]);
+    if (!targetId) return;
+    const r = find(String(targetId));
+    if (!r || r.index === 0) return;
+    r.arr.splice(r.index, 1);
+    r.arr.unshift(r.node);
+    if (window.LayoutEngine && r.parent && r.parent.type === "frame") {
+      window.LayoutEngine.applyAutoLayout(r.parent);
+    }
+    commitTreeToState();
+    if (typeof requestRender === "function") requestRender();
+    render();
+  };
+
+  // Send to Back (Ctrl + Shift + [): Pindah ke paling belakang (paling akhir array)
+  const sendToBack = (id) => {
+    const targetId = id || sel || (State.selectedIds && State.selectedIds[State.selectedIds.length - 1]);
+    if (!targetId) return;
+    const r = find(String(targetId));
+    if (!r || r.index === r.arr.length - 1) return;
+    r.arr.splice(r.index, 1);
+    r.arr.push(r.node);
+    if (window.LayoutEngine && r.parent && r.parent.type === "frame") {
+      window.LayoutEngine.applyAutoLayout(r.parent);
+    }
+    commitTreeToState();
+    if (typeof requestRender === "function") requestRender();
+    render();
+  };
+
+  window.Layers = {
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack,
+    find
   };
 
   // ---- drag & drop pakai pointer events (mouse + touch; touch = tahan 250 ms) ----

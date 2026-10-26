@@ -81,6 +81,7 @@
             height: Math.ceil(totalH) + 2
         };
     };
+    window.measureTextDimensions = measureTextDimensions;
 
     // Cari Frame di bawah koordinat dunia
     const findFrameAt = (pt) => {
@@ -301,7 +302,15 @@
 
         if (targetFrame) {
             if (!Array.isArray(targetFrame.children)) targetFrame.children = [];
-            targetFrame.children.push(newObj);
+            if (window.LayoutEngine && targetFrame.layout && targetFrame.layout.display !== 'none') {
+                const slot = window.LayoutEngine.getNextSlotPosition(targetFrame, newObj.transform.width, newObj.transform.height);
+                newObj.transform.x = slot.x;
+                newObj.transform.y = slot.y;
+                targetFrame.children.push(newObj);
+                window.LayoutEngine.applyAutoLayout(targetFrame);
+            } else {
+                targetFrame.children.push(newObj);
+            }
         } else {
             State.objects.push(newObj);
         }

@@ -41,13 +41,15 @@ $(function() {
 
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-  $(document).on('pointerdown', '.fg-in > .lb, .fg-in > i, .fg-in input[type="number"], .fg-color .op', function(e) {
+  $(document).on('pointerdown', '.fg-in > .lb, .fg-in > i, .fg-in input[type="number"], .fg-color .op, .matrix-cell-in, .matrix-cell-in > i, .matrix-cell-in input', function(e) {
     if (e.button !== 0) return; // Hanya klik kiri
     
     // Temukan input terkait
     const $this = $(this);
     if ($this.is('input')) {
       $targetInput = $this;
+    } else if ($this.closest('.matrix-cell-in').length) {
+      $targetInput = $this.closest('.matrix-cell-in').find('input');
     } else {
       $targetInput = $this.closest('.fg-in').find('input[type="number"]');
       if (!$targetInput.length) $targetInput = $this.closest('.fg-in').find('input');
@@ -74,14 +76,16 @@ $(function() {
     isDecimal = rawStep === 'any' || (rawStep && parseFloat(rawStep) < 1);
     step = 1;
 
-    // Kunci capture jika klik pada label/ikon
-    if (!$this.is('input')) {
-      e.preventDefault();
-      isScrubbing = true;
-      try {
-        if (e.pointerId && this.setPointerCapture) this.setPointerCapture(e.pointerId);
-      } catch (err) {}
-      $('body').css('cursor', 'ew-resize');
+    // Aktifkan scrubbing pada label/ikon atau jika klik pada elemen matrix
+    if (!$this.is('input') || $this.closest('.matrix-cell-in').length) {
+      if (!$this.is('input')) {
+        e.preventDefault();
+        isScrubbing = true;
+        try {
+          if (e.pointerId && this.setPointerCapture) this.setPointerCapture(e.pointerId);
+        } catch (err) {}
+        $('body').css('cursor', 'ew-resize');
+      }
     }
   });
 

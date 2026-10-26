@@ -78,7 +78,38 @@
         start = null;
         pointerId = null;
         State.drawing = null;
-        State.objects.push(o);
+        // Cek apakah objek baru digambar di dalam suatu Frame
+        let targetFrame = null;
+        for (let i = State.objects.length - 1; i >= 0; i--) {
+            const fo = State.objects[i];
+            if (fo && fo.type === 'frame' && fo.visible !== false && !fo.locked && fo.transform) {
+                const ft = fo.transform;
+                if (o.transform.x >= ft.x && o.transform.x <= ft.x + ft.width &&
+                    o.transform.y >= ft.y && o.transform.y <= ft.y + ft.height) {
+                    targetFrame = fo;
+                    break;
+                }
+            }
+        }
+
+        if (targetFrame) {
+            if (!Array.isArray(targetFrame.children)) targetFrame.children = [];
+            // Jika targetFrame memiliki alur flex, tempatkan di slot alur berikutnya
+            if (window.LayoutEngine && targetFrame.layout && targetFrame.layout.display !== 'none') {
+                const slot = window.LayoutEngine.getNextSlotPosition(targetFrame, o.transform.width, o.transform.height);
+                o.transform.x = slot.x;
+                o.transform.y = slot.y;
+                targetFrame.children.push(o);
+                window.LayoutEngine.applyAutoLayout(targetFrame);
+            } else {
+                o.transform.x -= targetFrame.transform.x;
+                o.transform.y -= targetFrame.transform.y;
+                targetFrame.children.push(o);
+            }
+        } else {
+            State.objects.push(o);
+        }
+
         State.selectedIds = [o.id];
         $(document).trigger('object:add', [o]);
         $(document).trigger('selection:change');

@@ -12,13 +12,13 @@ window.ContextMenu = (() => {
     currentSource = source;
 
     // Batasi posisi agar tidak keluar dari tepi layar
-    const menuW = 190;
-    const menuH = 170;
+    const menuW = 210;
+    const menuH = $menu.outerHeight() || 320;
     let posX = clientX;
     let posY = clientY;
 
-    if (posX + menuW > window.innerWidth) posX = window.innerWidth - menuW - 10;
-    if (posY + menuH > window.innerHeight) posY = window.innerHeight - menuH - 10;
+    if (posX + menuW > window.innerWidth) posX = Math.max(10, window.innerWidth - menuW - 10);
+    if (posY + menuH > window.innerHeight) posY = Math.max(10, window.innerHeight - menuH - 10);
 
     const hasTarget = !!currentTargetId;
     const hasMultiple = (State.selectedIds && State.selectedIds.length >= 2);
@@ -34,6 +34,10 @@ window.ContextMenu = (() => {
     $menu.find('[data-action="copy"]').toggleClass('disabled', !hasTarget);
     $menu.find('[data-action="duplicate"]').toggleClass('disabled', !hasTarget);
     $menu.find('[data-action="delete"]').toggleClass('disabled', !hasTarget);
+    $menu.find('[data-action="bring-forward"]').toggleClass('disabled', !hasTarget);
+    $menu.find('[data-action="send-backward"]').toggleClass('disabled', !hasTarget);
+    $menu.find('[data-action="bring-front"]').toggleClass('disabled', !hasTarget);
+    $menu.find('[data-action="send-back"]').toggleClass('disabled', !hasTarget);
 
     // Boolean items
     $menu.find('.ctx-boolean-item').toggle(hasMultiple);
@@ -108,6 +112,22 @@ window.ContextMenu = (() => {
         break;
       case 'delete':
         if (typeof window.deleteSelected === 'function') window.deleteSelected();
+        break;
+      case 'bring-forward':
+        if (window.Layers) window.Layers.bringForward(currentTargetId);
+        if (window.History && typeof window.History.record === 'function') window.History.record();
+        break;
+      case 'send-backward':
+        if (window.Layers) window.Layers.sendBackward(currentTargetId);
+        if (window.History && typeof window.History.record === 'function') window.History.record();
+        break;
+      case 'bring-front':
+        if (window.Layers) window.Layers.bringToFront(currentTargetId);
+        if (window.History && typeof window.History.record === 'function') window.History.record();
+        break;
+      case 'send-back':
+        if (window.Layers) window.Layers.sendToBack(currentTargetId);
+        if (window.History && typeof window.History.record === 'function') window.History.record();
         break;
       case 'boolean-union':
         if (window.BooleanOps) window.BooleanOps.union();

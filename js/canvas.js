@@ -1,3 +1,42 @@
+const drawGridGuidesForFrame = (frame) => {
+    if (!frame || frame.visible === false || !frame.transform) return;
+    const l = frame.layout;
+    if (l && l.display === 'grid' && l.showGridGuides !== false) {
+        const padding = Array.isArray(l.padding) ? l.padding : [16, 16, 16, 16];
+        const [padTop, padRight, padBottom, padLeft] = padding;
+        const columns = Math.max(1, parseInt(l.columns, 10) || 3);
+        const colGap = typeof l.colGap === 'number' ? l.colGap : 12;
+        const rowGap = typeof l.rowGap === 'number' ? l.rowGap : 12;
+
+        const gridW = Math.max(20, frame.transform.width - padLeft - padRight);
+        const colW = Math.max(10, Math.floor((gridW - (columns - 1) * colGap) / columns));
+
+        const children = (frame.children || []).filter(c => c && c.visible !== false && (!c.code || !c.code.position || !c.code.position.isAbsolute));
+        let maxRowH = 60;
+        children.forEach(c => {
+            const rSpan = (c.layout && c.layout.rowSpan) ? Math.max(1, parseInt(c.layout.rowSpan, 10)) : 1;
+            const unitH = Math.round((c.transform.height - (rSpan - 1) * rowGap) / rSpan);
+            if (unitH > maxRowH) maxRowH = unitH;
+        });
+
+        const rows = (l && l._totalGridRows) ? Math.max(2, l._totalGridRows) : Math.max(2, Math.ceil(Math.max(1, children.length) / columns));
+
+        cvCtx.save();
+        cvCtx.strokeStyle = 'rgba(13, 153, 255, 0.45)';
+        cvCtx.lineWidth = 1 / State.zoom;
+        cvCtx.setLineDash([4 / State.zoom, 4 / State.zoom]);
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < columns; c++) {
+                const cellX = padLeft + c * (colW + colGap);
+                const cellY = padTop + r * (maxRowH + rowGap);
+                cvCtx.strokeRect(cellX, cellY, colW, maxRowH);
+            }
+        }
+        cvCtx.restore();
+    }
+};
+
 /* ================= CANVAS (render + koordinat + zoom/pan) ================= */
 
 
@@ -418,6 +457,67 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn) => {
     });
 };
 
+
+// Helper untuk menggambar border per sisi (Top, Right, Bottom, Left) persis seperti CSS box-model
+const drawIndividualBorders = (ctx, t, s, radii, strokeWidths, traceRectFn) => {
+    const swTop = strokeWidths.top || 0;
+    const swRight = strokeWidths.right || 0;
+    const swBottom = strokeWidths.bottom || 0;
+    const swLeft = strokeWidths.left || 0;
+
+    const x = t.x, y = t.y, w = t.width, h = t.height;
+
+    // Pasang clipping agar border terpotong persis mengikuti kontur luar objek (termasuk rounded corners)
+    ctx.save();
+    ctx.fillStyle = ctx.strokeStyle; // Samakan warna fill potongan border dengan warna stroke yang aktif
+    traceRectFn();
+    ctx.clip();
+
+    // Gambar masing-masing sisi sebagai potongan trapesium/persegi panjang (CSS Border Box Model)
+    // 1. Top Border
+    if (swTop > 0) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + w, y);
+        ctx.lineTo(x + w - swRight, y + swTop);
+        ctx.lineTo(x + swLeft, y + swTop);
+        ctx.closePath();
+        ctx.fill();
+    }
+    // 2. Right Border
+    if (swRight > 0) {
+        ctx.beginPath();
+        ctx.moveTo(x + w, y);
+        ctx.lineTo(x + w, y + h);
+        ctx.lineTo(x + w - swRight, y + h - swBottom);
+        ctx.lineTo(x + w - swRight, y + swTop);
+        ctx.closePath();
+        ctx.fill();
+    }
+    // 3. Bottom Border
+    if (swBottom > 0) {
+        ctx.beginPath();
+        ctx.moveTo(x + w, y + h);
+        ctx.lineTo(x, y + h);
+        ctx.lineTo(x + swLeft, y + h - swBottom);
+        ctx.lineTo(x + w - swRight, y + h - swBottom);
+        ctx.closePath();
+        ctx.fill();
+    }
+    // 4. Left Border
+    if (swLeft > 0) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + h);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x + swLeft, y + swTop);
+        ctx.lineTo(x + swLeft, y + h - swBottom);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    ctx.restore();
+};
+
 const drawObject = o => {
     if (!o || o.visible === false || !o.transform) return;
     const t = o.transform,
@@ -522,30 +622,51 @@ const drawObject = o => {
             cvCtx.restore();
         }
     } else if (o.type === 'frame') {
-        Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); 
+        const frameCr = (o.geometry && o.geometry.cornerRadius) || (s && s.cornerRadius) || 0;
+        const normFrameRadii = Array.isArray(frameCr) ? [frameCr[0] || 0, frameCr[1] || 0, frameCr[2] || 0, frameCr[3] || 0] : [parseFloat(frameCr) || 0, parseFloat(frameCr) || 0, parseFloat(frameCr) || 0, parseFloat(frameCr) || 0];
+        const maxFrameR = Math.max(...normFrameRadii);
+        const traceFrame = () => {
+            cvCtx.beginPath();
+            if (maxFrameR > 0 && typeof cvCtx.roundRect === "function") {
+                cvCtx.roundRect(t.x, t.y, t.width, t.height, normFrameRadii);
+            } else {
+                cvCtx.rect(t.x, t.y, t.width, t.height);
+            }
+        };
+        cvCtx.save();
+        traceFrame();
+        Paint.fillPath(cvCtx, s, t);
+        cvCtx.restore();
+        const hasCustomFrameSides = s.strokeSides === 'custom' && s.strokeWidths;
         const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
         const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
-        if (hasStroke && sw > 0) {
+        if (hasStroke && (sw > 0 || hasCustomFrameSides)) {
             cvCtx.save();
             applyStrokeStyle(cvCtx, s, t);
-            const align = s.strokeAlign || 'inside';
-            if (align === 'inside') {
-                cvCtx.beginPath();
-                cvCtx.rect(t.x, t.y, t.width, t.height);
-                cvCtx.clip();
-                cvCtx.lineWidth = sw * 2;
-                cvCtx.strokeRect(t.x, t.y, t.width, t.height);
-            } else if (align === 'outside') {
-                cvCtx.save();
-                cvCtx.beginPath();
-                cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
-                cvCtx.rect(t.x, t.y, t.width, t.height);
-                cvCtx.clip('evenodd');
-                cvCtx.lineWidth = sw * 2;
-                cvCtx.strokeRect(t.x, t.y, t.width, t.height);
-                cvCtx.restore();
+            if (hasCustomFrameSides) {
+                drawIndividualBorders(cvCtx, t, s, normFrameRadii, s.strokeWidths, traceFrame);
             } else {
-                cvCtx.strokeRect(t.x, t.y, t.width, t.height);
+                const align = s.strokeAlign || 'inside';
+                if (align === 'inside') {
+                    traceFrame();
+                    cvCtx.clip();
+                    cvCtx.lineWidth = sw * 2;
+                    traceFrame();
+                    cvCtx.stroke();
+                } else if (align === 'outside') {
+                    cvCtx.save();
+                    cvCtx.beginPath();
+                    cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                    traceFrame();
+                    cvCtx.clip('evenodd');
+                    cvCtx.lineWidth = sw * 2;
+                    traceFrame();
+                    cvCtx.stroke();
+                    cvCtx.restore();
+                } else {
+                    traceFrame();
+                    cvCtx.stroke();
+                }
             }
             cvCtx.restore();
         }
@@ -565,7 +686,18 @@ const drawObject = o => {
             }
             
             cvCtx.translate(t.x, t.y);
+            drawGridGuidesForFrame(o);
             o.children.forEach(drawObject);
+            cvCtx.restore();
+        } else if (o.layout && o.layout.display === 'grid') {
+            cvCtx.save();
+            if (o.clipContent !== false) {
+                cvCtx.beginPath();
+                cvCtx.rect(t.x, t.y, t.width, t.height);
+                cvCtx.clip();
+            }
+            cvCtx.translate(t.x, t.y);
+            drawGridGuidesForFrame(o);
             cvCtx.restore();
         }
     } else if (o.type === 'group') {
@@ -577,11 +709,12 @@ const drawObject = o => {
         }
     } else if (o.type === 'rectangle') {
         const cr = (o.geometry && o.geometry.cornerRadius) || (s && s.cornerRadius) || 0;
-        const radius = Array.isArray(cr) ? cr[0] : (parseFloat(cr) || 0);
+        const normRadii = Array.isArray(cr) ? [cr[0] || 0, cr[1] || 0, cr[2] || 0, cr[3] || 0] : [parseFloat(cr) || 0, parseFloat(cr) || 0, parseFloat(cr) || 0, parseFloat(cr) || 0];
+        const maxR = Math.max(...normRadii);
         const traceRect = () => {
             cvCtx.beginPath();
-            if (radius > 0 && typeof cvCtx.roundRect === 'function') {
-                cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
+            if (maxR > 0 && typeof cvCtx.roundRect === 'function') {
+                cvCtx.roundRect(t.x, t.y, t.width, t.height, normRadii);
             } else {
                 cvCtx.rect(t.x, t.y, t.width, t.height);
             }
@@ -589,42 +722,43 @@ const drawObject = o => {
 
         cvCtx.save();
         applyEffectsBefore(cvCtx, s);
-        Paint.fillRect(cvCtx, s, t.x, t.y, t.width, t.height); 
+        traceRect();
+        Paint.fillPath(cvCtx, s, t);
         cvCtx.restore();
 
         // Pasang efek inner shadow, noise, texture, glass, shader
         applyEffectsAfter(cvCtx, s, t, traceRect);
 
+        const hasCustomSides = s.strokeSides === 'custom' && s.strokeWidths;
         const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
         const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
-        if (hasStroke && sw > 0) {
+        if (hasStroke && (sw > 0 || hasCustomSides)) {
             cvCtx.save();
             applyStrokeStyle(cvCtx, s, t);
-            const align = s.strokeAlign || 'inside';
-
-            if (align === 'inside') {
-                traceRect();
-                cvCtx.clip();
-                cvCtx.lineWidth = sw * 2;
-                traceRect();
-                cvCtx.stroke();
-            } else if (align === 'outside') {
-                cvCtx.save();
-                cvCtx.beginPath();
-                cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
-                if (radius > 0 && typeof cvCtx.roundRect === 'function') {
-                    cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
-                } else {
-                    cvCtx.rect(t.x, t.y, t.width, t.height);
-                }
-                cvCtx.clip('evenodd');
-                cvCtx.lineWidth = sw * 2;
-                traceRect();
-                cvCtx.stroke();
-                cvCtx.restore();
+            if (hasCustomSides) {
+                drawIndividualBorders(cvCtx, t, s, normRadii, s.strokeWidths, traceRect);
             } else {
-                traceRect();
-                cvCtx.stroke();
+                const align = s.strokeAlign || 'inside';
+                if (align === 'inside') {
+                    traceRect();
+                    cvCtx.clip();
+                    cvCtx.lineWidth = sw * 2;
+                    traceRect();
+                    cvCtx.stroke();
+                } else if (align === 'outside') {
+                    cvCtx.save();
+                    cvCtx.beginPath();
+                    cvCtx.rect(t.x - sw * 2, t.y - sw * 2, t.width + sw * 4, t.height + sw * 4);
+                    traceRect();
+                    cvCtx.clip('evenodd');
+                    cvCtx.lineWidth = sw * 2;
+                    traceRect();
+                    cvCtx.stroke();
+                    cvCtx.restore();
+                } else {
+                    traceRect();
+                    cvCtx.stroke();
+                }
             }
             cvCtx.restore();
         }
@@ -697,6 +831,63 @@ const drawObject = o => {
             cvCtx.restore();
         }
     } else if (o.type === 'path' || o.type === 'vector') {
+        const geom = o.geometry || {};
+        if (geom.pathData && typeof Path2D !== "undefined") {
+            cvCtx.save();
+            const vb = geom.viewBox || { x: 0, y: 0, width: t.width || 100, height: t.height || 100 };
+            const sx = (t.width || 100) / (vb.width || 100);
+            const sy = (t.height || 100) / (vb.height || 100);
+
+            cvCtx.translate(t.x, t.y);
+            cvCtx.scale(sx, sy);
+            cvCtx.translate(-vb.x, -vb.y);
+
+            if (!geom._path2d || geom._cachedPathData !== geom.pathData) {
+                try {
+                    geom._path2d = new Path2D(geom.pathData);
+                    geom._cachedPathData = geom.pathData;
+                } catch (err) {
+                    console.error("Invalid SVG pathData:", err);
+                }
+            }
+
+            const isRealP2D = geom._path2d && (typeof Path2D !== 'undefined') && (geom._path2d instanceof Path2D);
+            if (isRealP2D) {
+                // Fills (Solid / Gradient dari Paint.js)
+                if (s.fills && s.fills.length > 0) {
+                    s.fills.forEach(p => {
+                        if (!p || p.visible === false) return;
+                        if (p.type === "SOLID") {
+                            const css = Paint.cssOf(p);
+                            if (css) {
+                                cvCtx.fillStyle = css;
+                                cvCtx.fill(geom._path2d);
+                            }
+                        }
+                    });
+                } else if (s.fill && s.fill !== "none") {
+                    cvCtx.fillStyle = s.fill;
+                    cvCtx.fill(geom._path2d);
+                }
+
+                // Strokes
+                const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
+                const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== "none");
+                if (sw > 0 && hasStroke) {
+                    cvCtx.strokeStyle = s.stroke || "#000000";
+                    cvCtx.lineWidth = sw / Math.max(0.001, (sx + sy) / 2);
+                    cvCtx.lineCap = s.strokeCap || "round";
+                    cvCtx.lineJoin = s.strokeJoin || "round";
+                    cvCtx.stroke(geom._path2d);
+                }
+            }
+            cvCtx.restore();
+            if (hasTransform) cvCtx.restore();
+            return;
+        } else if (o.type === 'vector') {
+            if (hasTransform) cvCtx.restore();
+            return;
+        }
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length >= 2) {
             cvCtx.save();
@@ -931,11 +1122,14 @@ const drawObject = o => {
         const rawContent = o.content || '';
         const lineHeight = o.lineHeight || (size * 1.25);
 
-        // Word wrap jika mode fixed dan batas lebar ditentukan
+        // Word wrap: jika mode fixed atau jika lebar kotak lebih sempit dari teks
         const lines = [];
-        if (o.resizing === 'fixed' && t.width > 20) {
+        const isWrapping = (o.resizing === 'fixed' || (t.width > 20 && !o.autoWidthOnly));
+        
+        if (isWrapping && t.width > 20) {
             const rawParagraphs = rawContent.split('\n');
             rawParagraphs.forEach(para => {
+                // Split berdasarkan kata atau karakter jika kata terlalu panjang
                 const words = para.split(' ');
                 let curLine = '';
                 words.forEach(w => {
@@ -943,7 +1137,35 @@ const drawObject = o => {
                     const metrics = cvCtx.measureText(testLine);
                     if (metrics.width > t.width && curLine) {
                         lines.push(curLine);
-                        curLine = w;
+                        // Cek jika kata tunggal w sendiri lebih lebar dari t.width, pecah per karakter
+                        if (cvCtx.measureText(w).width > t.width) {
+                            let subWord = '';
+                            for (let ci = 0; ci < w.length; ci++) {
+                                const testChar = subWord + w[ci];
+                                if (cvCtx.measureText(testChar).width > t.width && subWord) {
+                                    lines.push(subWord);
+                                    subWord = w[ci];
+                                } else {
+                                    subWord = testChar;
+                                }
+                            }
+                            curLine = subWord;
+                        } else {
+                            curLine = w;
+                        }
+                    } else if (metrics.width > t.width && !curLine) {
+                        // Kata pertama langsung melebihi lebar
+                        let subWord = '';
+                        for (let ci = 0; ci < w.length; ci++) {
+                            const testChar = subWord + w[ci];
+                            if (cvCtx.measureText(testChar).width > t.width && subWord) {
+                                lines.push(subWord);
+                                subWord = w[ci];
+                            } else {
+                                subWord = testChar;
+                            }
+                        }
+                        curLine = subWord;
                     } else {
                         curLine = testLine;
                     }
@@ -955,12 +1177,29 @@ const drawObject = o => {
             lines.push(...rawContent.split('\n'));
         }
 
+        // Hitung total tinggi teks untuk Auto-fit dan Vertical Alignment
+        const totalTextHeight = Math.max(lineHeight, lines.length * lineHeight);
+
+        // Jika mode auto resizing, sesuaikan tinggi kotak pas dengan konten teks
+        if (o.resizing !== 'fixed') {
+            t.height = Math.round(totalTextHeight);
+        }
+
+        // Vertical Alignment (top, middle, bottom)
+        const vAlign = o.verticalAlign || 'top';
+        let startY = t.y;
+        if (vAlign === 'middle') {
+            startY = t.y + Math.max(0, (t.height - totalTextHeight) / 2);
+        } else if (vAlign === 'bottom') {
+            startY = t.y + Math.max(0, t.height - totalTextHeight);
+        }
+
         let renderX = t.x;
         if (o.textAlign === 'center') renderX = t.x + (t.width / 2);
         else if (o.textAlign === 'right') renderX = t.x + t.width;
 
         lines.forEach((line, idx) => {
-            const lineY = t.y + (idx * lineHeight);
+            const lineY = startY + (idx * lineHeight);
             cvCtx.fillText(line, renderX, lineY);
 
             // Dekorasi Underline & Strikethrough
@@ -1585,7 +1824,7 @@ cvEl.addEventListener('auxclick', e => {
         if (!dt || !dt.files || !dt.files.length) return;
 
         // Ambil file gambar pertama yang sesuai
-        const file = Array.from(dt.files).find(f => f.type.startsWith('image/'));
+        const file = Array.from(dt.files).find(f => f.type.startsWith("image/") || /\.(svg|png|jpe?g)$/i.test(f.name));
         if (!file) return;
 
         // Hitung posisi kursor saat di-drop dalam koordinat world canvas
@@ -1599,10 +1838,36 @@ cvEl.addEventListener('auxclick', e => {
             worldDropPos = eventToWorld(e);
         }
 
+        // Jika file adalah SVG, parse sebagai Native Vector Object!
+        if (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) {
+            const svgReader = new FileReader();
+            svgReader.onload = ev => {
+                const svgText = ev.target.result;
+                if (window.SvgVectorImporter && typeof window.SvgVectorImporter.parseSVGToObjects === "function") {
+                    const objects = window.SvgVectorImporter.parseSVGToObjects(svgText, worldDropPos, file.name);
+                    if (objects && objects.length > 0) {
+                        objects.forEach(obj => State.objects.push(obj));
+                        State.selectedIds = objects.map(o => o.id);
+                        $(document).trigger("selection:change");
+                        $(document).trigger("object:add", [objects[0]]);
+                        if (window.History && typeof window.History.record === "function") window.History.record(true);
+                        requestRender();
+                        return;
+                    }
+                }
+                // Fallback jika parsing gagal: masukkan sebagai image biasa
+                if (window.ImageTool && typeof window.ImageTool.placeImageAt === "function") {
+                    window.ImageTool.placeImageAt(ev.target.result, file.name, worldDropPos);
+                }
+            };
+            svgReader.readAsText(file);
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = ev => {
             const dataUrl = ev.target.result;
-            if (window.ImageTool && typeof window.ImageTool.placeImageAt === 'function') {
+            if (window.ImageTool && typeof window.ImageTool.placeImageAt === "function") {
                 window.ImageTool.placeImageAt(dataUrl, file.name, worldDropPos);
             }
         };

@@ -83,19 +83,52 @@
         return null;
     };
 
-    // Mencari Frame target di koordinat dunia pt (mengecualikan ID objek yang sedang di-drag)
-    const findTargetFrame = (pt, excludeIds = []) => {
-        for (let i = State.objects.length - 1; i >= 0; i--) {
-            const obj = State.objects[i];
-            if (!obj || obj.type !== 'frame' || obj.visible === false || obj.locked === true || !obj.transform) continue;
-            if (excludeIds.includes(obj.id)) continue;
-
-            const t = obj.transform;
-            if (pt.x >= t.x && pt.x <= t.x + t.width && pt.y >= t.y && pt.y <= t.y + t.height) {
-                return obj;
-            }
+    // Cek apakah targetId adalah keturunan dari parentObj (mencegah siklus frame masuk ke dalam dirinya sendiri)
+    const isDescendantOf = (targetId, parentObj) => {
+        if (!parentObj || !Array.isArray(parentObj.children)) return false;
+        for (const child of parentObj.children) {
+            if (child.id === targetId) return true;
+            if (child.children && isDescendantOf(targetId, child)) return true;
         }
-        return null;
+        return false;
+    };
+
+    // Mencari Frame target terdalam di koordinat dunia pt (mengecualikan ID objek yang sedang di-drag dan anak-anaknya)
+    const findTargetFrame = (pt, excludeIds = []) => {
+        const searchList = (list, parentOffset = { x: 0, y: 0 }) => {
+            for (let i = list.length - 1; i >= 0; i--) {
+                const obj = list[i];
+                if (!obj || obj.type !== "frame" || obj.visible === false || obj.locked === true || !obj.transform) continue;
+                if (excludeIds.includes(obj.id)) continue;
+
+                // Jangan izinkan frame target jika salah satu excludeIds adalah parent dari target ini
+                let isExcluded = false;
+                for (const exId of excludeIds) {
+                    const exFound = findObjectWithParent(exId);
+                    if (exFound && exFound.obj && isDescendantOf(obj.id, exFound.obj)) {
+                        isExcluded = true;
+                        break;
+                    }
+                }
+                if (isExcluded) continue;
+
+                const absX = parentOffset.x + obj.transform.x;
+                const absY = parentOffset.y + obj.transform.y;
+                const t = obj.transform;
+
+                if (pt.x >= absX && pt.x <= absX + t.width && pt.y >= absY && pt.y <= absY + t.height) {
+                    // Cek terlebih dahulu apakah ada nested child frame di dalamnya yang terkena kursor
+                    if (Array.isArray(obj.children) && obj.children.length > 0) {
+                        const childHit = searchList(obj.children, { x: absX, y: absY });
+                        if (childHit) return childHit;
+                    }
+                    return obj;
+                }
+            }
+            return null;
+        };
+
+        return searchList(State.objects, { x: 0, y: 0 });
     };
 
     // Mengecek apakah dua persegi bersinggungan / beririsan (AABB intersection)
@@ -829,6 +862,15 @@
         if (window.Padding) window.Padding.clear();
 
         if (prevMode === 'resize' || prevMode === 'gap' || prevMode === 'rotate') {
+            // Terapkan auto layout jika elemen yang di-resize berada di dalam frame
+            if (window.LayoutEngine) {
+                State.selectedIds.forEach(id => {
+                    const found = findObjectWithParent(id);
+                    if (found && found.parent && found.parent.type === 'frame') {
+                        window.LayoutEngine.applyAutoLayout(found.parent);
+                    }
+                });
+            }
             $(document).trigger('object:change');
             if (window.History && typeof window.History.record === 'function') {
                 window.History.record();
@@ -855,7 +897,7 @@
                 }
 
                 // Frame itu sendiri tidak boleh dimasukkan ke frame lain dalam drag biasa
-                if (found.obj.type === 'frame') return;
+                // Objek biasa atau Frame dapat dimasukkan ke frame lain (nested frame), asalkan bukan frame target itu sendiri
 
                 if (!pointerWorld) return;
 
@@ -878,15 +920,30 @@
                         found.arr.splice(found.index, 1);
                         if (!Array.isArray(targetFrame.children)) targetFrame.children = [];
 
-                        obj.transform.x = absX - targetFrame.transform.x;
-                        obj.transform.y = absY - targetFrame.transform.y;
-                        targetFrame.children.push(obj);
+                        // Cari absolute offset targetFrame
+                        const targetBounds = getWorldBounds(targetFrame.id) || { x: targetFrame.transform.x, y: targetFrame.transform.y };
+
+                        // Jika targetFrame memiliki alur flex / grid, tempatkan di slot alur berikutnya
+                        if (window.LayoutEngine && targetFrame.layout && targetFrame.layout.display !== "none") {
+                            const slot = window.LayoutEngine.getNextSlotPosition(targetFrame, obj.transform.width, obj.transform.height);
+                            obj.transform.x = slot.x;
+                            obj.transform.y = slot.y;
+                            targetFrame.children.push(obj);
+                            window.LayoutEngine.applyAutoLayout(targetFrame);
+                        } else {
+                            obj.transform.x = Math.round(absX - targetBounds.x);
+                            obj.transform.y = Math.round(absY - targetBounds.y);
+                            targetFrame.children.push(obj);
+                        }
                     } else if (oldParent && oldParent.type === 'frame') {
                         // 2. KELUAR DARI FRAME (Drag-out ke root) - hanya jika parent asalnya adalah FRAME
                         found.arr.splice(found.index, 1);
                         obj.transform.x = absX;
                         obj.transform.y = absY;
                         State.objects.push(obj);
+                        if (window.LayoutEngine && oldParent.layout) {
+                            window.LayoutEngine.applyAutoLayout(oldParent);
+                        }
                     }
                 }
             });

@@ -171,6 +171,61 @@ $(function() {
     });
     commit();
   };
+
+  // ---- Distribute Spacing ----
+  const distribute = (axis) => {
+    const m = model();
+    if (!m || m.sel.length < 3) return; // Butuh minimal 3 objek untuk distribute
+    
+    // Urutkan objek berdasarkan posisi
+    const items = [...m.sel].sort((a, b) => {
+      const bA = Geo.bounds(a);
+      const bB = Geo.bounds(b);
+      return axis === 'h' ? (bA.x - bB.x) : (bA.y - bB.y);
+    });
+
+    const firstB = Geo.bounds(items[0]);
+    const lastB = Geo.bounds(items[items.length - 1]);
+
+    if (axis === 'h') {
+      const totalSpan = (lastB.x + lastB.width) - firstB.x;
+      const totalWidths = items.reduce((sum, it) => sum + Geo.bounds(it).width, 0);
+      const remainingGap = totalSpan - totalWidths;
+      const gap = remainingGap / (items.length - 1);
+
+      let currentX = firstB.x;
+      items.forEach((it) => {
+        const b = Geo.bounds(it);
+        const dx = currentX - b.x;
+        it.obj.transform.x = r2(it.obj.transform.x + dx);
+        currentX += b.width + gap;
+      });
+    } else {
+      const totalSpan = (lastB.y + lastB.height) - firstB.y;
+      const totalHeights = items.reduce((sum, it) => sum + Geo.bounds(it).height, 0);
+      const remainingGap = totalSpan - totalHeights;
+      const gap = remainingGap / (items.length - 1);
+
+      let currentY = firstB.y;
+      items.forEach((it) => {
+        const b = Geo.bounds(it);
+        const dy = currentY - b.y;
+        it.obj.transform.y = r2(it.obj.transform.y + dy);
+        currentY += b.height + gap;
+      });
+    }
+
+    commit();
+    refresh(true);
+  };
+
+  $('#view-design').on('click', '[data-act="distribute-h"]', function() {
+    distribute('h');
+  });
+
+  $('#view-design').on('click', '[data-act="distribute-v"]', function() {
+    distribute('v');
+  });
   $('#view-design').on('click', '[data-act^="align-"]', function() {
     align(String($(this).data('act')));
   });
