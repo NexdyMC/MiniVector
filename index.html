@@ -712,7 +712,7 @@
                 </div>
 
                 <!-- Font Weight & Size / LineHeight / LetterSpacing -->
-                <div class="fg-grid" style="margin-top:8px">
+                  <div class="fg-grid" style="margin-top:8px">
                   <div class="mv-custom-select-wrap" id="wrap-font-weight" style="flex:1;">
                     <div class="mv-custom-select-trigger" id="trigger-font-weight" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
                       <span id="label-font-weight">Regular</span>
@@ -936,7 +936,6 @@
               <!-- Konten Inspector Properti Code -->
               <div id="code-inspector-content" style="display: none;">
 
-                <!-- 1. KELOMPOK STATIS: ELEMENT & TAG -->
                 <!-- 1b. FLEXBOX / AUTO-LAYOUT CONTROLS (Khusus Frame) -->
                 <section class="fg-sec" id="code-sec-layout" style="display: none;">
                   <div class="fg-head"><span>Flexbox & Auto-Layout</span></div>
@@ -956,24 +955,38 @@
                   <div class="fg-grid" style="margin-bottom: 6px;">
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Justify</div>
-                      <select id="code-select-justify" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                        <option value="flex-start">justify-start</option>
-                        <option value="center">justify-center</option>
-                        <option value="flex-end">justify-end</option>
-                        <option value="space-between">justify-between</option>
-                        <option value="space-around">justify-around</option>
-                        <option value="space-evenly">justify-evenly</option>
-                      </select>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-justify">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-justify" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-justify">justify-start</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-justify" role="listbox">
+                          <div class="mv-custom-select-item selected" data-val="flex-start">justify-start</div>
+                          <div class="mv-custom-select-item" data-val="center">justify-center</div>
+                          <div class="mv-custom-select-item" data-val="flex-end">justify-end</div>
+                          <div class="mv-custom-select-item" data-val="space-between">justify-between</div>
+                          <div class="mv-custom-select-item" data-val="space-around">justify-around</div>
+                          <div class="mv-custom-select-item" data-val="space-evenly">justify-evenly</div>
+                        </div>
+                      </div>
+                      <select id="code-select-justify" style="display:none"></select>
                     </div>
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Align</div>
-                      <select id="code-select-align" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                        <option value="flex-start">items-start</option>
-                        <option value="center">items-center</option>
-                        <option value="flex-end">items-end</option>
-                        <option value="stretch">items-stretch</option>
-                        <option value="baseline">items-baseline</option>
-                      </select>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-align">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-align" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-align">items-start</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-align" role="listbox">
+                          <div class="mv-custom-select-item selected" data-val="flex-start">items-start</div>
+                          <div class="mv-custom-select-item" data-val="center">items-center</div>
+                          <div class="mv-custom-select-item" data-val="flex-end">items-end</div>
+                          <div class="mv-custom-select-item" data-val="stretch">items-stretch</div>
+                          <div class="mv-custom-select-item" data-val="baseline">items-baseline</div>
+                        </div>
+                      </div>
+                      <select id="code-select-align" style="display:none"></select>
                     </div>
                   </div>
 
@@ -985,118 +998,159 @@
                       <input id="code-layout-gap" type="number" value="8" min="0" max="256" step="1" style="width: 100%;">
                       <span class="end">px</span>
                     </label>
-                    <select id="code-select-gap" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="custom">Custom (Bebas)</option>
-                      <option value="0" data-px="0">gap-0 (0px)</option>
-                      <option value="4" data-px="4">gap-1 (4px)</option>
-                      <option value="8" data-px="8">gap-2 (8px)</option>
-                      <option value="12" data-px="12">gap-3 (12px)</option>
-                      <option value="16" data-px="16">gap-4 (16px)</option>
-                      <option value="20" data-px="20">gap-5 (20px)</option>
-                      <option value="24" data-px="24">gap-6 (24px)</option>
-                      <option value="32" data-px="32">gap-8 (32px)</option>
-                      <option value="40" data-px="40">gap-10 (40px)</option>
-                      <option value="48" data-px="48">gap-12 (48px)</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-gap" style="flex: 1.2; min-width: 0;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-gap" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-gap">gap-2 (8px)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-gap" role="listbox">
+                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="0" data-px="0">gap-0 (0px)</div>
+                        <div class="mv-custom-select-item" data-val="4" data-px="4">gap-1 (4px)</div>
+                        <div class="mv-custom-select-item selected" data-val="8" data-px="8">gap-2 (8px)</div>
+                        <div class="mv-custom-select-item" data-val="12" data-px="12">gap-3 (12px)</div>
+                        <div class="mv-custom-select-item" data-val="16" data-px="16">gap-4 (16px)</div>
+                        <div class="mv-custom-select-item" data-val="20" data-px="20">gap-5 (20px)</div>
+                        <div class="mv-custom-select-item" data-val="24" data-px="24">gap-6 (24px)</div>
+                        <div class="mv-custom-select-item" data-val="32" data-px="32">gap-8 (32px)</div>
+                        <div class="mv-custom-select-item" data-val="40" data-px="40">gap-10 (40px)</div>
+                        <div class="mv-custom-select-item" data-val="48" data-px="48">gap-12 (48px)</div>
+                      </div>
+                    </div>
+                    <select id="code-select-gap" style="display:none"></select>
                   </div>
                 </section>
 
+                <!-- HTML ELEMENT -->
                 <section class="fg-sec">
                   <div class="fg-head"><span>HTML Element</span></div>
                   <div class="fg-label" style="margin-top: 4px;">Semantic Tag</div>
-                  <select id="code-html-tag" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer;">
-                    <option value="div">&lt;div&gt; (Container)</option>
-                    <option value="section">&lt;section&gt; (Section)</option>
-                    <option value="article">&lt;article&gt; (Article Card)</option>
-                    <option value="header">&lt;header&gt; (Header)</option>
-                    <option value="footer">&lt;footer&gt; (Footer)</option>
-                    <option value="nav">&lt;nav&gt; (Navigation)</option>
-                    <option value="button">&lt;button&gt; (Button)</option>
-                    <option value="span">&lt;span&gt; (Inline)</option>
-                    <option value="p">&lt;p&gt; (Paragraph)</option>
-                  </select>
+                  <div class="mv-custom-select-wrap" id="wrap-code-html-tag">
+                    <div class="mv-custom-select-trigger" id="trigger-code-html-tag" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="label-code-html-tag">&lt;div&gt; (Container)</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                    <div class="mv-custom-select-menu" id="menu-code-html-tag" role="listbox">
+                      <div class="mv-custom-select-item selected" data-val="div">&lt;div&gt; (Container)</div>
+                      <div class="mv-custom-select-item" data-val="section">&lt;section&gt; (Section)</div>
+                      <div class="mv-custom-select-item" data-val="article">&lt;article&gt; (Article Card)</div>
+                      <div class="mv-custom-select-item" data-val="header">&lt;header&gt; (Header)</div>
+                      <div class="mv-custom-select-item" data-val="footer">&lt;footer&gt; (Footer)</div>
+                      <div class="mv-custom-select-item" data-val="nav">&lt;nav&gt; (Navigation)</div>
+                      <div class="mv-custom-select-item" data-val="button">&lt;button&gt; (Button)</div>
+                      <div class="mv-custom-select-item" data-val="span">&lt;span&gt; (Inline)</div>
+                      <div class="mv-custom-select-item" data-val="p">&lt;p&gt; (Paragraph)</div>
+                    </div>
+                  </div>
+                  <select id="code-html-tag" style="display:none"></select>
                 </section>
 
-                <!-- 2. KELOMPOK STATIS: DIMENSIONS (Width & Height 2 Baris: Input + Unit, lalu Tailwind Select) -->
+                <!-- 2. DIMENSIONS -->
                 <section class="fg-sec">
                   <div class="fg-head"><span>Dimensions</span></div>
                   
                   <!-- WIDTH -->
                   <div class="fg-label" style="margin-top: 4px;">Width</div>
-                  <!-- Baris 1: [input : number] [unit : px, rem, em, %] -->
                   <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
                     <label class="fg-in" style="flex: 1; min-width: 0;">
                       <span class="lb">W</span>
                       <input id="code-prop-w" type="number" value="120" min="0" step="any" style="width: 100%;">
                     </label>
-                    <select id="code-unit-w" class="fg-select" style="width: 72px; flex: none; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="px" selected>px</option>
-                      <option value="rem">rem</option>
-                      <option value="em">em</option>
-                      <option value="%">%</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-unit-w" style="width: 72px; flex: none;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-unit-w" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-unit-w">px</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-unit-w" role="listbox">
+                        <div class="mv-custom-select-item selected" data-val="px">px</div>
+                        <div class="mv-custom-select-item" data-val="rem">rem</div>
+                        <div class="mv-custom-select-item" data-val="em">em</div>
+                        <div class="mv-custom-select-item" data-val="%">%</div>
+                      </div>
+                    </div>
+                    <select id="code-unit-w" style="display:none"></select>
                   </div>
-                  <!-- Baris 2: [select : Custom / Tailwind Preset] -->
+                  <!-- Width Tailwind Preset Select -->
                   <div style="margin-bottom: 12px;">
-                    <select id="code-select-w" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="custom">Custom (Bebas)</option>
-                      <option value="full">w-full (100%)</option>
-                      <option value="auto">w-auto (auto)</option>
-                      <option value="16" data-px="16">w-4 (1rem / 16px)</option>
-                      <option value="24" data-px="24">w-6 (1.5rem / 24px)</option>
-                      <option value="32" data-px="32">w-8 (2rem / 32px)</option>
-                      <option value="40" data-px="40">w-10 (2.5rem / 40px)</option>
-                      <option value="48" data-px="48">w-12 (3rem / 48px)</option>
-                      <option value="64" data-px="64">w-16 (4rem / 64px)</option>
-                      <option value="80" data-px="80">w-20 (5rem / 80px)</option>
-                      <option value="96" data-px="96">w-24 (6rem / 96px)</option>
-                      <option value="128" data-px="128">w-32 (8rem / 128px)</option>
-                      <option value="160" data-px="160">w-40 (10rem / 160px)</option>
-                      <option value="192" data-px="192">w-48 (12rem / 192px)</option>
-                      <option value="256" data-px="256">w-64 (16rem / 256px)</option>
-                      <option value="320" data-px="320">w-80 (20rem / 320px)</option>
-                      <option value="384" data-px="384">w-96 (24rem / 384px)</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-w">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-w" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-w">Custom (Bebas)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-w" role="listbox">
+                        <div class="mv-custom-select-item selected" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="full">w-full (100%)</div>
+                        <div class="mv-custom-select-item" data-val="auto">w-auto (auto)</div>
+                        <div class="mv-custom-select-item" data-val="16" data-px="16">w-4 (1rem / 16px)</div>
+                        <div class="mv-custom-select-item" data-val="24" data-px="24">w-6 (1.5rem / 24px)</div>
+                        <div class="mv-custom-select-item" data-val="32" data-px="32">w-8 (2rem / 32px)</div>
+                        <div class="mv-custom-select-item" data-val="40" data-px="40">w-10 (2.5rem / 40px)</div>
+                        <div class="mv-custom-select-item" data-val="48" data-px="48">w-12 (3rem / 48px)</div>
+                        <div class="mv-custom-select-item" data-val="64" data-px="64">w-16 (4rem / 64px)</div>
+                        <div class="mv-custom-select-item" data-val="80" data-px="80">w-20 (5rem / 80px)</div>
+                        <div class="mv-custom-select-item" data-val="96" data-px="96">w-24 (6rem / 96px)</div>
+                        <div class="mv-custom-select-item" data-val="128" data-px="128">w-32 (8rem / 128px)</div>
+                        <div class="mv-custom-select-item" data-val="160" data-px="160">w-40 (10rem / 160px)</div>
+                        <div class="mv-custom-select-item" data-val="192" data-px="192">w-48 (12rem / 192px)</div>
+                        <div class="mv-custom-select-item" data-val="256" data-px="256">w-64 (16rem / 256px)</div>
+                        <div class="mv-custom-select-item" data-val="320" data-px="320">w-80 (20rem / 320px)</div>
+                        <div class="mv-custom-select-item" data-val="384" data-px="384">w-96 (24rem / 384px)</div>
+                      </div>
+                    </div>
+                    <select id="code-select-w" style="display:none"></select>
                   </div>
 
                   <!-- HEIGHT -->
                   <div class="fg-label">Height</div>
-                  <!-- Baris 1: [input : number] [unit : px, rem, em, %] -->
                   <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
                     <label class="fg-in" style="flex: 1; min-width: 0;">
                       <span class="lb">H</span>
                       <input id="code-prop-h" type="number" value="80" min="0" step="any" style="width: 100%;">
                     </label>
-                    <select id="code-unit-h" class="fg-select" style="width: 72px; flex: none; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="px" selected>px</option>
-                      <option value="rem">rem</option>
-                      <option value="em">em</option>
-                      <option value="%">%</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-unit-h" style="width: 72px; flex: none;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-unit-h" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-unit-h">px</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-unit-h" role="listbox">
+                        <div class="mv-custom-select-item selected" data-val="px">px</div>
+                        <div class="mv-custom-select-item" data-val="rem">rem</div>
+                        <div class="mv-custom-select-item" data-val="em">em</div>
+                        <div class="mv-custom-select-item" data-val="%">%</div>
+                      </div>
+                    </div>
+                    <select id="code-unit-h" style="display:none"></select>
                   </div>
-                  <!-- Baris 2: [select : Custom / Tailwind Preset] -->
+                  <!-- Height Tailwind Preset Select -->
                   <div>
-                    <select id="code-select-h" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="custom">Custom (Bebas)</option>
-                      <option value="full">h-full (100%)</option>
-                      <option value="auto">h-auto (auto)</option>
-                      <option value="16" data-px="16">h-4 (1rem / 16px)</option>
-                      <option value="24" data-px="24">h-6 (1.5rem / 24px)</option>
-                      <option value="32" data-px="32">h-8 (2rem / 32px)</option>
-                      <option value="40" data-px="40">h-10 (2.5rem / 40px)</option>
-                      <option value="48" data-px="48">h-12 (3rem / 48px)</option>
-                      <option value="64" data-px="64">h-16 (4rem / 64px)</option>
-                      <option value="80" data-px="80">h-20 (5rem / 80px)</option>
-                      <option value="96" data-px="96">h-24 (6rem / 96px)</option>
-                      <option value="128" data-px="128">h-32 (8rem / 128px)</option>
-                      <option value="160" data-px="160">h-40 (10rem / 160px)</option>
-                      <option value="192" data-px="192">h-48 (12rem / 192px)</option>
-                      <option value="256" data-px="256">h-64 (16rem / 256px)</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-h">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-h" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-h">Custom (Bebas)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-h" role="listbox">
+                        <div class="mv-custom-select-item selected" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="full">h-full (100%)</div>
+                        <div class="mv-custom-select-item" data-val="auto">h-auto (auto)</div>
+                        <div class="mv-custom-select-item" data-val="16" data-px="16">h-4 (1rem / 16px)</div>
+                        <div class="mv-custom-select-item" data-val="24" data-px="24">h-6 (1.5rem / 24px)</div>
+                        <div class="mv-custom-select-item" data-val="32" data-px="32">h-8 (2rem / 32px)</div>
+                        <div class="mv-custom-select-item" data-val="40" data-px="40">h-10 (2.5rem / 40px)</div>
+                        <div class="mv-custom-select-item" data-val="48" data-px="48">h-12 (3rem / 48px)</div>
+                        <div class="mv-custom-select-item" data-val="64" data-px="64">h-16 (4rem / 64px)</div>
+                        <div class="mv-custom-select-item" data-val="80" data-px="80">h-20 (5rem / 80px)</div>
+                        <div class="mv-custom-select-item" data-val="96" data-px="96">h-24 (6rem / 96px)</div>
+                        <div class="mv-custom-select-item" data-val="128" data-px="128">h-32 (8rem / 128px)</div>
+                        <div class="mv-custom-select-item" data-val="160" data-px="160">h-40 (10rem / 160px)</div>
+                        <div class="mv-custom-select-item" data-val="192" data-px="192">h-48 (12rem / 192px)</div>
+                        <div class="mv-custom-select-item" data-val="256" data-px="256">h-64 (16rem / 256px)</div>
+                      </div>
+                    </div>
+                    <select id="code-select-h" style="display:none"></select>
                   </div>
                 </section>
 
-                <!-- 2b. BORDER RADIUS (Rounded Tailwind Sync) -->
+                <!-- BORDER RADIUS -->
                 <section class="fg-sec" id="code-sec-radius">
                   <div class="fg-head"><span>Border Radius</span></div>
                   <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
@@ -1105,22 +1159,29 @@
                       <input id="code-prop-radius" type="number" value="0" min="0" step="any" style="width: 100%;">
                       <span class="end">px</span>
                     </label>
-                    <select id="code-select-radius" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="custom">Custom (Bebas)</option>
-                      <option value="0" data-px="0">rounded-none (0px)</option>
-                      <option value="2" data-px="2">rounded-sm (2px)</option>
-                      <option value="4" data-px="4">rounded (4px)</option>
-                      <option value="6" data-px="6">rounded-md (6px)</option>
-                      <option value="8" data-px="8">rounded-lg (8px)</option>
-                      <option value="12" data-px="12">rounded-xl (12px)</option>
-                      <option value="16" data-px="16">rounded-2xl (16px)</option>
-                      <option value="24" data-px="24">rounded-3xl (24px)</option>
-                      <option value="9999" data-px="9999">rounded-full (Pill)</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-radius" style="flex: 1.2; min-width: 0;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-radius" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-radius">rounded-none (0px)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-radius" role="listbox">
+                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item selected" data-val="0" data-px="0">rounded-none (0px)</div>
+                        <div class="mv-custom-select-item" data-val="2" data-px="2">rounded-sm (2px)</div>
+                        <div class="mv-custom-select-item" data-val="4" data-px="4">rounded (4px)</div>
+                        <div class="mv-custom-select-item" data-val="6" data-px="6">rounded-md (6px)</div>
+                        <div class="mv-custom-select-item" data-val="8" data-px="8">rounded-lg (8px)</div>
+                        <div class="mv-custom-select-item" data-val="12" data-px="12">rounded-xl (12px)</div>
+                        <div class="mv-custom-select-item" data-val="16" data-px="16">rounded-2xl (16px)</div>
+                        <div class="mv-custom-select-item" data-val="24" data-px="24">rounded-3xl (24px)</div>
+                        <div class="mv-custom-select-item" data-val="9999" data-px="9999">rounded-full (Pill)</div>
+                      </div>
+                    </div>
+                    <select id="code-select-radius" style="display:none"></select>
                   </div>
                 </section>
 
-                <!-- 2c. BORDER & SIDES (Tailwind Border Sync) -->
+                <!-- BORDER & SIDES -->
                 <section class="fg-sec" id="code-sec-border">
                   <div class="fg-head"><span>Border & Sides</span></div>
                   <!-- Baris 1: Border Width Input & Tailwind Preset Dropdown -->
@@ -1130,17 +1191,24 @@
                       <input id="code-prop-border-width" type="number" value="0" min="0" max="256" step="1" style="width: 100%;">
                       <span class="end">px</span>
                     </label>
-                    <select id="code-select-border-width" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="custom">Custom (Bebas)</option>
-                      <option value="0" data-px="0">border-0 (0px)</option>
-                      <option value="1" data-px="1">border (1px)</option>
-                      <option value="2" data-px="2">border-2 (2px)</option>
-                      <option value="4" data-px="4">border-4 (4px)</option>
-                      <option value="8" data-px="8">border-8 (8px)</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-border-width" style="flex: 1.2; min-width: 0;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-border-width" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-border-width">border-0 (0px)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-border-width" role="listbox">
+                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item selected" data-val="0" data-px="0">border-0 (0px)</div>
+                        <div class="mv-custom-select-item" data-val="1" data-px="1">border (1px)</div>
+                        <div class="mv-custom-select-item" data-val="2" data-px="2">border-2 (2px)</div>
+                        <div class="mv-custom-select-item" data-val="4" data-px="4">border-4 (4px)</div>
+                        <div class="mv-custom-select-item" data-val="8" data-px="8">border-8 (8px)</div>
+                      </div>
+                    </div>
+                    <select id="code-select-border-width" style="display:none"></select>
                   </div>
 
-                  <!-- Baris 2: Sisi Border (All vs Individual Sides) -->
+                  <!-- Baris 2: Sisi Border -->
                   <div class="fg-label" style="margin-top: 6px;">Border Sides</div>
                   <div style="display: flex; gap: 4px; margin-bottom: 8px;">
                     <button type="button" class="fg-ib code-bdr-side-btn on" data-side="all" style="flex: 1; height: 26px; font-size: 11px;">All</button>
@@ -1150,20 +1218,27 @@
                     <button type="button" class="fg-ib code-bdr-side-btn" data-side="left" style="flex: 1; height: 26px; font-size: 11px;" title="Left Border">L</button>
                   </div>
 
-                  <!-- Baris 3: Border Style (Solid, Dashed, Dotted) -->
+                  <!-- Baris 3: Border Style -->
                   <div class="fg-label">Border Style</div>
-                  <select id="code-select-border-style" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 8px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                    <option value="solid">border-solid</option>
-                    <option value="dashed">border-dashed</option>
-                    <option value="dotted">border-dotted</option>
-                  </select>
+                  <div class="mv-custom-select-wrap" id="wrap-code-select-border-style">
+                    <div class="mv-custom-select-trigger" id="trigger-code-select-border-style" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="label-code-select-border-style">border-solid</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                    <div class="mv-custom-select-menu" id="menu-code-select-border-style" role="listbox">
+                      <div class="mv-custom-select-item selected" data-val="solid">border-solid</div>
+                      <div class="mv-custom-select-item" data-val="dashed">border-dashed</div>
+                      <div class="mv-custom-select-item" data-val="dotted">border-dotted</div>
+                    </div>
+                  </div>
+                  <select id="code-select-border-style" style="display:none"></select>
                 </section>
 
-                <!-- 2d. TYPOGRAPHY & TEXT FORMATTING (Khusus Teks) -->
+                <!-- TYPOGRAPHY & TEXT -->
                 <section class="fg-sec" id="code-sec-typography" style="display: none;">
                   <div class="fg-head"><span>Typography & Text</span></div>
                   
-                  <!-- Baris 1: Font Size (Input px + Tailwind Preset) -->
+                  <!-- Baris 1: Font Size -->
                   <div class="fg-label">Font Size</div>
                   <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
                     <label class="fg-in" style="flex: 1; min-width: 0;">
@@ -1171,34 +1246,48 @@
                       <input id="code-prop-fontsize" type="number" value="16" min="6" max="256" step="1" style="width: 100%;">
                       <span class="end">px</span>
                     </label>
-                    <select id="code-select-fontsize" class="fg-select" style="flex: 1.2; min-width: 0; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                      <option value="custom">Custom (Bebas)</option>
-                      <option value="12" data-px="12">text-xs (12px)</option>
-                      <option value="14" data-px="14">text-sm (14px)</option>
-                      <option value="16" data-px="16">text-base (16px)</option>
-                      <option value="18" data-px="18">text-lg (18px)</option>
-                      <option value="20" data-px="20">text-xl (20px)</option>
-                      <option value="24" data-px="24">text-2xl (24px)</option>
-                      <option value="30" data-px="30">text-3xl (30px)</option>
-                      <option value="36" data-px="36">text-4xl (36px)</option>
-                      <option value="48" data-px="48">text-5xl (48px)</option>
-                      <option value="60" data-px="60">text-6xl (60px)</option>
-                    </select>
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-fontsize" style="flex: 1.2; min-width: 0;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-fontsize" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-fontsize">text-base (16px)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-fontsize" role="listbox">
+                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="12" data-px="12">text-xs (12px)</div>
+                        <div class="mv-custom-select-item" data-val="14" data-px="14">text-sm (14px)</div>
+                        <div class="mv-custom-select-item selected" data-val="16" data-px="16">text-base (16px)</div>
+                        <div class="mv-custom-select-item" data-val="18" data-px="18">text-lg (18px)</div>
+                        <div class="mv-custom-select-item" data-val="20" data-px="20">text-xl (20px)</div>
+                        <div class="mv-custom-select-item" data-val="24" data-px="24">text-2xl (24px)</div>
+                        <div class="mv-custom-select-item" data-val="30" data-px="30">text-3xl (30px)</div>
+                        <div class="mv-custom-select-item" data-val="36" data-px="36">text-4xl (36px)</div>
+                        <div class="mv-custom-select-item" data-val="48" data-px="48">text-5xl (48px)</div>
+                        <div class="mv-custom-select-item" data-val="60" data-px="60">text-6xl (60px)</div>
+                      </div>
+                    </div>
+                    <select id="code-select-fontsize" style="display:none"></select>
                   </div>
 
                   <!-- Baris 2: Font Weight & Text Align -->
                   <div class="fg-grid" style="margin-bottom: 6px;">
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Weight</div>
-                      <select id="code-select-fontweight" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                        <option value="300">font-light (300)</option>
-                        <option value="400">font-normal (400)</option>
-                        <option value="500">font-medium (500)</option>
-                        <option value="600">font-semibold (600)</option>
-                        <option value="700">font-bold (700)</option>
-                        <option value="800">font-extrabold (800)</option>
-                        <option value="900">font-black (900)</option>
-                      </select>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-fontweight">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-fontweight" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-fontweight">font-normal (400)</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-fontweight" role="listbox">
+                          <div class="mv-custom-select-item" data-val="300">font-light (300)</div>
+                          <div class="mv-custom-select-item selected" data-val="400">font-normal (400)</div>
+                          <div class="mv-custom-select-item" data-val="500">font-medium (500)</div>
+                          <div class="mv-custom-select-item" data-val="600">font-semibold (600)</div>
+                          <div class="mv-custom-select-item" data-val="700">font-bold (700)</div>
+                          <div class="mv-custom-select-item" data-val="800">font-extrabold (800)</div>
+                          <div class="mv-custom-select-item" data-val="900">font-black (900)</div>
+                        </div>
+                      </div>
+                      <select id="code-select-fontweight" style="display:none"></select>
                     </div>
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Alignment</div>
@@ -1210,34 +1299,48 @@
                     </div>
                   </div>
 
-                  <!-- Baris 3: Line Height (Leading) & Letter Spacing (Tracking) -->
+                  <!-- Baris 3: Leading & Tracking -->
                   <div class="fg-grid" style="margin-bottom: 6px;">
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Leading</div>
-                      <select id="code-select-leading" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                        <option value="normal">leading-normal</option>
-                        <option value="none">leading-none (1)</option>
-                        <option value="tight">leading-tight (1.25)</option>
-                        <option value="snug">leading-snug (1.375)</option>
-                        <option value="relaxed">leading-relaxed (1.625)</option>
-                        <option value="loose">leading-loose (2)</option>
-                      </select>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-leading">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-leading" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-leading">leading-normal</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-leading" role="listbox">
+                          <div class="mv-custom-select-item selected" data-val="normal">leading-normal</div>
+                          <div class="mv-custom-select-item" data-val="none">leading-none (1)</div>
+                          <div class="mv-custom-select-item" data-val="tight">leading-tight (1.25)</div>
+                          <div class="mv-custom-select-item" data-val="snug">leading-snug (1.375)</div>
+                          <div class="mv-custom-select-item" data-val="relaxed">leading-relaxed (1.625)</div>
+                          <div class="mv-custom-select-item" data-val="loose">leading-loose (2)</div>
+                        </div>
+                      </div>
+                      <select id="code-select-leading" style="display:none"></select>
                     </div>
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Tracking</div>
-                      <select id="code-select-tracking" class="fg-select" style="width: 100%; height: var(--ctl); background: var(--c-input); border: 1px solid var(--c-line); border-radius: 6px; color: inherit; padding: 0 6px; outline: none; cursor: pointer; font-size: var(--fs-sm);">
-                        <option value="normal">tracking-normal</option>
-                        <option value="tighter">tracking-tighter (-0.05em)</option>
-                        <option value="tight">tracking-tight (-0.025em)</option>
-                        <option value="wide">tracking-wide (0.025em)</option>
-                        <option value="wider">tracking-wider (0.05em)</option>
-                        <option value="widest">tracking-widest (0.1em)</option>
-                      </select>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-tracking">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-tracking" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-tracking">tracking-normal</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-tracking" role="listbox">
+                          <div class="mv-custom-select-item selected" data-val="normal">tracking-normal</div>
+                          <div class="mv-custom-select-item" data-val="tighter">tracking-tighter (-0.05em)</div>
+                          <div class="mv-custom-select-item" data-val="tight">tracking-tight (-0.025em)</div>
+                          <div class="mv-custom-select-item" data-val="wide">tracking-wide (0.025em)</div>
+                          <div class="mv-custom-select-item" data-val="wider">tracking-wider (0.05em)</div>
+                          <div class="mv-custom-select-item" data-val="widest">tracking-widest (0.1em)</div>
+                        </div>
+                      </div>
+                      <select id="code-select-tracking" style="display:none"></select>
                     </div>
                   </div>
                 </section>
 
-                <!-- 3. KELOMPOK DINAMIS: POSITION (Toggle [+] / [-] Absolute) -->
+                <!-- 3. POSITION -->
                 <section class="fg-sec" id="code-sec-position">
                   <div class="fg-head">
                     <span>Position (Absolute)</span>
@@ -1307,55 +1410,305 @@
     <!-- Settings -->
     <div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="modal-box">
-        <div class="modal-head"><span id="settings-title">Settings</span>
+        <div class="modal-head"><span id="settings-title"><i class="fa-solid fa-gear" style="margin-right: 6px; color: var(--c-accent);"></i> Settings</span>
           <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico">
               <use href="#i-close" />
             </svg></button>
         </div>
-        <div class="modal-body" id="settings-body">
-          <div class="field-label" style="margin-bottom: 8px;">Canvas & Snapping</div>
-          <p class="field-desc">Atur perilaku pendekatan magnet antar objek dan indikator jarak / padding.</p>
+        <div class="modal-body" id="settings-body" style="padding: 0; overflow: hidden;">
+          <div class="settings-layout">
+            <!-- Sidebar Nav Tabs -->
+            <div class="settings-sidebar">
+              <button class="settings-nav-btn active" data-tab="storage">
+                <i class="fa-solid fa-database"></i> Storage & Data
+              </button>
+              <button class="settings-nav-btn" data-tab="canvas">
+                <i class="fa-solid fa-palette"></i> Canvas & Snapping
+              </button>
+              <button class="settings-nav-btn" data-tab="workspace">
+                <i class="fa-solid fa-sliders"></i> Preferences
+              </button>
+              <button class="settings-nav-btn" data-tab="shortcuts">
+                <i class="fa-solid fa-keyboard"></i> Shortcuts
+              </button>
+              <button class="settings-nav-btn" data-tab="about">
+                <i class="fa-solid fa-circle-info"></i> About
+              </button>
+            </div>
 
-          <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 12px;">
-            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-              <div>
-                <strong style="display: block; font-size: var(--fs-body);">Enable Magnet (Snapping)</strong>
-                <small style="color: var(--c-mute);">Otomatis menempelkan sisi atau tengah objek saat sejajar</small>
-              </div>
-              <input type="checkbox" id="setting-magnet-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
-            </label>
+            <!-- Content Area -->
+            <div class="settings-content">
+              <!-- 1. STORAGE TAB -->
+              <div class="settings-tab-pane active" id="tab-storage">
+                <div class="field-label" style="margin-bottom: 4px;">LocalStorage Management</div>
+                <p class="field-desc">Kelola penyimpanan lokal browser tempat data kanvas dan pengaturan disimpan.</p>
 
-            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-              <div>
-                <strong style="display: block; font-size: var(--fs-body);">Snap Threshold</strong>
-                <small style="color: var(--c-mute);">Jarak sensitivitas magnet dalam pixel (default: 6px)</small>
-              </div>
-              <input type="number" id="setting-magnet-threshold" value="6" min="1" max="30" class="fg-in" style="width: 64px; text-align: center;">
-            </label>
+                <div style="margin-top: 14px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--c-line); border-radius: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                    <span style="color: var(--c-mute);">Kapasitas Terpakai</span>
+                    <strong id="storage-usage-text">0 KB / 5 MB</strong>
+                  </div>
+                  <div class="storage-meter">
+                    <div class="storage-meter-fill" id="storage-meter-bar" style="width: 2%;"></div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--c-mute);">
+                    <span id="storage-objects-count">Total Objek: 0</span>
+                    <span id="storage-slots-count">Slot Gambar: 0</span>
+                  </div>
+                </div>
 
-            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-              <div>
-                <strong style="display: block; font-size: var(--fs-body);">Show Distance & Padding</strong>
-                <small style="color: var(--c-mute);">Tampilkan garis ukur dan angka pixel antar objek (tahan Alt)</small>
+                <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                  <div class="settings-row">
+                    <div class="settings-row-info">
+                      <strong>Reset Kanvas Saat Ini</strong>
+                      <small>Kosongkan semua objek di kanvas dan buat lembar kerja baru.</small>
+                    </div>
+                    <button class="btn-secondary-outline" id="btn-clear-canvas">
+                      <i class="fa-solid fa-eraser"></i> Reset Kanvas
+                    </button>
+                  </div>
+
+                  <div class="settings-row">
+                    <div class="settings-row-info">
+                      <strong>Hapus Seluruh LocalStorage</strong>
+                      <small style="color: #F24822;">Hapus permanen seluruh proyek, slot gambar, preferensi, dan reset ke awal.</small>
+                    </div>
+                    <button class="btn-danger-outline" id="btn-clear-all-storage">
+                      <i class="fa-solid fa-trash-can"></i> Delete Storage
+                    </button>
+                  </div>
+                </div>
               </div>
-              <input type="checkbox" id="setting-padding-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
-            </label>
+
+              <!-- 2. CANVAS & SNAPPING TAB -->
+              <div class="settings-tab-pane" id="tab-canvas">
+                <div class="field-label" style="margin-bottom: 4px;">Canvas & Snapping</div>
+                <p class="field-desc">Atur perilaku pendekatan magnet antar objek dan indikator jarak / padding.</p>
+
+                <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 14px;">
+                  <label class="settings-row" style="cursor: pointer;">
+                    <div class="settings-row-info">
+                      <strong>Enable Magnet (Snapping)</strong>
+                      <small>Otomatis menempelkan sisi atau tengah objek saat sejajar</small>
+                    </div>
+                    <input type="checkbox" id="setting-magnet-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+                  </label>
+
+                  <label class="settings-row" style="cursor: pointer;">
+                    <div class="settings-row-info">
+                      <strong>Snap Threshold</strong>
+                      <small>Jarak sensitivitas magnet dalam pixel (default: 6px)</small>
+                    </div>
+                    <input type="number" id="setting-magnet-threshold" value="6" min="1" max="30" class="fg-in" style="width: 64px; text-align: center;">
+                  </label>
+
+                  <label class="settings-row" style="cursor: pointer;">
+                    <div class="settings-row-info">
+                      <strong>Show Distance & Padding</strong>
+                      <small>Tampilkan garis ukur dan angka pixel antar objek (tahan Alt)</small>
+                    </div>
+                    <input type="checkbox" id="setting-padding-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+                  </label>
+
+                  <label class="settings-row" style="cursor: pointer;">
+                    <div class="settings-row-info">
+                      <strong>Auto-Save Camera</strong>
+                      <small>Otomatis simpan posisi layar & zoom saat digeser/di-zoom</small>
+                    </div>
+                    <input type="checkbox" id="setting-camera-autosave" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+                  </label>
+                </div>
+              </div>
+
+              <!-- 3. PREFERENCES TAB -->
+              <div class="settings-tab-pane" id="tab-workspace">
+                <div class="field-label" style="margin-bottom: 4px;">Workspace & Code Defaults</div>
+                <p class="field-desc">Sesuaikan preferensi kerja default Anda di MiniVector.</p>
+
+                <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 14px;">
+                  <div class="settings-row">
+                    <div class="settings-row-info">
+                      <strong>Default Export Format</strong>
+                      <small>Format default yang dipilih saat membuka panel Code Mode.</small>
+                    </div>
+                    <select id="setting-default-export-fmt" class="fg-select" style="width: 130px; background: var(--c-input); color: #fff; border: 1px solid var(--c-line); border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer;">
+                      <option value="html">HTML + Tailwind</option>
+                      <option value="react">React (JSX)</option>
+                      <option value="vue">Vue Template</option>
+                    </select>
+                  </div>
+
+                  <div class="settings-row">
+                    <div class="settings-row-info">
+                      <strong>Default Export Scale</strong>
+                      <small>Resolusi default saat mengunduh gambar PNG / JPG.</small>
+                    </div>
+                    <select id="setting-default-export-scale" class="fg-select" style="width: 130px; background: var(--c-input); color: #fff; border: 1px solid var(--c-line); border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer;">
+                      <option value="1">1x (Standar)</option>
+                      <option value="2" selected>2x (Retina / HD)</option>
+                      <option value="3">3x (Ultra HD)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. SHORTCUTS TAB -->
+              <div class="settings-tab-pane" id="tab-shortcuts">
+                <div class="field-label" style="margin-bottom: 4px;">Keyboard Shortcuts</div>
+                <p class="field-desc">Daftar shortcut tombol cepat untuk mempercepat alur kerja.</p>
+
+                <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Select / Pointer Tool</span>
+                    <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">V</kbd>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Rectangle Tool</span>
+                    <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">R</kbd>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Ellipse Tool</span>
+                    <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">O</kbd>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Frame Tool</span>
+                    <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">F</kbd>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Text Tool</span>
+                    <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">T</kbd>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Undo / Redo</span>
+                    <span style="display:flex;gap:4px;"><kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">Ctrl+Z</kbd> <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">Ctrl+Y</kbd></span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="color: var(--c-mute);">Auto-Layout Wrap</span>
+                    <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">Shift+A</kbd>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                    <span style="color: var(--c-mute);">Group / Ungroup</span>
+                    <span style="display:flex;gap:4px;"><kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">Ctrl+G</kbd> <kbd style="padding: 2px 6px; background: var(--c-input); border-radius: 4px;">Ctrl+Shift+G</kbd></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. ABOUT TAB -->
+              <div class="settings-tab-pane" id="tab-about">
+                <div style="text-align: center; padding: 16px 0;">
+                  <div style="width: 48px; height: 48px; margin: 0 auto 12px; background: #0D99FF; border-radius: 12px; display: grid; place-items: center; color: #fff; font-size: 24px; font-weight: 700;">
+                    MV
+                  </div>
+                  <strong style="font-size: 16px; color: #fff; display: block;">MiniVector</strong>
+                  <span style="font-size: 12px; color: var(--c-mute);">v1.2.0 • Web-Based Vector Design Editor</span>
+                  <p style="font-size: 12px; color: var(--c-mute); max-width: 340px; margin: 12px auto 0; line-height: 1.5;">
+                    A lightweight, fast, and feature-rich vector design editor inspired by modern web standards and Figma. Built with HTML5 Canvas 2D, Tailwind CSS, and vanilla JavaScript.
+                  </p>
+                  <div style="margin-top: 16px;">
+                    <a href="https://github.com/NexdyMC/MiniVector" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #0D99FF; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px;">
+                      <i class="fa-brands fa-github"></i> GitHub Repository
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="field-label" style="margin-top: 20px; margin-bottom: 8px;">Camera & Viewport</div>
-          <p class="field-desc">Atur bagaimana posisi layar (pan & zoom) disimpan.</p>
-
-          <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 12px;">
-            <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-              <div>
-                <strong style="display: block; font-size: var(--fs-body);">Auto-Save Camera</strong>
-                <small style="color: var(--c-mute);">Otomatis simpan posisi layar & zoom saat digeser/di-zoom</small>
+    
+    <!-- Font Manager Modal (Two-Column Figma Style) -->
+    <div class="modal" id="modal-font-manager" role="dialog" aria-modal="true" aria-labelledby="font-manager-title">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-font" style="color:var(--c-accent);font-size:15px;"></i>
+            <span id="font-manager-title" style="font-weight:600;font-size:14px;">Custom Font Manager</span>
+          </div>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup">
+            <svg class="ico"><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:0;overflow:hidden;flex:1;">
+          <div class="font-manager-layout">
+            <!-- Kolom Kiri: Dropzone & Daftar Font -->
+            <div class="font-manager-sidebar">
+              <!-- Drag & Drop Zone -->
+              <div class="font-dropzone" id="font-manager-dropzone">
+                <i class="fa-solid fa-cloud-arrow-up font-dropzone-icon"></i>
+                <div class="font-dropzone-text">Drag & drop file font di sini</div>
+                <div class="font-dropzone-sub">Didukung: .ttf, .otf, .woff, .woff2</div>
+                <button class="btn" id="btn-browse-font" style="margin-top:4px;height:26px;font-size:11px;padding:0 10px;">
+                  Pilih File...
+                </button>
               </div>
-              <input type="checkbox" id="setting-camera-autosave" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
-            </label>
+              <input type="file" id="font-manager-file-input" accept=".ttf,.otf,.woff,.woff2" multiple hidden aria-label="Pilih file font">
 
-            <div style="font-size: 11px; color: var(--c-mute); line-height: 1.4; padding: 8px 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--c-line); border-radius: 6px;">
-              Jika <strong>Auto-Save</strong> dinonaktifkan, posisi kamera hanya akan disimpan saat Anda menekan tombol Save manual atau shortcut <strong>Ctrl + S</strong>.
+              <!-- Filter / Search -->
+              <div style="font-size:11.5px;font-weight:600;color:var(--c-mute);display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+                <span>FONT TERPASANG (<span id="custom-font-count">0</span>)</span>
+              </div>
+
+              <!-- List Font Cards -->
+              <div class="font-list-wrap" id="font-manager-list">
+                <!-- Diisi secara dinamis -->
+              </div>
+            </div>
+
+            <!-- Kolom Kanan: Detail & Live Preview -->
+            <div class="font-manager-content" id="font-manager-detail">
+              <div class="font-preview-header">
+                <div>
+                  <div class="font-preview-title" id="font-preview-name">Pilih atau Upload Font</div>
+                  <div class="font-preview-meta" id="font-preview-meta">Belum ada font kustom yang dipilih</div>
+                </div>
+                <span class="font-item-badge" id="font-preview-format" style="display:none;">TTF</span>
+              </div>
+
+              <!-- Weight Selector -->
+              <div id="font-weight-section" style="display:none;">
+                <label style="font-size:11.5px;font-weight:600;color:var(--c-mute);display:block;margin-bottom:6px;">
+                  KETEBALAN (WEIGHT):
+                </label>
+                <div class="font-weight-selector" id="font-preview-weights">
+                  <!-- Tombol bobot dinamis -->
+                </div>
+              </div>
+
+              <!-- Slider Ukuran Preview -->
+              <div class="font-size-slider-row" id="font-slider-section" style="display:none;">
+                <span style="font-size:11px;font-weight:600;">UKURAN:</span>
+                <input type="range" id="font-preview-size-slider" min="12" max="64" value="24">
+                <span id="font-preview-size-label" style="width:36px;text-align:right;font-weight:600;color:#fff;">24px</span>
+              </div>
+
+              <!-- Preview Text Area (Editable) -->
+              <div style="display:flex;flex-direction:column;flex:1;min-height:120px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span style="font-size:11px;font-weight:600;color:var(--c-mute);">LIVE PREVIEW (EDITABLE):</span>
+                  <button id="btn-reset-preview-text" class="btn" style="height:20px;font-size:10.5px;padding:0 6px;background:transparent;border:none;color:#0D99FF;">Reset Teks</button>
+                </div>
+                <div class="font-preview-box" id="font-preview-sample" contenteditable="true" spellcheck="false">
+                  The quick brown fox jumps over the lazy dog.
+                  0123456789 (!@#$%^&*?)
+                </div>
+              </div>
+
+              <!-- Actions Bottom Bar -->
+              <div class="font-manager-actions" id="font-actions-bar" style="display:none;">
+                <button class="btn btn-primary" id="btn-apply-font-to-selected" style="height:32px;font-size:12px;padding:0 14px;">
+                  <i class="fa-solid fa-check"></i> Terapkan ke Objek
+                </button>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn" id="btn-export-current-font" style="height:32px;font-size:12px;padding:0 12px;" title="Unduh file font ke komputer">
+                    <i class="fa-solid fa-download"></i> Unduh File
+                  </button>
+                  <button class="btn-danger-outline" id="btn-delete-current-font" style="height:32px;font-size:12px;padding:0 12px;" title="Hapus font dari MiniVector">
+                    <i class="fa-solid fa-trash-can"></i> Hapus Font
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

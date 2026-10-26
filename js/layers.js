@@ -30,6 +30,7 @@ $(function() {
     if (typeof State !== 'undefined') {
       State.objects = tree.slice().reverse();
       $(document).trigger('object:change');
+      if (typeof requestRender === 'function') requestRender();
     }
   };
 
@@ -261,6 +262,7 @@ $(function() {
     }
 
     commitTreeToState();
+    if (typeof requestRender === 'function') requestRender();
     render();
   };
   // Alt+↑/↓: pindah urutan di antara saudara (alternatif keyboard untuk drag & drop)
@@ -275,6 +277,7 @@ $(function() {
       window.LayoutEngine.applyAutoLayout(r.parent);
     }
     commitTreeToState();
+    if (typeof requestRender === 'function') requestRender();
     render();
   };
 

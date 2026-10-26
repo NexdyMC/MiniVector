@@ -6,6 +6,79 @@
 
 $(function () {
   'use strict';
+  /* ================= MODERN CUSTOM DROPDOWN SELECT HANDLER ================= */
+  const closeAllCustomSelects = () => {
+    $('#view-code .mv-custom-select-wrap').removeClass('open');
+    $('#view-code .mv-custom-select-trigger').removeClass('active').attr('aria-expanded', 'false');
+  };
+
+  // Toggle buka/tutup menu custom select di tab Code
+  $(document).on('click', '#view-code .mv-custom-select-trigger', function (e) {
+    e.stopPropagation();
+    const $trigger = $(this);
+    const $wrap = $trigger.closest('.mv-custom-select-wrap');
+    const isOpen = $wrap.hasClass('open');
+
+    // Tutup dropdown lainnya
+    $('.mv-custom-select-wrap').not($wrap).removeClass('open');
+    $('.mv-custom-select-trigger').not($trigger).removeClass('active').attr('aria-expanded', 'false');
+
+    if (!isOpen) {
+      $wrap.addClass('open');
+      $trigger.addClass('active').attr('aria-expanded', 'true');
+    } else {
+      $wrap.removeClass('open');
+      $trigger.removeClass('active').attr('aria-expanded', 'false');
+    }
+  });
+
+  // Pilih item dari menu custom select di tab Code
+  $(document).on('click', '#view-code .mv-custom-select-item', function (e) {
+    e.stopPropagation();
+    const $item = $(this);
+    const val = $item.data('val');
+    const text = $item.text();
+    const $wrap = $item.closest('.mv-custom-select-wrap');
+    const $trigger = $wrap.find('.mv-custom-select-trigger');
+    const wrapId = $wrap.attr('id') || '';
+    const selectId = wrapId.replace('wrap-', '');
+
+    $wrap.find('.mv-custom-select-item').removeClass('selected');
+    $item.addClass('selected');
+    $trigger.find('span').text(text);
+    $wrap.removeClass('open');
+    $trigger.removeClass('active').attr('aria-expanded', 'false');
+
+    // Trigger change pada select asli yang tersembunyi
+    const $select = $('#' + selectId);
+    if ($select.length) {
+      $select.val(val).trigger('change');
+    }
+  });
+
+  // Tutup jika klik sembarang di luar
+  $(document).on('click', function () {
+    closeAllCustomSelects();
+  });
+
+  // Helper untuk update label & selected item custom select dari luar
+  const setCustomSelectVal = (selectId, val) => {
+    const $wrap = $('#wrap-' + selectId);
+    if (!$wrap.length) return;
+    const $menu = $wrap.find('.mv-custom-select-menu');
+    let $item = $menu.find(`.mv-custom-select-item[data-val="${val}"]`);
+    if (!$item.length) {
+      // coba cari match via data-px jika ada
+      $item = $menu.find(`.mv-custom-select-item[data-px="${val}"]`);
+    }
+    if ($item.length) {
+      $wrap.find('.mv-custom-select-item').removeClass('selected');
+      $item.addClass('selected');
+      $wrap.find('.mv-custom-select-trigger > span').text($item.text());
+    }
+    $('#' + selectId).val(val);
+  };
+
 
   const BASE_FONT_SIZE = 16; // 1rem = 16px standar browser
 
@@ -64,8 +137,8 @@ $(function () {
 
     const unitW = c.sizing.width.unit || 'px';
     const unitH = c.sizing.height.unit || 'px';
-    $('#code-unit-w').val(unitW);
-    $('#code-unit-h').val(unitH);
+    setCustomSelectVal('code-unit-w', unitW);
+    setCustomSelectVal('code-unit-h', unitH);
 
     // Tampilkan nilai di input sesuai unit
     let dispW = t.width || 0;
@@ -83,24 +156,22 @@ $(function () {
 
     // Pilih option Tailwind yang cocok untuk Width
     const wVal = Math.round(t.width || 0);
-    const $selectW = $('#code-select-w');
     if (unitW === '%') {
-      $selectW.val('full');
-    } else if ($selectW.find(`option[data-px="${wVal}"]`).length) {
-      $selectW.val(wVal);
+      setCustomSelectVal('code-select-w', 'full');
+    } else if ($('#menu-code-select-w').find(`.mv-custom-select-item[data-px="${wVal}"]`).length) {
+      setCustomSelectVal('code-select-w', wVal);
     } else {
-      $selectW.val('custom');
+      setCustomSelectVal('code-select-w', 'custom');
     }
 
     // Pilih option Tailwind yang cocok untuk Height
     const hVal = Math.round(t.height || 0);
-    const $selectH = $('#code-select-h');
     if (unitH === '%') {
-      $selectH.val('full');
-    } else if ($selectH.find(`option[data-px="${hVal}"]`).length) {
-      $selectH.val(hVal);
+      setCustomSelectVal('code-select-h', 'full');
+    } else if ($('#menu-code-select-h').find(`.mv-custom-select-item[data-px="${hVal}"]`).length) {
+      setCustomSelectVal('code-select-h', hVal);
     } else {
-      $selectH.val('custom');
+      setCustomSelectVal('code-select-h', 'custom');
     }
 
     // 2b. Sinkronisasi Border Radius
@@ -112,11 +183,10 @@ $(function () {
     else if (rawCr !== undefined) radPx = parseFloat(rawCr) || 0;
 
     $('#code-prop-radius').val(radPx);
-    const $selectRad = $('#code-select-radius');
-    if ($selectRad.find(`option[data-px="${radPx}"]`).length) {
-      $selectRad.val(radPx);
+    if ($('#menu-code-select-radius').find(`.mv-custom-select-item[data-px="${radPx}"]`).length) {
+      setCustomSelectVal('code-select-radius', radPx);
     } else {
-      $selectRad.val('custom');
+      setCustomSelectVal('code-select-radius', 'custom');
     }
 
     // 2c. Sinkronisasi Border & Sides
@@ -127,12 +197,10 @@ $(function () {
       bdrW = Math.max(sty.strokeWidths.top || 0, sty.strokeWidths.right || 0, sty.strokeWidths.bottom || 0, sty.strokeWidths.left || 0);
     }
     $('#code-prop-border-width').val(bdrW);
-
-    const $selectBdr = $('#code-select-border-width');
-    if ($selectBdr.find(`option[data-px="${bdrW}"]`).length) {
-      $selectBdr.val(bdrW);
+    if ($('#menu-code-select-border-width').find(`.mv-custom-select-item[data-px="${bdrW}"]`).length) {
+      setCustomSelectVal('code-select-border-width', bdrW);
     } else {
-      $selectBdr.val('custom');
+      setCustomSelectVal('code-select-border-width', 'custom');
     }
 
     // Border side toggle buttons (All / T / R / B / L)
@@ -149,10 +217,10 @@ $(function () {
 
     // Border style
     const isDashed = Array.isArray(sty.strokeDashes) && sty.strokeDashes.length > 0;
-    $('#code-select-border-style').val(isDashed ? 'dashed' : 'solid');
+    setCustomSelectVal('code-select-border-style', isDashed ? 'dashed' : 'solid');
 
     // 3. Sinkronisasi Tag HTML
-    $('#code-html-tag').val(c.htmlTag || (obj.type === 'text' ? 'p' : 'div'));
+    setCustomSelectVal('code-html-tag', c.htmlTag || (obj.type === 'text' ? 'p' : 'div'));
 
     // 4. Sinkronisasi Kategori Dinamis: Position (Absolute)
     c.position = c.position || { isAbsolute: false };
@@ -175,15 +243,14 @@ $(function () {
       
       const gapVal = (l.gap !== undefined ? l.gap : 8);
       $('#code-layout-gap').val(gapVal);
-      const $selectGap = $('#code-select-gap');
-      if ($selectGap.find(`option[data-px="${gapVal}"]`).length) {
-        $selectGap.val(gapVal);
+      if ($('#menu-code-select-gap').find(`.mv-custom-select-item[data-px="${gapVal}"]`).length) {
+        setCustomSelectVal('code-select-gap', gapVal);
       } else {
-        $selectGap.val('custom');
+        setCustomSelectVal('code-select-gap', 'custom');
       }
 
-      $('#code-select-justify').val(l.justifyContent || 'flex-start');
-      $('#code-select-align').val(l.alignItems || 'flex-start');
+      setCustomSelectVal('code-select-justify', l.justifyContent || 'flex-start');
+      setCustomSelectVal('code-select-align', l.alignItems || 'flex-start');
     } else {
       $('#code-sec-layout').hide();
     }
@@ -204,21 +271,20 @@ $(function () {
       $('#code-sec-typography').show();
       const fs = obj.fontSize || 16;
       $('#code-prop-fontsize').val(fs);
-      const $selectFs = $('#code-select-fontsize');
-      if ($selectFs.find(`option[data-px="${fs}"]`).length) {
-        $selectFs.val(fs);
+      if ($('#menu-code-select-fontsize').find(`.mv-custom-select-item[data-px="${fs}"]`).length) {
+        setCustomSelectVal('code-select-fontsize', fs);
       } else {
-        $selectFs.val('custom');
+        setCustomSelectVal('code-select-fontsize', 'custom');
       }
 
-      $('#code-select-fontweight').val(String(obj.fontWeight || '400'));
+      setCustomSelectVal('code-select-fontweight', String(obj.fontWeight || '400'));
 
       const ta = obj.textAlign || 'left';
       $('#code-text-align-seg button').removeClass('on');
       $(`#code-text-align-seg button[data-align="${ta}"]`).addClass('on');
 
-      $('#code-select-leading').val(obj.leadingPreset || 'normal');
-      $('#code-select-tracking').val(obj.trackingPreset || 'normal');
+      setCustomSelectVal('code-select-leading', obj.leadingPreset || 'normal');
+      setCustomSelectVal('code-select-tracking', obj.trackingPreset || 'normal');
     } else {
       $('#code-sec-typography').hide();
     }
@@ -731,5 +797,245 @@ $(function () {
     }
   });
 
+
+  /* ================= CODE EXPORT MODAL LOGIC (INTERACTIVE PREVIEW & EDITOR) ================= */
+  let currentModalFormat = 'html';
+  let currentModalStyle = 'tailwind';
+  let modalPreviewZoom = 1;
+
+  const updateModalGutters = (lineCount) => {
+    let guttersHtml = '';
+    for (let i = 1; i <= Math.max(1, lineCount); i++) {
+      guttersHtml += `${i}<br>`;
+    }
+    $('#code-modal-gutters').html(guttersHtml);
+  };
+
+  const syncExportModal = () => {
+    const obj = getSelectedObject();
+    if (!obj) {
+      $('#code-export-target-name').text('No Layer Selected');
+      $('#code-preview-dimen-meta').html('<i class="fa-solid fa-ruler-combined" style="margin-right:4px;"></i> 0 × 0 px');
+      $('#code-preview-type-meta').html('<i class="fa-solid fa-shapes" style="margin-right:4px;"></i> None');
+      $('#code-preview-rendered-box').empty().html('<div style="color:var(--c-mute);padding:24px;text-align:center;font-size:12px;">Pilih objek di kanvas untuk mengekspor kode</div>');
+      $('#code-modal-snippet').text('// Belum ada objek yang dipilih');
+      updateModalGutters(1);
+      $('#code-modal-lines-count').text('0 lines');
+      $('#code-modal-bytes-count').text('0 B');
+      return;
+    }
+
+    const t = obj.transform || { width: 100, height: 100 };
+    const w = Math.round(t.width || 0);
+    const h = Math.round(t.height || 0);
+    const name = obj.name || (obj.type ? obj.type.charAt(0).toUpperCase() + obj.type.slice(1) : 'Layer');
+
+    $('#code-export-target-name').text(name);
+    $('#code-preview-dimen-meta').html(`<i class="fa-solid fa-ruler-combined" style="margin-right:4px;"></i> ${w} × ${h} px`);
+    $('#code-preview-type-meta').html(`<i class="fa-solid fa-shapes" style="margin-right:4px;"></i> ${obj.type ? obj.type.toUpperCase() : 'LAYER'}`);
+
+    // 1. Sinkronisasi Segmented Controls
+    $('#code-modal-format-seg button').removeClass('on');
+    $(`#code-modal-format-seg button[data-format="${currentModalFormat}"]`).addClass('on');
+
+    $('#code-modal-style-seg button').removeClass('on');
+    $(`#code-modal-style-seg button[data-style="${currentModalStyle}"]`).addClass('on');
+
+    // 2. Generate Code Snippet
+    let snippet = '';
+    const isStandalone = $('#code-modal-opt-standalone').is(':checked');
+    const withComments = $('#code-modal-opt-comments').is(':checked');
+
+    if (currentModalStyle === 'tailwind') {
+      // Pastikan format objek sinkron sementara untuk generator
+      const prevFmt = obj.code && obj.code.exportFormat;
+      obj.code = obj.code || {};
+      obj.code.exportFormat = currentModalFormat;
+      snippet = (window.CodeTailwind && typeof window.CodeTailwind.generate === 'function')
+        ? window.CodeTailwind.generate(obj)
+        : '';
+      if (prevFmt) obj.code.exportFormat = prevFmt;
+    } else {
+      snippet = (window.CodeCSS && typeof window.CodeCSS.generate === 'function')
+        ? window.CodeCSS.generate(obj)
+        : '';
+    }
+
+    // Optional Standalone Wrap & Comments
+    let headerComment = '';
+    if (withComments) {
+      if (currentModalFormat === 'html' || currentModalStyle === 'css') {
+        headerComment = `<!-- Exported from MiniVector: ${name} (${w}x${h}px) -->\n`;
+        if (currentModalStyle === 'css') {
+          headerComment = `/* Exported from MiniVector: ${name} (${w}x${h}px) */\n`;
+        }
+      } else {
+        headerComment = `// Exported from MiniVector: ${name} (${w}x${h}px)\n`;
+      }
+    }
+
+    if (isStandalone) {
+      if (currentModalFormat === 'html') {
+        snippet = `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${name}</title>\n  <script src="https://cdn.tailwindcss.com"><\/script>\n</head>\n<body class="bg-gray-900 min-h-screen flex items-center justify-center p-8">\n  ${snippet.split('\n').join('\n  ')}\n</body>\n</html>`;
+      } else if (currentModalFormat === 'react') {
+        snippet = `import React from 'react';\n\n${snippet}`;
+      }
+    }
+
+    if (headerComment) {
+      snippet = headerComment + snippet;
+    }
+
+    $('#code-modal-snippet').text(snippet);
+
+    // Update lines & bytes
+    const lines = snippet ? snippet.split('\n').length : 0;
+    updateModalGutters(lines);
+    $('#code-modal-lines-count').text(`${lines} line${lines === 1 ? '' : 's'}`);
+    const byteSize = new Blob([snippet]).size;
+    $('#code-modal-bytes-count').text(byteSize > 1024 ? (byteSize / 1024).toFixed(1) + ' KB' : byteSize + ' B');
+
+    // Update filename badge
+    const ext = currentModalStyle === 'css' ? 'css' : (currentModalFormat === 'react' ? 'jsx' : (currentModalFormat === 'vue' ? 'vue' : 'html'));
+    const iconClass = currentModalStyle === 'css' ? 'fa-brands fa-css3-alt' : (currentModalFormat === 'react' ? 'fa-brands fa-react' : (currentModalFormat === 'vue' ? 'fa-brands fa-vuejs' : 'fa-brands fa-html5'));
+    const iconColor = currentModalStyle === 'css' ? '#264de4' : (currentModalFormat === 'react' ? '#61dafb' : (currentModalFormat === 'vue' ? '#42b883' : '#e34f26'));
+    $('#code-modal-filename').html(`<i class="${iconClass}" style="margin-right:6px;color:${iconColor};"></i>${name.replace(/\s+/g, '')}.${ext}`);
+
+    // 3. Render Live Component Preview on Canvas stage
+    renderLiveModalPreview(obj);
+  };
+
+  const renderLiveModalPreview = (obj) => {
+    const $container = $('#code-preview-rendered-box');
+    $container.empty();
+    if (!obj || !obj.transform) return;
+
+    const t = obj.transform;
+    const w = Math.round(t.width || 0);
+    const h = Math.round(t.height || 0);
+
+    const sty = obj.style || {};
+    let bg = sty.fill || '#D9D9D9';
+    let border = '';
+    const bw = sty.strokeWidth || 0;
+    const bc = sty.stroke || '#000000';
+    if (bw > 0 && bc !== 'none') {
+      border = `${bw}px solid ${bc}`;
+    }
+
+    let br = 0;
+    if (obj.geometry && obj.geometry.cornerRadius) {
+      const cr = obj.geometry.cornerRadius;
+      br = Array.isArray(cr) ? `${cr[0]}px ${cr[1]}px ${cr[2]}px ${cr[3]}px` : `${cr}px`;
+    }
+
+    const $previewEl = $('<div>').css({
+      width: w + 'px',
+      height: h + 'px',
+      background: bg,
+      border: border,
+      borderRadius: br,
+      boxSizing: 'border-box',
+      display: obj.type === 'frame' ? 'flex' : 'block',
+      position: 'relative',
+      overflow: obj.clipContent !== false ? 'hidden' : 'visible',
+      transition: 'all 0.15s ease'
+    });
+
+    if (obj.type === 'text') {
+      $previewEl.text(obj.content || obj.text || obj.name || 'Sample Text').css({
+        fontSize: (obj.fontSize || 16) + 'px',
+        fontFamily: obj.fontFamily || 'sans-serif',
+        fontWeight: obj.fontWeight || '400',
+        color: sty.fill || '#ffffff',
+        lineHeight: obj.lineHeight ? obj.lineHeight : 'normal',
+        letterSpacing: (obj.letterSpacing || 0) + 'px',
+        textAlign: obj.textAlign || 'left',
+        background: 'transparent'
+      });
+    }
+
+    $container.append($previewEl);
+    updatePreviewZoom(modalPreviewZoom);
+  };
+
+  const updatePreviewZoom = (zoom) => {
+    modalPreviewZoom = Math.min(3, Math.max(0.2, zoom));
+    $('#code-preview-stage-wrapper').css('transform', `scale(${modalPreviewZoom})`);
+    $('#code-preview-zoom-label').text(Math.round(modalPreviewZoom * 100) + '%');
+  };
+
+  // Open modal button
+  $(document).on('click', '#btn-open-code-export-modal', function () {
+    if (typeof openModal === 'function') {
+      openModal('code-export');
+      syncExportModal();
+    }
+  });
+
+  // Modal format switch
+  $(document).on('click', '#code-modal-format-seg button', function () {
+    currentModalFormat = $(this).data('format');
+    syncExportModal();
+  });
+
+  // Modal style switch
+  $(document).on('click', '#code-modal-style-seg button', function () {
+    currentModalStyle = $(this).data('style');
+    syncExportModal();
+  });
+
+  // Checkbox option toggles
+  $(document).on('change', '#code-modal-opt-standalone, #code-modal-opt-comments', function () {
+    syncExportModal();
+  });
+
+  // Zoom controls
+  $(document).on('click', '#code-preview-zoom-in', function () {
+    updatePreviewZoom(modalPreviewZoom + 0.15);
+  });
+  $(document).on('click', '#code-preview-zoom-out', function () {
+    updatePreviewZoom(modalPreviewZoom - 0.15);
+  });
+  $(document).on('click', '#code-preview-zoom-reset', function () {
+    updatePreviewZoom(1);
+  });
+
+  // Copy Code in Modal
+  $(document).on('click', '#btn-code-modal-copy', function () {
+    const text = $('#code-modal-snippet').text();
+    if (navigator.clipboard && text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const $btn = $(this);
+        const orig = $btn.html();
+        $btn.html('<i class="fa-solid fa-check"></i> Copied!');
+        setTimeout(() => $btn.html(orig), 1600);
+      });
+    }
+  });
+
+  // Download Code File
+  $(document).on('click', '#btn-code-modal-download', function () {
+    const text = $('#code-modal-snippet').text();
+    if (!text) return;
+    const obj = getSelectedObject();
+    const name = obj ? (obj.name || 'Component').replace(/\s+/g, '_') : 'Component';
+    const ext = currentModalStyle === 'css' ? 'css' : (currentModalFormat === 'react' ? 'jsx' : (currentModalFormat === 'vue' ? 'vue' : 'html'));
+    const mime = ext === 'css' ? 'text/css' : (ext === 'html' ? 'text/html' : 'text/javascript');
+
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $('#modal-code-export').on('modal:open', syncExportModal);
+
   window.syncCodeView = syncCodeView;
+  window.syncExportModal = syncExportModal;
 });

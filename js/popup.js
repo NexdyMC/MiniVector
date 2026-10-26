@@ -278,8 +278,43 @@ $('#btn-import-confirm').on('click', function () {
   }
 });
 
-/* ---- Settings modal initialization & synchronization ---- */
+/* ---- Settings modal initialization, tabs & storage management ---- */
+const updateStorageStats = () => {
+  try {
+    let totalChars = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const val = localStorage.getItem(key) || '';
+      totalChars += key.length + val.length;
+    }
+    // Tiap char JS UTF-16 ~ 2 bytes
+    const totalBytes = totalChars * 2;
+    const kb = (totalBytes / 1024).toFixed(1);
+    const pct = Math.min(100, Math.max(1, (totalBytes / (5 * 1024 * 1024)) * 100));
+
+    $('#storage-usage-text').text(`${kb} KB / 5 MB`);
+    $('#storage-meter-bar').css('width', `${pct}%`);
+
+    const objCount = (window.State && window.State.objects) ? window.State.objects.length : 0;
+    $('#storage-objects-count').text(`Total Objek: ${objCount}`);
+
+    let slotCount = 0;
+    try {
+      const rawSlots = localStorage.getItem(STORAGE_KEY_SLOTS);
+      if (rawSlots) {
+        const parsed = JSON.parse(rawSlots);
+        slotCount = Array.isArray(parsed) ? parsed.filter(s => s && s.data).length : 0;
+      }
+    } catch (_) {}
+    $('#storage-slots-count').text(`Slot Gambar: ${slotCount}`);
+  } catch (e) {
+    console.warn('Storage calculation error:', e);
+  }
+};
+
 const initSettingsModal = () => {
+  updateStorageStats();
+
   if (window.Magnet) {
     $('#setting-magnet-enable').prop('checked', !!window.Magnet.enabled);
     $('#setting-magnet-threshold').val(window.Magnet.threshold || 6);
@@ -290,10 +325,77 @@ const initSettingsModal = () => {
   if (typeof window.getCameraSaveMode === 'function') {
     $('#setting-camera-autosave').prop('checked', window.getCameraSaveMode() === 'auto');
   }
+
+  // Load preferences from localStorage if present
+  const savedExportFmt = localStorage.getItem('minivector_default_export_fmt');
+  if (savedExportFmt) {
+    $('#setting-default-export-fmt').val(savedExportFmt);
+  }
+  const savedExportScale = localStorage.getItem('minivector_default_export_scale');
+  if (savedExportScale) {
+    $('#setting-default-export-scale').val(savedExportScale);
+  }
 };
 
 $('#modal-settings').on('modal:open', initSettingsModal);
 
+/* Settings Sidebar Tab Switching */
+$(document).on('click', '.settings-nav-btn', function () {
+  const targetTab = $(this).data('tab');
+  if (!targetTab) return;
+
+  $('.settings-nav-btn').removeClass('active');
+  $(this).addClass('active');
+
+  $('.settings-tab-pane').removeClass('active');
+  $(`#tab-${targetTab}`).addClass('active');
+
+  if (targetTab === 'storage') {
+    updateStorageStats();
+  }
+});
+
+/* Reset Canvas Only */
+$(document).on('click', '#btn-clear-canvas', function () {
+  if (!confirm('Apakah Anda yakin ingin mengosongkan seluruh kanvas saat ini? Tindakan ini akan membuat lembar kerja kosong baru.')) {
+    return;
+  }
+  if (window.State) {
+    window.State.objects = [];
+    window.State.selectedIds = [];
+  }
+  if (typeof window.saveProject === 'function') {
+    window.saveProject();
+  }
+  if (window.History && typeof window.History.record === 'function') {
+    window.History.record(true);
+  }
+  $(document).trigger('selection:change');
+  $(document).trigger('project:load');
+  if (typeof requestRender === 'function') {
+    requestRender();
+  }
+  updateStorageStats();
+  closeModal();
+});
+
+/* Delete All LocalStorage (Factory Reset) */
+$(document).on('click', '#btn-clear-all-storage', function () {
+  const confirmed = confirm(
+    'PERINGATAN: Seluruh proyek, slot gambar, riwayat layer, dan preferensi akan dihapus permanen dari LocalStorage browser Anda.\n\nApakah Anda benar-benar yakin ingin melanjutkan?'
+  );
+  if (!confirmed) return;
+
+  try {
+    localStorage.clear();
+  } catch (err) {
+    console.error('Failed to clear localStorage:', err);
+  }
+  alert('LocalStorage telah berhasil dibersihkan. Halaman akan dimuat ulang ke kondisi awal.');
+  window.location.reload();
+});
+
+/* Canvas & Snapping Controls */
 $(document).on('change', '#setting-magnet-enable', function () {
   if (window.Magnet) window.Magnet.setEnabled(this.checked);
 });
@@ -313,8 +415,24 @@ $(document).on('change', '#setting-camera-autosave', function () {
   }
 });
 
+/* Preferences Controls */
+$(document).on('change', '#setting-default-export-fmt', function () {
+  const val = $(this).val();
+  localStorage.setItem('minivector_default_export_fmt', val);
+  if ($('#code-format').length) {
+    $('#code-format').val(val).trigger('change');
+  }
+});
+
+$(document).on('change', '#setting-default-export-scale', function () {
+  const val = $(this).val();
+  localStorage.setItem('minivector_default_export_scale', val);
+  if ($('#export-scale').length) {
+    $('#export-scale').val(val).trigger('input');
+  }
+});
+
 // Run initial sync on document ready
 $(function () {
   initSettingsModal();
 });
-
