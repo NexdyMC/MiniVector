@@ -97,6 +97,10 @@ $(function() {
     } else {
       $select.val('');
     }
+
+    // Update status Clip Content checkbox
+    const isClip = f.obj.clipContent !== false;
+    $('#prop-frame-clip-content').prop('checked', isClip);
   };
 
   // Dengarkan perubahan seleksi atau objek
@@ -177,3 +181,42 @@ $(function() {
   // Inisialisasi awal
   syncUI();
 });
+
+
+  // Toggle Clip Content pada Frame
+  $('#prop-frame-clip-content').on('change', function() {
+    const f = getSingleSelectedFrame();
+    if (!f) return;
+    f.obj.clipContent = this.checked;
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    if (typeof syncCodeView === 'function') syncCodeView();
+  });
+
+  // Tombol Fit to Frame: Menyesuaikan ukuran semua elemen anak yang dipilih atau seluruh anak agar pas di dalam frame
+  $('#btn-fit-children-to-frame').on('click', function(e) {
+    e.stopPropagation();
+    const f = getSingleSelectedFrame();
+    if (!f || !Array.isArray(f.obj.children) || f.obj.children.length === 0) return;
+
+    const frameW = Math.round(f.obj.transform.width);
+    const frameH = Math.round(f.obj.transform.height);
+
+    f.obj.children.forEach(child => {
+      if (!child.transform) return;
+      child.transform.x = 0;
+      child.transform.y = 0;
+      child.transform.width = frameW;
+      child.transform.height = frameH;
+      if (child.code && child.code.position) {
+        child.code.position.top = 0;
+        child.code.position.right = 0;
+        child.code.position.bottom = 0;
+        child.code.position.left = 0;
+      }
+    });
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    if (typeof syncCodeView === 'function') syncCodeView();
+  });

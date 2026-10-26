@@ -867,6 +867,17 @@
                         <button class="fg-ib on" data-orient="portrait" title="Portrait" style="padding:0 8px;font-size:11px;">P</button>
                         <button class="fg-ib" data-orient="landscape" title="Landscape" style="padding:0 8px;font-size:11px;">L</button>
                       </div>
+
+                    <!-- Clip Content Toggle & Fit to Frame -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 2px 0 2px;border-top:1px solid rgba(255,255,255,0.06);">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:11.5px;color:#d4d4d8;" title="Potong elemen anak yang keluar dari batas frame (overflow: hidden)">
+                        <input type="checkbox" id="prop-frame-clip-content" checked style="accent-color:var(--c-accent);cursor:pointer;">
+                        <span>Clip content</span>
+                      </label>
+                      <button type="button" id="btn-fit-children-to-frame" class="btn" style="height:22px;font-size:10.5px;padding:0 8px;background:rgba(255,255,255,0.06);border:none;color:#38bdf8;" title="Sesuaikan ukuran elemen anak agar pas di dalam frame">
+                        Fit to Frame
+                      </button>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -936,6 +947,14 @@
               <!-- Konten Inspector Properti Code -->
               <div id="code-inspector-content" style="display: none;">
 
+                <!-- EXPORT CODE HERO BANNER -->
+                <div style="padding: 10px 14px 4px 14px;">
+                  <button type="button" id="btn-open-code-export-modal" class="fg-btn" style="width: 100%; height: 32px; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0d99ff 0%, #0284c7 100%); border: none; box-shadow: 0 2px 8px rgba(13, 153, 255, 0.35);">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>Export Component Modal</span>
+                  </button>
+                </div>
+
                 <!-- 1b. FLEXBOX / AUTO-LAYOUT CONTROLS (Khusus Frame) -->
                 <section class="fg-sec" id="code-sec-layout" style="display: none;">
                   <div class="fg-head"><span>Flexbox & Auto-Layout</span></div>
@@ -1004,7 +1023,7 @@
                       </div>
                       <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
                       <div class="mv-custom-select-menu" id="menu-code-select-gap" role="listbox">
-                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="custom">Custom</div>
                         <div class="mv-custom-select-item" data-val="0" data-px="0">gap-0 (0px)</div>
                         <div class="mv-custom-select-item" data-val="4" data-px="4">gap-1 (4px)</div>
                         <div class="mv-custom-select-item selected" data-val="8" data-px="8">gap-2 (8px)</div>
@@ -1074,11 +1093,11 @@
                   <div style="margin-bottom: 12px;">
                     <div class="mv-custom-select-wrap" id="wrap-code-select-w">
                       <div class="mv-custom-select-trigger" id="trigger-code-select-w" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-                        <span id="label-code-select-w">Custom (Bebas)</span>
+                        <span id="label-code-select-w">Custom</span>
                       </div>
                       <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
                       <div class="mv-custom-select-menu" id="menu-code-select-w" role="listbox">
-                        <div class="mv-custom-select-item selected" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item selected" data-val="custom">Custom</div>
                         <div class="mv-custom-select-item" data-val="full">w-full (100%)</div>
                         <div class="mv-custom-select-item" data-val="auto">w-auto (auto)</div>
                         <div class="mv-custom-select-item" data-val="16" data-px="16">w-4 (1rem / 16px)</div>
@@ -1125,11 +1144,11 @@
                   <div>
                     <div class="mv-custom-select-wrap" id="wrap-code-select-h">
                       <div class="mv-custom-select-trigger" id="trigger-code-select-h" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-                        <span id="label-code-select-h">Custom (Bebas)</span>
+                        <span id="label-code-select-h">Custom</span>
                       </div>
                       <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
                       <div class="mv-custom-select-menu" id="menu-code-select-h" role="listbox">
-                        <div class="mv-custom-select-item selected" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item selected" data-val="custom">Custom</div>
                         <div class="mv-custom-select-item" data-val="full">h-full (100%)</div>
                         <div class="mv-custom-select-item" data-val="auto">h-auto (auto)</div>
                         <div class="mv-custom-select-item" data-val="16" data-px="16">h-4 (1rem / 16px)</div>
@@ -1150,6 +1169,111 @@
                   </div>
                 </section>
 
+                <!-- 2b. BACKGROUND & FILL (Solid / Linear Gradient) -->
+                <section class="fg-sec" id="code-sec-background">
+                  <div class="fg-head">
+                    <span>Background & Fill</span>
+                    <div class="fg-actions">
+                      <button id="code-btn-toggle-fill" class="fg-ib" title="Aktifkan / Nonaktifkan Fill">
+                        <i class="fa-solid fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="code-sec-background-body" style="display: none;">
+                    <!-- Fill Type Segmented Control: Solid vs Gradient vs None -->
+                    <div class="fg-seg" id="code-fill-type-seg" style="width: 100%; margin-bottom: 8px;">
+                      <button type="button" class="fg-ib on" data-fill-type="solid" style="flex: 1; height: 26px; font-size: 11px;">Solid</button>
+                      <button type="button" class="fg-ib" data-fill-type="gradient" style="flex: 1; height: 26px; font-size: 11px;">Gradient</button>
+                      <button type="button" class="fg-ib" data-fill-type="none" style="flex: 1; height: 26px; font-size: 11px;">None</button>
+                    </div>
+
+                    <!-- SOLID COLOR CONTROLS -->
+                    <div id="code-fill-solid-controls">
+                      <div class="fg-label" style="margin: 4px 0;">Color & Palette</div>
+                      <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                        <input id="code-fill-color-picker" type="color" aria-label="Pilih warna solid fill" value="#3B82F6" style="width: 28px; height: 26px; border: 1px solid var(--c-line); border-radius: 4px; padding: 0; cursor: pointer; background: transparent;">
+                        <label class="fg-in" style="flex: 1;">
+                          <span class="lb">#</span>
+                          <input id="code-fill-color-hex" type="text" value="3B82F6" placeholder="HEX" style="font-family: monospace; text-transform: uppercase;">
+                        </label>
+                      </div>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-tailwind-color" style="margin-bottom: 8px;">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-tailwind-color" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-tailwind-color">bg-blue-500</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-tailwind-color" role="listbox" style="max-height: 180px; overflow-y: auto;">
+                          <div class="mv-custom-select-item" data-val="custom">Custom HEX (Arbitrary)</div>
+                          <div class="mv-custom-select-item" data-val="#ffffff" data-class="bg-white">bg-white</div>
+                          <div class="mv-custom-select-item" data-val="#000000" data-class="bg-black">bg-black</div>
+                          <div class="mv-custom-select-item" data-val="#f8fafc" data-class="bg-slate-50">bg-slate-50</div>
+                          <div class="mv-custom-select-item" data-val="#64748b" data-class="bg-slate-500">bg-slate-500</div>
+                          <div class="mv-custom-select-item" data-val="#0f172a" data-class="bg-slate-900">bg-slate-900</div>
+                          <div class="mv-custom-select-item" data-val="#ef4444" data-class="bg-red-500">bg-red-500</div>
+                          <div class="mv-custom-select-item" data-val="#f97316" data-class="bg-orange-500">bg-orange-500</div>
+                          <div class="mv-custom-select-item" data-val="#f59e0b" data-class="bg-amber-500">bg-amber-500</div>
+                          <div class="mv-custom-select-item" data-val="#10b981" data-class="bg-emerald-500">bg-emerald-500</div>
+                          <div class="mv-custom-select-item" data-val="#06b6d4" data-class="bg-cyan-500">bg-cyan-500</div>
+                          <div class="mv-custom-select-item selected" data-val="#3b82f6" data-class="bg-blue-500">bg-blue-500</div>
+                          <div class="mv-custom-select-item" data-val="#1d4ed8" data-class="bg-blue-700">bg-blue-700</div>
+                          <div class="mv-custom-select-item" data-val="#6366f1" data-class="bg-indigo-500">bg-indigo-500</div>
+                          <div class="mv-custom-select-item" data-val="#8b5cf6" data-class="bg-purple-500">bg-purple-500</div>
+                          <div class="mv-custom-select-item" data-val="#ec4899" data-class="bg-pink-500">bg-pink-500</div>
+                          <div class="mv-custom-select-item" data-val="#f43f5e" data-class="bg-rose-500">bg-rose-500</div>
+                        </div>
+                      </div>
+                      <select id="code-select-tailwind-color" style="display:none"></select>
+                    </div>
+
+                    <!-- GRADIENT CONTROLS (Multi-color & Arbitrary Angles) -->
+                    <div id="code-fill-gradient-controls" style="display: none;">
+                      <!-- Gradient Angle & Quick Direction Presets -->
+                      <div class="fg-label" style="margin: 4px 0;">Angle / Direction</div>
+                      <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                        <label class="fg-in" title="Sudut Gradient Derajat (0-360)" style="flex: 1;">
+                          <i class="fa-solid fa-rotate" style="font-size: 11px;"></i>
+                          <input id="code-gradient-angle" type="number" value="90" min="0" max="360" step="1">
+                          <span class="end">°</span>
+                        </label>
+                        <div class="mv-custom-select-wrap" id="wrap-code-select-gradient-dir" style="flex: 1.4;">
+                          <div class="mv-custom-select-trigger" id="trigger-code-select-gradient-dir" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                            <span id="label-code-select-gradient-dir">to-r (90°)</span>
+                          </div>
+                          <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                          <div class="mv-custom-select-menu" id="menu-code-select-gradient-dir" role="listbox">
+                            <div class="mv-custom-select-item selected" data-val="90" data-tw="to-r">to-r (90°)</div>
+                            <div class="mv-custom-select-item" data-val="135" data-tw="to-br">to-br (135°)</div>
+                            <div class="mv-custom-select-item" data-val="180" data-tw="to-b">to-b (180°)</div>
+                            <div class="mv-custom-select-item" data-val="225" data-tw="to-bl">to-bl (225°)</div>
+                            <div class="mv-custom-select-item" data-val="270" data-tw="to-l">to-l (270°)</div>
+                            <div class="mv-custom-select-item" data-val="315" data-tw="to-tl">to-tl (315°)</div>
+                            <div class="mv-custom-select-item" data-val="0" data-tw="to-t">to-t (0°)</div>
+                            <div class="mv-custom-select-item" data-val="45" data-tw="to-tr">to-tr (45°)</div>
+                            <div class="mv-custom-select-item" data-val="custom">Custom Angle (e.g. 120°)</div>
+                          </div>
+                        </div>
+                        <select id="code-select-gradient-dir" style="display:none"></select>
+                      </div>
+
+                      <!-- Interactive Multi-Color Stops Bar & Counter -->
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 4px;">
+                        <span class="fg-label" style="margin: 0;">Color Stops (<span id="code-gradient-stops-count">2</span>)</span>
+                        <button type="button" id="code-btn-add-gradient-stop" class="btn" style="height: 20px; font-size: 10px; padding: 0 6px; background: rgba(255,255,255,0.06); border: none; color: #38bdf8;">
+                          <i class="fa-solid fa-plus"></i> Add Stop
+                        </button>
+                      </div>
+
+                      <!-- Gradient Preview Bar -->
+                      <div id="code-gradient-preview-bar" style="height: 14px; border-radius: 4px; border: 1px solid var(--c-line); margin-bottom: 8px; background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%);"></div>
+
+                      <!-- Dynamic Color Stops List (Up to 6+ colors) -->
+                      <div id="code-gradient-stops-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto;">
+                        <!-- Diisi secara dinamis oleh JavaScript -->
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 <!-- BORDER RADIUS -->
                 <section class="fg-sec" id="code-sec-radius">
                   <div class="fg-head"><span>Border Radius</span></div>
@@ -1165,7 +1289,7 @@
                       </div>
                       <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
                       <div class="mv-custom-select-menu" id="menu-code-select-radius" role="listbox">
-                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="custom">Custom</div>
                         <div class="mv-custom-select-item selected" data-val="0" data-px="0">rounded-none (0px)</div>
                         <div class="mv-custom-select-item" data-val="2" data-px="2">rounded-sm (2px)</div>
                         <div class="mv-custom-select-item" data-val="4" data-px="4">rounded (4px)</div>
@@ -1197,7 +1321,7 @@
                       </div>
                       <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
                       <div class="mv-custom-select-menu" id="menu-code-select-border-width" role="listbox">
-                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="custom">Custom</div>
                         <div class="mv-custom-select-item selected" data-val="0" data-px="0">border-0 (0px)</div>
                         <div class="mv-custom-select-item" data-val="1" data-px="1">border (1px)</div>
                         <div class="mv-custom-select-item" data-val="2" data-px="2">border-2 (2px)</div>
@@ -1252,7 +1376,7 @@
                       </div>
                       <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
                       <div class="mv-custom-select-menu" id="menu-code-select-fontsize" role="listbox">
-                        <div class="mv-custom-select-item" data-val="custom">Custom (Bebas)</div>
+                        <div class="mv-custom-select-item" data-val="custom">Custom</div>
                         <div class="mv-custom-select-item" data-val="12" data-px="12">text-xs (12px)</div>
                         <div class="mv-custom-select-item" data-val="14" data-px="14">text-sm (14px)</div>
                         <div class="mv-custom-select-item selected" data-val="16" data-px="16">text-base (16px)</div>
@@ -1340,27 +1464,220 @@
                   </div>
                 </section>
 
-                <!-- 3. POSITION -->
+                <!-- 3. POSITION (2x2 Compact Grid Inset with Quick Anchor Bar) -->
                 <section class="fg-sec" id="code-sec-position">
                   <div class="fg-head">
-                    <span>Position (Absolute)</span>
+                    <span>Position</span>
                     <div class="fg-actions">
-                      <button id="code-btn-toggle-position" class="fg-ib" title="Tambah / Hapus Absolute Position">
+                      <button id="code-btn-toggle-position" class="fg-ib" title="Aktifkan / Nonaktifkan Positioning">
                         <i class="fa-solid fa-plus"></i>
                       </button>
                     </div>
                   </div>
                   <div id="code-sec-position-body" style="display: none;">
-                    <div class="fg-label">Coordinates (px)</div>
-                    <div class="fg-grid">
-                      <label class="fg-in"><span class="lb">Top</span><input id="code-pos-top" type="number" placeholder="auto"></label>
-                      <label class="fg-in"><span class="lb">Left</span><input id="code-pos-left" type="number" placeholder="auto"></label>
+                    <!-- Position Type Selector -->
+                    <div class="fg-field" style="margin-bottom: 8px;">
+                      <div class="fg-label" style="margin: 0 0 4px;">Type</div>
+                      <div class="mv-custom-select-wrap" id="wrap-code-position-type">
+                        <div class="mv-custom-select-trigger" id="trigger-code-position-type" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-position-type">absolute</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-position-type" role="listbox">
+                          <div class="mv-custom-select-item" data-val="static">static</div>
+                          <div class="mv-custom-select-item" data-val="relative">relative</div>
+                          <div class="mv-custom-select-item selected" data-val="absolute">absolute</div>
+                          <div class="mv-custom-select-item" data-val="fixed">fixed</div>
+                          <div class="mv-custom-select-item" data-val="sticky">sticky</div>
+                        </div>
+                      </div>
+                      <select id="code-position-type" style="display:none"></select>
                     </div>
-                    <div class="fg-label">Z-Index</div>
-                    <div class="fg-grid">
-                      <label class="fg-in"><span class="lb">Z</span><input id="code-pos-zindex" type="number" value="1"></label>
-                      <span></span>
+
+                    <!-- Quick Anchor Bar (9-dot presets) -->
+                    <div class="fg-label" style="margin: 6px 0 4px;">Quick Anchor</div>
+                    <div class="code-quick-anchor-bar">
+                      <button type="button" class="anchor-btn" data-anchor="tl" title="Top-Left (top: 0, left: 0)"><i class="fa-solid fa-arrow-up-left"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="tc" title="Top-Center (top: 0)"><i class="fa-solid fa-arrow-up"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="tr" title="Top-Right (top: 0, right: 0)"><i class="fa-solid fa-arrow-up-right"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="cl" title="Center-Left (left: 0)"><i class="fa-solid fa-arrow-left"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="fill" title="Fill / Inset-0 (top: 0, right: 0, bottom: 0, left: 0)"><i class="fa-solid fa-expand"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="cr" title="Center-Right (right: 0)"><i class="fa-solid fa-arrow-right"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="bl" title="Bottom-Left (bottom: 0, left: 0)"><i class="fa-solid fa-arrow-down-left"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="bc" title="Bottom-Center (bottom: 0)"><i class="fa-solid fa-arrow-down"></i></button>
+                      <button type="button" class="anchor-btn" data-anchor="br" title="Bottom-Right (bottom: 0, right: 0)"><i class="fa-solid fa-arrow-down-right"></i></button>
                     </div>
+
+                    <!-- 2x2 Compact Grid Inset Coordinates -->
+                    <div class="fg-label" style="margin: 8px 0 4px;">Inset Coordinates (px)</div>
+                    <div class="fg-grid" style="margin-bottom: 4px;">
+                      <label class="fg-in" title="Top distance">
+                        <span class="lb">T</span>
+                        <input id="code-pos-top" type="number" placeholder="auto">
+                      </label>
+                      <label class="fg-in" title="Right distance">
+                        <span class="lb">R</span>
+                        <input id="code-pos-right" type="number" placeholder="auto">
+                      </label>
+                    </div>
+                    <div class="fg-grid" style="margin-bottom: 8px;">
+                      <label class="fg-in" title="Bottom distance">
+                        <span class="lb">B</span>
+                        <input id="code-pos-bottom" type="number" placeholder="auto">
+                      </label>
+                      <label class="fg-in" title="Left distance">
+                        <span class="lb">L</span>
+                        <input id="code-pos-left" type="number" placeholder="auto">
+                      </label>
+                    </div>
+
+                    <!-- Stacking Order: Z-Index Input & Quick Presets -->
+                    <div class="fg-label" style="margin: 4px 0;">Z-Index & Stacking</div>
+                    <div class="fg-grid" style="display:flex; gap:6px; align-items:center;">
+                      <label class="fg-in" title="Z-Index numeric layer depth" style="flex:1;">
+                        <span class="lb">Z</span>
+                        <input id="code-pos-zindex" type="number" value="1" placeholder="1">
+                      </label>
+                      <div class="fg-seg" id="code-pos-zindex-presets" style="flex:1.4; height:var(--ctl);">
+                        <button type="button" class="fg-ib" data-z="0" style="padding:0 6px;">0</button>
+                        <button type="button" class="fg-ib" data-z="10" style="padding:0 6px;">10</button>
+                        <button type="button" class="fg-ib" data-z="20" style="padding:0 6px;">20</button>
+                        <button type="button" class="fg-ib" data-z="50" style="padding:0 6px;">50</button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 3b. EFFECTS & SHADOW -->
+                <section class="fg-sec" id="code-sec-effects">
+                  <div class="fg-head">
+                    <span>Effects & Shadow</span>
+                    <div class="fg-actions">
+                      <button id="code-btn-toggle-shadow" class="fg-ib" title="Aktifkan / Nonaktifkan Box Shadow">
+                        <i class="fa-solid fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="code-sec-effects-body" style="display: none;">
+                    <!-- Tailwind Shadow Presets Dropdown -->
+                    <div class="fg-field" style="margin-bottom: 8px;">
+                      <div class="fg-label" style="margin: 0 0 4px;">Tailwind Shadow</div>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-shadow">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-shadow" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-shadow">shadow-none</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-shadow" role="listbox">
+                          <div class="mv-custom-select-item selected" data-val="none">shadow-none</div>
+                          <div class="mv-custom-select-item" data-val="sm">shadow-sm</div>
+                          <div class="mv-custom-select-item" data-val="base">shadow</div>
+                          <div class="mv-custom-select-item" data-val="md">shadow-md</div>
+                          <div class="mv-custom-select-item" data-val="lg">shadow-lg</div>
+                          <div class="mv-custom-select-item" data-val="xl">shadow-xl</div>
+                          <div class="mv-custom-select-item" data-val="2xl">shadow-2xl</div>
+                          <div class="mv-custom-select-item" data-val="inner">shadow-inner</div>
+                          <div class="mv-custom-select-item" data-val="custom">Custom Arbitrary</div>
+                        </div>
+                      </div>
+                      <select id="code-select-shadow" style="display:none"></select>
+                    </div>
+
+                    <!-- Shadow Coordinates 2x2 Grid (X, Y, Blur, Spread) -->
+                    <div class="fg-label" style="margin: 6px 0 4px;">Shadow Offsets (px)</div>
+                    <div class="fg-grid" style="margin-bottom: 4px;">
+                      <label class="fg-in" title="Offset X">
+                        <span class="lb">X</span>
+                        <input id="code-shadow-x" type="number" value="0" step="1">
+                      </label>
+                      <label class="fg-in" title="Offset Y">
+                        <span class="lb">Y</span>
+                        <input id="code-shadow-y" type="number" value="4" step="1">
+                      </label>
+                    </div>
+                    <div class="fg-grid" style="margin-bottom: 8px;">
+                      <label class="fg-in" title="Blur Radius">
+                        <span class="lb">B</span>
+                        <input id="code-shadow-blur" type="number" value="8" min="0" step="1">
+                      </label>
+                      <label class="fg-in" title="Spread Radius">
+                        <span class="lb">S</span>
+                        <input id="code-shadow-spread" type="number" value="0" step="1">
+                      </label>
+                    </div>
+
+                    <!-- Shadow Color & Opacity -->
+                    <div class="fg-label" style="margin: 6px 0 4px;">Shadow Color & Alpha</div>
+                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                      <input id="code-shadow-color" type="color" aria-label="Pilih warna bayangan (shadow)" value="#000000" style="width: 28px; height: 26px; border: 1px solid var(--c-line); border-radius: 4px; padding: 0; cursor: pointer; background: transparent;">
+                      <label class="fg-in" style="flex: 1;">
+                        <span class="lb">A</span>
+                        <input id="code-shadow-opacity" type="number" value="25" min="0" max="100" step="1">
+                        <span class="end">%</span>
+                      </label>
+                    </div>
+
+                    <!-- Element Opacity -->
+                    <div class="fg-label" style="margin: 6px 0 4px;">Element Opacity</div>
+                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
+                      <label class="fg-in" style="flex: 1;">
+                        <i class="fa-solid fa-circle-half-stroke" style="font-size: 11px;"></i>
+                        <input id="code-element-opacity" type="number" value="100" min="0" max="100" step="1">
+                        <span class="end">%</span>
+                      </label>
+                      <div class="mv-custom-select-wrap" id="wrap-code-select-opacity" style="flex: 1.2;">
+                        <div class="mv-custom-select-trigger" id="trigger-code-select-opacity" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                          <span id="label-code-select-opacity">opacity-100</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                        <div class="mv-custom-select-menu" id="menu-code-select-opacity" role="listbox">
+                          <div class="mv-custom-select-item selected" data-val="100">opacity-100 (100%)</div>
+                          <div class="mv-custom-select-item" data-val="95">opacity-95 (95%)</div>
+                          <div class="mv-custom-select-item" data-val="90">opacity-90 (90%)</div>
+                          <div class="mv-custom-select-item" data-val="80">opacity-80 (80%)</div>
+                          <div class="mv-custom-select-item" data-val="75">opacity-75 (75%)</div>
+                          <div class="mv-custom-select-item" data-val="50">opacity-50 (50%)</div>
+                          <div class="mv-custom-select-item" data-val="25">opacity-25 (25%)</div>
+                          <div class="mv-custom-select-item" data-val="10">opacity-10 (10%)</div>
+                          <div class="mv-custom-select-item" data-val="0">opacity-0 (0%)</div>
+                        </div>
+                      </div>
+                      <select id="code-select-opacity" style="display:none"></select>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 3c. CODE OUTPUT SETTINGS & CUSTOM CLASS -->
+                <section class="fg-sec" id="code-sec-output-settings">
+                  <div class="fg-head"><span>Output Settings</span></div>
+                  
+                  <!-- Custom Class Name & Component Name -->
+                  <div class="fg-label" style="margin-top: 4px;">Class / Selector Name</div>
+                  <div style="margin-bottom: 6px;">
+                    <label class="fg-in" title="Nama class kustom (contoh: card-pricing atau btn-primary)">
+                      <span class="lb">.</span>
+                      <input id="code-custom-class" type="text" placeholder="card-item" style="font-family: monospace;">
+                    </label>
+                  </div>
+
+                  <div class="fg-label">Component Name (JSX / Vue)</div>
+                  <div style="margin-bottom: 8px;">
+                    <label class="fg-in" title="Nama function component (contoh: PricingCard)">
+                      <i class="fa-solid fa-cube" style="font-size: 11px;"></i>
+                      <input id="code-component-name" type="text" placeholder="PricingCard" style="font-family: monospace;">
+                    </label>
+                  </div>
+
+                  <!-- Output Mode Preferences (Inline CSS vs Ruleset, Comments) -->
+                  <div class="fg-label">Code Preferences</div>
+                  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px;">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 11px; color: #d4d4d8;">
+                      <span>Inline Style format (CSS)</span>
+                      <input type="checkbox" id="code-pref-inline-style" style="accent-color: var(--c-accent); cursor: pointer;">
+                    </label>
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 11px; color: #d4d4d8;">
+                      <span>Include Section Comments</span>
+                      <input type="checkbox" id="code-pref-comments" style="accent-color: var(--c-accent); cursor: pointer;">
+                    </label>
                   </div>
                 </section>
 
@@ -1407,7 +1724,119 @@
      POPUP
      ============================================================ -->
 
-    <!-- Settings -->
+        <!-- Code Export Modal (Two-Column Split Layout: Live Preview & IDE Editor) -->
+    <div class="modal" id="modal-code-export" role="dialog" aria-modal="true" aria-labelledby="code-export-title">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-code" style="color: var(--c-accent); font-size: 14px;"></i>
+            <span id="code-export-title" style="font-weight: 600; font-size: 13px;">Export Component</span>
+            <span class="code-modal-tag" id="code-export-target-name">Button</span>
+          </div>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup">
+            <svg class="ico"><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding: 0; overflow: hidden; height: 100%;">
+          <div class="code-export-layout">
+            <!-- Kolom Kiri: Live Component Preview di Canvas Checkerboard -->
+            <div class="code-export-preview-pane">
+              <div class="code-preview-toolbar">
+                <div class="code-preview-tb-title">
+                  <i class="fa-solid fa-eye" style="margin-right: 6px; color: #38bdf8;"></i> LIVE PREVIEW
+                </div>
+                <div class="code-preview-tb-actions">
+                  <button type="button" class="code-preview-zoom-btn" id="code-preview-zoom-out" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
+                  <span id="code-preview-zoom-label">100%</span>
+                  <button type="button" class="code-preview-zoom-btn" id="code-preview-zoom-in" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
+                  <button type="button" class="code-preview-zoom-btn" id="code-preview-zoom-reset" title="Reset Zoom (100%)"><i class="fa-solid fa-rotate-left"></i></button>
+                </div>
+              </div>
+              <div class="code-preview-canvas-container">
+                <div class="code-preview-stage-wrapper" id="code-preview-stage-wrapper">
+                  <div class="code-preview-rendered-box" id="code-preview-rendered-box">
+                    <!-- Elemen komponen dirender secara live di sini -->
+                  </div>
+                </div>
+              </div>
+              <div class="code-preview-meta-bar">
+                <span id="code-preview-dimensions">320 × 240 px</span>
+                <span id="code-preview-scale-info">Scale: 1.0x</span>
+              </div>
+            </div>
+
+            <!-- Kolom Kanan: IDE-Style Code Editor & Actions -->
+            <div class="code-export-code-pane">
+              <div class="code-pane-header">
+                <div class="code-pane-tabs">
+                  <!-- Framework Format Tabs -->
+                  <div class="code-pane-tab-group">
+                    <span class="code-pane-tab-lbl">Framework:</span>
+                    <div class="fg-seg" id="code-modal-format-seg">
+                      <button type="button" class="fg-ib on" data-format="html">HTML</button>
+                      <button type="button" class="fg-ib" data-format="react">React (JSX)</button>
+                      <button type="button" class="fg-ib" data-format="vue">Vue</button>
+                    </div>
+                  </div>
+                  <!-- Style Mode Tabs -->
+                  <div class="code-pane-tab-group">
+                    <span class="code-pane-tab-lbl">Styling:</span>
+                    <div class="fg-seg" id="code-modal-style-seg">
+                      <button type="button" class="fg-ib on" data-style="tailwind">Tailwind CSS</button>
+                      <button type="button" class="fg-ib" data-style="css">Pure CSS</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- IDE Editor Window -->
+              <div class="code-editor-wrapper">
+                <div class="code-editor-topbar">
+                  <div class="code-editor-filename" id="code-modal-filename">
+                    <i class="fa-brands fa-html5" style="margin-right: 6px; color: #e34f26;"></i>Component.html
+                  </div>
+                  <div class="code-editor-stats">
+                    <span id="code-modal-lines-count">12 lines</span>
+                    <span>•</span>
+                    <span id="code-modal-bytes-count">380 B</span>
+                  </div>
+                </div>
+                <div class="code-editor-body">
+                  <div class="code-editor-gutters" id="code-modal-gutters">
+                    1<br>2<br>3<br>4<br>5
+                  </div>
+                  <pre class="code-editor-pre"><code id="code-modal-snippet"></code></pre>
+                </div>
+              </div>
+
+              <!-- Action Bar & Preferences -->
+              <div class="code-pane-footer">
+                <div class="code-pane-footer-opts">
+                  <label class="code-checkbox-label" title="Sertakan kerangka dokumen lengkap / import statement">
+                    <input type="checkbox" id="code-modal-opt-standalone">
+                    <span>Full boilerplate</span>
+                  </label>
+                  <label class="code-checkbox-label" title="Sertakan komentar anotasi properti">
+                    <input type="checkbox" id="code-modal-opt-comments">
+                    <span>Comments</span>
+                  </label>
+                </div>
+                <div class="code-pane-footer-btns">
+                  <button type="button" class="btn" id="btn-code-modal-download" style="height: 30px; font-size: 11.5px; padding: 0 12px; gap: 6px;">
+                    <i class="fa-solid fa-download"></i> Download
+                  </button>
+                  <button type="button" class="btn btn-primary" id="btn-code-modal-copy" style="height: 30px; font-size: 11.5px; padding: 0 14px; gap: 6px;">
+                    <i class="fa-regular fa-copy"></i> Copy Code
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Settings -->
     <div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="modal-box">
         <div class="modal-head"><span id="settings-title"><i class="fa-solid fa-gear" style="margin-right: 6px; color: var(--c-accent);"></i> Settings</span>
@@ -1491,7 +1920,7 @@
                       <strong>Enable Magnet (Snapping)</strong>
                       <small>Otomatis menempelkan sisi atau tengah objek saat sejajar</small>
                     </div>
-                    <input type="checkbox" id="setting-magnet-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+                    <input type="checkbox" id="setting-magnet-enable" aria-label="Enable Magnet Snapping" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
                   </label>
 
                   <label class="settings-row" style="cursor: pointer;">
@@ -1499,7 +1928,7 @@
                       <strong>Snap Threshold</strong>
                       <small>Jarak sensitivitas magnet dalam pixel (default: 6px)</small>
                     </div>
-                    <input type="number" id="setting-magnet-threshold" value="6" min="1" max="30" class="fg-in" style="width: 64px; text-align: center;">
+                    <input type="number" id="setting-magnet-threshold" aria-label="Snap Threshold dalam pixel" value="6" min="1" max="30" class="fg-in" style="width: 64px; text-align: center;">
                   </label>
 
                   <label class="settings-row" style="cursor: pointer;">
@@ -1507,7 +1936,7 @@
                       <strong>Show Distance & Padding</strong>
                       <small>Tampilkan garis ukur dan angka pixel antar objek (tahan Alt)</small>
                     </div>
-                    <input type="checkbox" id="setting-padding-enable" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+                    <input type="checkbox" id="setting-padding-enable" aria-label="Show Distance and Padding" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
                   </label>
 
                   <label class="settings-row" style="cursor: pointer;">
@@ -1515,7 +1944,7 @@
                       <strong>Auto-Save Camera</strong>
                       <small>Otomatis simpan posisi layar & zoom saat digeser/di-zoom</small>
                     </div>
-                    <input type="checkbox" id="setting-camera-autosave" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
+                    <input type="checkbox" id="setting-camera-autosave" aria-label="Auto-Save Camera" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--c-accent);">
                   </label>
                 </div>
               </div>
@@ -1679,7 +2108,7 @@
               <!-- Slider Ukuran Preview -->
               <div class="font-size-slider-row" id="font-slider-section" style="display:none;">
                 <span style="font-size:11px;font-weight:600;">UKURAN:</span>
-                <input type="range" id="font-preview-size-slider" min="12" max="64" value="24">
+                <input type="range" id="font-preview-size-slider" aria-label="Ukuran font preview" min="12" max="64" value="24">
                 <span id="font-preview-size-label" style="width:36px;text-align:right;font-weight:600;color:#fff;">24px</span>
               </div>
 

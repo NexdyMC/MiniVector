@@ -103,6 +103,72 @@ $(function () {
     return findObj(State.objects);
   };
 
+
+  // Helper mencari parent frame dari suatu object
+  const getParentFrameOf = (obj) => {
+    if (!obj || !window.State || !window.State.objects) return null;
+    const search = (list, parent = null) => {
+      for (const item of list) {
+        if (item.id === obj.id) return parent;
+        if (item.children && Array.isArray(item.children)) {
+          const res = search(item.children, item);
+          if (res) return res;
+        }
+      }
+      return null;
+    };
+    return search(window.State.objects);
+  };
+
+  // Helper sinkronisasi koordinat inset dari posisi transform aktual objek
+  const updateObjectInsetsFromTransform = (obj) => {
+    if (!obj || !obj.transform) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || {};
+    const pos = obj.code.position;
+    if (!pos.isActive && !pos.isAbsolute) return;
+
+    const parent = getParentFrameOf(obj);
+    const t = obj.transform;
+    const curX = Math.round(t.x || 0);
+    const curY = Math.round(t.y || 0);
+    const curW = Math.round(t.width || 0);
+    const curH = Math.round(t.height || 0);
+
+    const parentW = parent && parent.transform ? Math.round(parent.transform.width || 0) : 0;
+    const parentH = parent && parent.transform ? Math.round(parent.transform.height || 0) : 0;
+
+    // Cek anchor mana yang aktif
+    const hasTop = pos.top !== '' && pos.top !== null && pos.top !== undefined;
+    const hasRight = pos.right !== '' && pos.right !== null && pos.right !== undefined;
+    const hasBottom = pos.bottom !== '' && pos.bottom !== null && pos.bottom !== undefined;
+    const hasLeft = pos.left !== '' && pos.left !== null && pos.left !== undefined;
+
+    // Jika belum ada yang di-set atau default, set top & left
+    if (!hasTop && !hasRight && !hasBottom && !hasLeft) {
+      pos.top = curY;
+      pos.left = curX;
+      return;
+    }
+
+    // Jika Top aktif, update Top
+    if (hasTop) {
+      pos.top = curY;
+    }
+    // Jika Left aktif, update Left
+    if (hasLeft) {
+      pos.left = curX;
+    }
+    // Jika Right aktif dan ada parent frame, update Right = parentW - (curX + curW)
+    if (hasRight && parentW > 0) {
+      pos.right = Math.max(0, parentW - (curX + curW));
+    }
+    // Jika Bottom aktif dan ada parent frame, update Bottom = parentH - (curY + curH)
+    if (hasBottom && parentH > 0) {
+      pos.bottom = Math.max(0, parentH - (curY + curH));
+    }
+  };
+
   const syncCodeView = () => {
     const obj = getSelectedObject();
     const $viewCode = $('#view-code');
@@ -219,21 +285,191 @@ $(function () {
     const isDashed = Array.isArray(sty.strokeDashes) && sty.strokeDashes.length > 0;
     setCustomSelectVal('code-select-border-style', isDashed ? 'dashed' : 'solid');
 
+    // 2d. Sinkronisasi Background & Fill (Solid vs Gradient vs None)
+    const activeFills = Array.isArray(sty.fills) ? sty.fills.filter(f => f && f.visible !== false) : [];
+    const topFill = activeFills.length > 0 ? activeFills[activeFills.length - 1] : (sty.fill && sty.fill !== 'none' ? { type: 'SOLID', color: sty.fill } : null);
+    const hasFill = !!topFill;
+
+    $('#code-sec-background-body').toggle(hasFill);
+    $('#code-btn-toggle-fill').toggleClass('on', hasFill).attr('title', hasFill ? 'Hapus Fill' : 'Tambah Fill');
+    $('#code-btn-toggle-fill i').attr('class', hasFill ? 'fa-solid fa-minus' : 'fa-solid fa-plus');
+
+    if (hasFill) {
+      const fillType = topFill.type === 'GRADIENT_LINEAR' ? 'gradient' : 'solid';
+      $('#code-fill-type-seg button').removeClass('on');
+      $(`#code-fill-type-seg button[data-fill-type="${fillType}"]`).addClass('on');
+
+      if (fillType === 'solid') {
+        $('#code-fill-solid-controls').show();
+        $('#code-fill-gradient-controls').hide();
+
+        const curCol = topFill.color || '#3B82F6';
+        $('#code-fill-color-picker').val(curCol.startsWith('#') && curCol.length === 7 ? curCol : '#3b82f6');
+        $('#code-fill-color-hex').val(curCol.replace('#', '').toUpperCase());
+
+        const matchedItem = $(`#menu-code-select-tailwind-color .mv-custom-select-item[data-val="${curCol.toLowerCase()}"]`);
+        if (matchedItem.length) {
+          setCustomSelectVal('code-select-tailwind-color', curCol.toLowerCase());
+        } else {
+          setCustomSelectVal('code-select-tailwind-color', 'custom');
+        }
+      } else {
+        // Gradient Mode
+        $('#code-fill-solid-controls').hide();
+        $('#code-fill-gradient-controls').show();
+
+        // Degree calculation
+        let deg = 90;
+        if (typeof Paint !== 'undefined' && typeof Paint.linearAngle === 'function') {
+          deg = Math.round((Paint.linearAngle(topFill) + 90) % 360);
+        } else if (topFill.start && topFill.end) {
+          const st = topFill.start, en = topFill.end;
+          deg = Math.round((Math.atan2(en.y - st.y, en.x - st.x) * 180 / Math.PI + 450) % 360);
+        }
+        $('#code-gradient-angle').val(deg);
+
+        const matchedDirItem = $(`#menu-code-select-gradient-dir .mv-custom-select-item[data-val="${deg}"]`);
+        if (matchedDirItem.length) {
+          setCustomSelectVal('code-select-gradient-dir', deg);
+        } else {
+          setCustomSelectVal('code-select-gradient-dir', 'custom');
+        }
+
+        // Stops rendering
+        const stops = (Array.isArray(topFill.stops) ? topFill.stops : [])
+          .filter(st => st && isFinite(st.offset))
+          .sort((a, b) => a.offset - b.offset);
+
+        $('#code-gradient-stops-count').text(stops.length);
+
+        // Preview bar CSS
+        const stopCssList = stops.map(st => `${st.color || '#000'} ${Math.round(st.offset * 100)}%`);
+        if (stopCssList.length > 0) {
+          $('#code-gradient-preview-bar').css('background', `linear-gradient(90deg, ${stopCssList.join(', ')})`);
+        }
+
+        // Render stop items
+        const $stopsList = $('#code-gradient-stops-list');
+        $stopsList.empty();
+
+        stops.forEach((st, idx) => {
+          const pct = Math.round(st.offset * 100);
+          const col = st.color || '#000000';
+          const $row = $(`
+            <div class="code-gradient-stop-row" data-index="${idx}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;background:rgba(255,255,255,0.03);border:1px solid var(--c-line);border-radius:4px;">
+              <input type="color" class="code-stop-color-input" value="${col}" style="width:20px;height:20px;border:none;border-radius:3px;cursor:pointer;padding:0;background:transparent;">
+              <span style="font-size:11px;font-family:monospace;flex:1;color:#fff;">${col.toUpperCase()}</span>
+              <label class="fg-in" style="width:58px;height:22px;padding:0 4px;" title="Offset percentage">
+                <input type="number" class="code-stop-offset-input" value="${pct}" min="0" max="100" step="1" style="font-size:10.5px;">
+                <span class="end" style="font-size:10px;">%</span>
+              </label>
+              ${stops.length > 2 ? `<button type="button" class="fg-ib code-btn-remove-stop" title="Hapus titik warna" style="width:22px;height:22px;color:#ef4444;"><i class="fa-solid fa-trash-can" style="font-size:10px;"></i></button>` : ''}
+            </div>
+          `);
+          $stopsList.append($row);
+        });
+      }
+    }
+
+
     // 3. Sinkronisasi Tag HTML
     setCustomSelectVal('code-html-tag', c.htmlTag || (obj.type === 'text' ? 'p' : 'div'));
 
-    // 4. Sinkronisasi Kategori Dinamis: Position (Absolute)
-    c.position = c.position || { isAbsolute: false };
-    const isAbs = !!c.position.isAbsolute;
-    $('#code-sec-position-body').toggle(isAbs);
-    $('#code-btn-toggle-position').toggleClass('on', isAbs).attr('title', isAbs ? 'Hapus Absolute Position' : 'Tambah Absolute Position');
-    $('#code-btn-toggle-position i').attr('class', isAbs ? 'fa-solid fa-minus' : 'fa-solid fa-plus');
-
-    if (isAbs) {
-      $('#code-pos-top').val(c.position.top !== null && c.position.top !== undefined ? c.position.top : '');
-      $('#code-pos-left').val(c.position.left !== null && c.position.left !== undefined ? c.position.left : '');
-      $('#code-pos-zindex').val(c.position.zIndex || 1);
+    // 4. Sinkronisasi Kategori Dinamis: Position (2x2 Compact Grid Inset with Quick Anchor Bar)
+    c.position = c.position || { isActive: false, isAbsolute: false, type: 'absolute' };
+    const isPosActive = !!(c.position.isActive || c.position.isAbsolute);
+    if (isPosActive) {
+      updateObjectInsetsFromTransform(obj);
     }
+    $('#code-sec-position-body').toggle(isPosActive);
+    $('#code-btn-toggle-position').toggleClass('on', isPosActive).attr('title', isPosActive ? 'Nonaktifkan Positioning' : 'Aktifkan Positioning');
+    $('#code-btn-toggle-position i').attr('class', isPosActive ? 'fa-solid fa-minus' : 'fa-solid fa-plus');
+
+    if (isPosActive) {
+      const pType = c.position.type || (c.position.isAbsolute ? 'absolute' : 'relative');
+      setCustomSelectVal('code-position-type', pType);
+
+      $('#code-pos-top').val(c.position.top !== null && c.position.top !== undefined ? c.position.top : '');
+      $('#code-pos-right').val(c.position.right !== null && c.position.right !== undefined ? c.position.right : '');
+      $('#code-pos-bottom').val(c.position.bottom !== null && c.position.bottom !== undefined ? c.position.bottom : '');
+      $('#code-pos-left').val(c.position.left !== null && c.position.left !== undefined ? c.position.left : '');
+
+      const curZ = c.position.zIndex !== undefined && c.position.zIndex !== null ? c.position.zIndex : 1;
+      $('#code-pos-zindex').val(curZ);
+      $('#code-pos-zindex-presets button').removeClass('on');
+      $(`#code-pos-zindex-presets button[data-z="${curZ}"]`).addClass('on');
+    }
+
+    // 4b. Sinkronisasi Effects & Shadow
+    const effects = sty.effects || [];
+    const activeShadow = effects.find(e => e && e.visible !== false && (e.type === 'drop-shadow' || e.type === 'inner-shadow'));
+    const isShadowActive = !!activeShadow;
+
+    $('#code-sec-effects-body').toggle(isShadowActive);
+    $('#code-btn-toggle-shadow').toggleClass('on', isShadowActive).attr('title', isShadowActive ? 'Hapus Box Shadow' : 'Tambah Box Shadow');
+    $('#code-btn-toggle-shadow i').attr('class', isShadowActive ? 'fa-solid fa-minus' : 'fa-solid fa-plus');
+
+    if (isShadowActive) {
+      $('#code-shadow-x').val(typeof activeShadow.x === 'number' ? activeShadow.x : 0);
+      $('#code-shadow-y').val(typeof activeShadow.y === 'number' ? activeShadow.y : 4);
+      $('#code-shadow-blur').val(typeof activeShadow.blur === 'number' ? activeShadow.blur : 8);
+      $('#code-shadow-spread').val(typeof activeShadow.spread === 'number' ? activeShadow.spread : 0);
+      $('#code-shadow-color').val(activeShadow.color || '#000000');
+      $('#code-shadow-opacity').val(Math.round((typeof activeShadow.opacity === 'number' ? activeShadow.opacity : 0.25) * 100));
+
+      // Match preset dropdown
+      const isInner = activeShadow.type === 'inner-shadow';
+      const sx = activeShadow.x || 0;
+      const sy = activeShadow.y || 0;
+      const sb = activeShadow.blur || 0;
+
+      if (isInner) {
+        setCustomSelectVal('code-select-shadow', 'inner');
+      } else if (sx === 0 && sy === 1 && sb === 2) {
+        setCustomSelectVal('code-select-shadow', 'sm');
+      } else if (sx === 0 && sy === 1 && sb === 3) {
+        setCustomSelectVal('code-select-shadow', 'base');
+      } else if (sx === 0 && sy === 4 && sb === 6) {
+        setCustomSelectVal('code-select-shadow', 'md');
+      } else if (sx === 0 && sy === 10 && sb === 15) {
+        setCustomSelectVal('code-select-shadow', 'lg');
+      } else if (sx === 0 && sy === 20 && sb === 25) {
+        setCustomSelectVal('code-select-shadow', 'xl');
+      } else if (sx === 0 && sy === 25 && sb === 50) {
+        setCustomSelectVal('code-select-shadow', '2xl');
+      } else {
+        setCustomSelectVal('code-select-shadow', 'custom');
+      }
+    } else {
+      setCustomSelectVal('code-select-shadow', 'none');
+    }
+
+
+    // 4c. Sinkronisasi Output Settings (Custom Class, Component Name, Preferences)
+    const defaultClass = (obj.name || obj.type || 'element')
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '-')
+      .replace(/-+/g, '-');
+
+    $('#code-custom-class').val(c.customClass || defaultClass);
+    
+    const defaultComp = (obj.name || 'Component').replace(/[^a-zA-Z0-9]/g, '');
+    const validDefaultComp = defaultComp ? (defaultComp.charAt(0).toUpperCase() + defaultComp.slice(1)) : 'Component';
+    $('#code-component-name').val(c.componentName || validDefaultComp);
+
+    $('#code-pref-inline-style').prop('checked', !!c.inlineStyle);
+    $('#code-pref-comments').prop('checked', !!c.includeComments);
+
+    // Element Opacity Sync
+    const curOpacity = (sty.opacity !== undefined && sty.opacity !== null) ? sty.opacity : 1;
+    const curOpacityPct = Math.round(curOpacity * 100);
+    $('#code-element-opacity').val(curOpacityPct);
+    if ($('#menu-code-select-opacity').find(`.mv-custom-select-item[data-val="${curOpacityPct}"]`).length) {
+      setCustomSelectVal('code-select-opacity', curOpacityPct);
+    } else {
+      setCustomSelectVal('code-select-opacity', 100);
+    }
+
 
     // 5. Sinkronisasi Layout Flex (Jika Objek bertipe Frame)
     if (obj.type === 'frame') {
@@ -454,17 +690,225 @@ $(function () {
     syncCodeView();
   });
 
-  // --- H. Toggle Dinamis: Tambah / Hapus Position Absolute ---
+  // --- H. Toggle Dinamis: Tambah / Hapus Position ---
   $(document).on('click', '#code-btn-toggle-position', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     obj.code = obj.code || {};
-    obj.code.position = obj.code.position || { isAbsolute: false };
-    obj.code.position.isAbsolute = !obj.code.position.isAbsolute;
-    if (obj.code.position.isAbsolute) {
+    obj.code.position = obj.code.position || { isActive: false, isAbsolute: false, type: 'absolute' };
+    const curActive = !!(obj.code.position.isActive || obj.code.position.isAbsolute);
+    obj.code.position.isActive = !curActive;
+    obj.code.position.isAbsolute = !curActive; // backward compatible
+    if (!curActive) {
+      obj.code.position.type = obj.code.position.type || 'absolute';
       obj.code.position.top = obj.transform ? Math.round(obj.transform.y) : 0;
       obj.code.position.left = obj.transform ? Math.round(obj.transform.x) : 0;
+      obj.code.position.right = '';
+      obj.code.position.bottom = '';
+      obj.code.position.zIndex = obj.code.position.zIndex || 1;
     }
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // Ganti Position Type (static, relative, absolute, fixed, sticky)
+  $(document).on('change', '#code-position-type', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true };
+    const prevType = obj.code.position.type;
+    const newType = this.value;
+    obj.code.position.type = newType;
+    obj.code.position.isAbsolute = (newType === 'absolute');
+
+    // Jika objek berada di dalam frame Auto-Layout (flex / grid):
+    // Mengubah ke 'absolute' mengeluarkannya dari normal flow flex (tidak mendorong saudara lainnya).
+    // Mengubah ke 'relative' atau 'static' mengembalikannya ke alur flex & memicu penataan ulang layout.
+    const parent = getParentFrameOf(obj);
+    if (parent && parent.type === 'frame' && window.LayoutEngine) {
+      window.LayoutEngine.applyAutoLayout(parent);
+    }
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Quick Anchor Bar Click Handlers
+  $(document).on('click', '.code-quick-anchor-bar .anchor-btn', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const anchor = $(this).data('anchor');
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, isAbsolute: true, type: 'absolute' };
+    obj.code.position.isActive = true;
+    obj.code.position.isAbsolute = (obj.code.position.type === 'absolute');
+
+    // Reset all insets first
+    obj.code.position.top = '';
+    obj.code.position.right = '';
+    obj.code.position.bottom = '';
+    obj.code.position.left = '';
+
+    const parent = getParentFrameOf(obj);
+    const parentW = parent && parent.transform ? Math.round(parent.transform.width) : 800;
+    const parentH = parent && parent.transform ? Math.round(parent.transform.height) : 600;
+    const curW = Math.round(obj.transform.width || 100);
+    const curH = Math.round(obj.transform.height || 100);
+
+    switch (anchor) {
+      case 'tl':
+        obj.code.position.top = 0;
+        obj.code.position.left = 0;
+        obj.transform.x = 0;
+        obj.transform.y = 0;
+        break;
+      case 'tc':
+        obj.code.position.top = 0;
+        obj.transform.y = 0;
+        break;
+      case 'tr':
+        obj.code.position.top = 0;
+        obj.code.position.right = 0;
+        obj.transform.x = Math.max(0, parentW - curW);
+        obj.transform.y = 0;
+        break;
+      case 'cl':
+        obj.code.position.left = 0;
+        obj.transform.x = 0;
+        break;
+      case 'fill':
+        obj.code.position.top = 0;
+        obj.code.position.right = 0;
+        obj.code.position.bottom = 0;
+        obj.code.position.left = 0;
+        obj.transform.x = 0;
+        obj.transform.y = 0;
+        obj.transform.width = parentW;
+        obj.transform.height = parentH;
+        break;
+      case 'cr':
+        obj.code.position.right = 0;
+        obj.transform.x = Math.max(0, parentW - curW);
+        break;
+      case 'bl':
+        obj.code.position.bottom = 0;
+        obj.code.position.left = 0;
+        obj.transform.x = 0;
+        obj.transform.y = Math.max(0, parentH - curH);
+        break;
+      case 'bc':
+        obj.code.position.bottom = 0;
+        obj.transform.y = Math.max(0, parentH - curH);
+        break;
+      case 'br':
+        obj.code.position.bottom = 0;
+        obj.code.position.right = 0;
+        obj.transform.x = Math.max(0, parentW - curW);
+        obj.transform.y = Math.max(0, parentH - curH);
+        break;
+    }
+
+    $('.code-quick-anchor-bar .anchor-btn').removeClass('active');
+    $(this).addClass('active');
+
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // Two-way Inset Coordinates Input Handlers (Top, Right, Bottom, Left)
+  // Mengetik nilai akan langsung menggerakkan posisi objek di kanvas (terhadap frame induk)
+  $(document).on('input change', '#code-pos-top', function () {
+    const obj = getSelectedObject();
+    if (!obj || !obj.transform) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, type: 'absolute' };
+    const val = this.value === '' ? '' : (parseFloat(this.value) || 0);
+    obj.code.position.top = val;
+    if (val !== '') {
+      obj.transform.y = val;
+    }
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  $(document).on('input change', '#code-pos-right', function () {
+    const obj = getSelectedObject();
+    if (!obj || !obj.transform) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, type: 'absolute' };
+    const val = this.value === '' ? '' : (parseFloat(this.value) || 0);
+    obj.code.position.right = val;
+    if (val !== '') {
+      const parent = getParentFrameOf(obj);
+      if (parent && parent.transform) {
+        obj.transform.x = Math.round(parent.transform.width - (obj.transform.width + val));
+      }
+    }
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  $(document).on('input change', '#code-pos-bottom', function () {
+    const obj = getSelectedObject();
+    if (!obj || !obj.transform) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, type: 'absolute' };
+    const val = this.value === '' ? '' : (parseFloat(this.value) || 0);
+    obj.code.position.bottom = val;
+    if (val !== '') {
+      const parent = getParentFrameOf(obj);
+      if (parent && parent.transform) {
+        obj.transform.y = Math.round(parent.transform.height - (obj.transform.height + val));
+      }
+    }
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  $(document).on('input change', '#code-pos-left', function () {
+    const obj = getSelectedObject();
+    if (!obj || !obj.transform) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, type: 'absolute' };
+    const val = this.value === '' ? '' : (parseFloat(this.value) || 0);
+    obj.code.position.left = val;
+    if (val !== '') {
+      obj.transform.x = val;
+    }
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Z-Index Input and Preset Buttons
+  $(document).on('input change', '#code-pos-zindex', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, type: 'absolute' };
+    const val = this.value === '' ? 1 : (parseInt(this.value, 10) || 0);
+    obj.code.position.zIndex = val;
+    $('#code-pos-zindex-presets button').removeClass('on');
+    $(`#code-pos-zindex-presets button[data-z="${val}"]`).addClass('on');
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  $(document).on('click', '#code-pos-zindex-presets button', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const z = parseInt($(this).data('z'), 10);
+    obj.code = obj.code || {};
+    obj.code.position = obj.code.position || { isActive: true, type: 'absolute' };
+    obj.code.position.zIndex = z;
+    $('#code-pos-zindex').val(z);
+    $('#code-pos-zindex-presets button').removeClass('on');
+    $(this).addClass('on');
     $(document).trigger('object:change');
     syncCodeView();
   });
@@ -765,6 +1209,400 @@ $(function () {
   });
 
   // --- EXPORT FORMAT SELECTOR (HTML, React JSX, Vue) ---
+  
+  
+  // ============================================================
+  // BACKGROUND & GRADIENT EVENT HANDLERS
+  // ============================================================
+  // Helper to ensure style.fills array
+  const getTopFillOfObj = (obj, createIfMissing = true) => {
+    if (!obj) return null;
+    obj.style = obj.style || {};
+    if (!Array.isArray(obj.style.fills)) {
+      if (obj.style.fill && obj.style.fill !== 'none') {
+        obj.style.fills = [{ id: 'fill_1', type: 'SOLID', visible: true, opacity: 1, color: obj.style.fill }];
+      } else if (createIfMissing) {
+        obj.style.fills = [{ id: 'fill_1', type: 'SOLID', visible: true, opacity: 1, color: '#3B82F6' }];
+      } else {
+        obj.style.fills = [];
+      }
+    }
+    if (obj.style.fills.length === 0 && createIfMissing) {
+      obj.style.fills.push({ id: 'fill_1', type: 'SOLID', visible: true, opacity: 1, color: '#3B82F6' });
+    }
+    return obj.style.fills[obj.style.fills.length - 1];
+  };
+
+  // Toggle Fill On/Off
+  $(document).on('click', '#code-btn-toggle-fill', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.style = obj.style || {};
+    if (Array.isArray(obj.style.fills) && obj.style.fills.length > 0) {
+      const top = obj.style.fills[obj.style.fills.length - 1];
+      top.visible = !top.visible;
+      if (!top.visible) {
+        obj.style.fill = 'none';
+      } else {
+        obj.style.fill = top.color || '#3B82F6';
+      }
+    } else {
+      obj.style.fills = [{ id: 'fill_1', type: 'SOLID', visible: true, opacity: 1, color: '#3B82F6' }];
+      obj.style.fill = '#3B82F6';
+    }
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Switch Fill Type (Solid / Gradient / None)
+  $(document).on('click', '#code-fill-type-seg button', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const type = $(this).data('fill-type');
+    obj.style = obj.style || {};
+
+    if (type === 'none') {
+      if (Array.isArray(obj.style.fills)) {
+        obj.style.fills.forEach(f => f.visible = false);
+      }
+      obj.style.fill = 'none';
+    } else if (type === 'solid') {
+      const top = getTopFillOfObj(obj, true);
+      top.type = 'SOLID';
+      top.visible = true;
+      top.color = top.color || '#3B82F6';
+      obj.style.fill = top.color;
+    } else if (type === 'gradient') {
+      const top = getTopFillOfObj(obj, true);
+      top.type = 'GRADIENT_LINEAR';
+      top.visible = true;
+      if (!Array.isArray(top.stops) || top.stops.length < 2) {
+        top.stops = [
+          { offset: 0, color: '#3B82F6', opacity: 1 },
+          { offset: 1, color: '#8B5CF6', opacity: 1 }
+        ];
+      }
+      if (!top.start) top.start = { x: 0, y: 0.5 };
+      if (!top.end) top.end = { x: 1, y: 0.5 };
+      obj.style.fill = top.stops[0].color;
+    }
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Solid Color Pickers
+  $(document).on('input change', '#code-fill-color-picker', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const val = this.value;
+    const top = getTopFillOfObj(obj, true);
+    top.type = 'SOLID';
+    top.color = val;
+    top.visible = true;
+    obj.style.fill = val;
+    $('#code-fill-color-hex').val(val.replace('#', '').toUpperCase());
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  $(document).on('change', '#code-fill-color-hex', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    let hex = this.value.trim().replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    if (hex.length !== 6) return;
+    const col = '#' + hex;
+
+    const top = getTopFillOfObj(obj, true);
+    top.type = 'SOLID';
+    top.color = col;
+    top.visible = true;
+    obj.style.fill = col;
+    $('#code-fill-color-picker').val(col);
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Tailwind Color Palette Dropdown Select
+  $(document).on('change', '#code-select-tailwind-color', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const val = this.value;
+    if (val === 'custom') return;
+
+    const top = getTopFillOfObj(obj, true);
+    top.type = 'SOLID';
+    top.color = val;
+    top.visible = true;
+    obj.style.fill = val;
+
+    $('#code-fill-color-picker').val(val);
+    $('#code-fill-color-hex').val(val.replace('#', '').toUpperCase());
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Gradient Angle Input
+  const applyGradientAngle = (deg) => {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const top = getTopFillOfObj(obj, false);
+    if (!top || top.type !== 'GRADIENT_LINEAR') return;
+
+    // Convert CSS degrees to internal Paint angle
+    // CSS: 90deg is to right. Paint: 0deg is to right.
+    const paintAngle = (deg - 90 + 360) % 360;
+    if (typeof Paint !== 'undefined' && typeof Paint.setLinearAngle === 'function') {
+      Paint.setLinearAngle(top, paintAngle);
+    } else {
+      const r = paintAngle * Math.PI / 180;
+      top.start = { x: 0.5 - Math.cos(r) * 0.5, y: 0.5 - Math.sin(r) * 0.5 };
+      top.end = { x: 0.5 + Math.cos(r) * 0.5, y: 0.5 + Math.sin(r) * 0.5 };
+    }
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  };
+
+  $(document).on('input change', '#code-gradient-angle', function () {
+    const deg = Math.max(0, Math.min(360, parseInt(this.value, 10) || 0));
+    applyGradientAngle(deg);
+  });
+
+  $(document).on('change', '#code-select-gradient-dir', function () {
+    const val = this.value;
+    if (val === 'custom') return;
+    const deg = parseInt(val, 10) || 90;
+    $('#code-gradient-angle').val(deg);
+    applyGradientAngle(deg);
+  });
+
+  // Add Stop Button (supports up to 6+ colors)
+  $(document).on('click', '#code-btn-add-gradient-stop', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const top = getTopFillOfObj(obj, false);
+    if (!top || top.type !== 'GRADIENT_LINEAR') return;
+    top.stops = top.stops || [];
+
+    // Calculate middle offset for new stop
+    const count = top.stops.length;
+    let newOffset = 0.5;
+    if (count >= 2) {
+      newOffset = Math.round(((top.stops[count - 2].offset + top.stops[count - 1].offset) / 2) * 100) / 100;
+    }
+
+    // Default vibrant color from palette
+    const rainbowColors = ['#10B981', '#06B6D4', '#F59E0B', '#EC4899', '#EF4444', '#6366F1'];
+    const pickColor = rainbowColors[count % rainbowColors.length];
+
+    top.stops.push({
+      offset: newOffset,
+      color: pickColor,
+      opacity: 1
+    });
+
+    top.stops.sort((a, b) => a.offset - b.offset);
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Edit Single Stop Color
+  $(document).on('input change', '.code-stop-color-input', function () {
+    const idx = $(this).closest('.code-gradient-stop-row').data('index');
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const top = getTopFillOfObj(obj, false);
+    if (!top || !top.stops || !top.stops[idx]) return;
+
+    top.stops[idx].color = this.value;
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Edit Single Stop Offset (%)
+  $(document).on('input change', '.code-stop-offset-input', function () {
+    const idx = $(this).closest('.code-gradient-stop-row').data('index');
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const top = getTopFillOfObj(obj, false);
+    if (!top || !top.stops || !top.stops[idx]) return;
+
+    const pct = Math.max(0, Math.min(100, parseInt(this.value, 10) || 0));
+    top.stops[idx].offset = pct / 100;
+    top.stops.sort((a, b) => a.offset - b.offset);
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Remove Stop Button
+  $(document).on('click', '.code-btn-remove-stop', function () {
+    const idx = $(this).closest('.code-gradient-stop-row').data('index');
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const top = getTopFillOfObj(obj, false);
+    if (!top || !top.stops || top.stops.length <= 2) return;
+
+    top.stops.splice(idx, 1);
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // ============================================================
+  // EFFECTS & BOX SHADOW EVENT HANDLERS
+  // ============================================================
+  // Toggle Shadow On/Off
+  $(document).on('click', '#code-btn-toggle-shadow', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.style = obj.style || {};
+    obj.style.effects = obj.style.effects || [];
+
+    const existingIdx = obj.style.effects.findIndex(e => e && (e.type === 'drop-shadow' || e.type === 'inner-shadow'));
+    if (existingIdx !== -1) {
+      // Hapus shadow
+      obj.style.effects.splice(existingIdx, 1);
+    } else {
+      // Tambah drop-shadow default ala Tailwind shadow-md
+      obj.style.effects.push({
+        id: 'fx_' + Math.random().toString(36).slice(2, 8),
+        type: 'drop-shadow',
+        visible: true,
+        x: 0,
+        y: 4,
+        blur: 6,
+        spread: 0,
+        color: '#000000',
+        opacity: 0.15
+      });
+    }
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Ganti Preset Tailwind Shadow
+  $(document).on('change', '#code-select-shadow', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const val = this.value;
+    obj.style = obj.style || {};
+    obj.style.effects = obj.style.effects || [];
+
+    const existingIdx = obj.style.effects.findIndex(e => e && (e.type === 'drop-shadow' || e.type === 'inner-shadow'));
+
+    if (val === 'none') {
+      if (existingIdx !== -1) obj.style.effects.splice(existingIdx, 1);
+    } else if (val !== 'custom') {
+      const presets = {
+        sm: { type: 'drop-shadow', x: 0, y: 1, blur: 2, spread: 0, color: '#000000', opacity: 0.05 },
+        base: { type: 'drop-shadow', x: 0, y: 1, blur: 3, spread: 0, color: '#000000', opacity: 0.1 },
+        md: { type: 'drop-shadow', x: 0, y: 4, blur: 6, spread: 0, color: '#000000', opacity: 0.1 },
+        lg: { type: 'drop-shadow', x: 0, y: 10, blur: 15, spread: 0, color: '#000000', opacity: 0.1 },
+        xl: { type: 'drop-shadow', x: 0, y: 20, blur: 25, spread: 0, color: '#000000', opacity: 0.1 },
+        '2xl': { type: 'drop-shadow', x: 0, y: 25, blur: 50, spread: 0, color: '#000000', opacity: 0.25 },
+        inner: { type: 'inner-shadow', x: 0, y: 2, blur: 4, spread: 0, color: '#000000', opacity: 0.06 }
+      };
+
+      const presetData = presets[val];
+      if (presetData) {
+        if (existingIdx !== -1) {
+          Object.assign(obj.style.effects[existingIdx], presetData, { visible: true });
+        } else {
+          obj.style.effects.push({
+            id: 'fx_' + Math.random().toString(36).slice(2, 8),
+            visible: true,
+            ...presetData
+          });
+        }
+      }
+    }
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Edit Manual Shadow Coordinates (X, Y, Blur, Spread, Color, Alpha)
+  const updateCustomShadow = () => {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.style = obj.style || {};
+    obj.style.effects = obj.style.effects || [];
+
+    let activeShadow = obj.style.effects.find(e => e && (e.type === 'drop-shadow' || e.type === 'inner-shadow'));
+    if (!activeShadow) {
+      activeShadow = {
+        id: 'fx_' + Math.random().toString(36).slice(2, 8),
+        type: 'drop-shadow',
+        visible: true,
+        x: 0,
+        y: 4,
+        blur: 8,
+        spread: 0,
+        color: '#000000',
+        opacity: 0.25
+      };
+      obj.style.effects.push(activeShadow);
+    }
+
+    activeShadow.x = parseFloat($('#code-shadow-x').val()) || 0;
+    activeShadow.y = parseFloat($('#code-shadow-y').val()) || 0;
+    activeShadow.blur = Math.max(0, parseFloat($('#code-shadow-blur').val()) || 0);
+    activeShadow.spread = parseFloat($('#code-shadow-spread').val()) || 0;
+    activeShadow.color = $('#code-shadow-color').val() || '#000000';
+    activeShadow.opacity = Math.max(0, Math.min(100, parseFloat($('#code-shadow-opacity').val()) || 25)) / 100;
+    activeShadow.visible = true;
+
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  };
+
+  $(document).on('input change', '#code-shadow-x, #code-shadow-y, #code-shadow-blur, #code-shadow-spread, #code-shadow-color, #code-shadow-opacity', updateCustomShadow);
+
+  // Element Opacity Handlers
+  $(document).on('input change', '#code-element-opacity', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const val = Math.max(0, Math.min(100, parseFloat($(this).val()) || 100));
+    obj.style = obj.style || {};
+    obj.style.opacity = val / 100;
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  $(document).on('change', '#code-select-opacity', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const val = parseFloat(this.value);
+    if (!isNaN(val)) {
+      obj.style = obj.style || {};
+      obj.style.opacity = Math.max(0, Math.min(1, val / 100));
+      $(document).trigger('object:change');
+      if (typeof requestRender === 'function') requestRender();
+      syncCodeView();
+    }
+  });
+
   $(document).on('click', '#code-export-format-seg button', function () {
     const obj = getSelectedObject();
     if (!obj) return;
@@ -1036,6 +1874,7 @@ $(function () {
 
   $('#modal-code-export').on('modal:open', syncExportModal);
 
+  window.updateObjectInsetsFromTransform = updateObjectInsetsFromTransform;
   window.syncCodeView = syncCodeView;
   window.syncExportModal = syncExportModal;
 });

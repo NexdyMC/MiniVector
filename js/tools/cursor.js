@@ -690,11 +690,16 @@
 
                     t.x = Math.round(newBoxX - parentOriginX);
                     t.y = Math.round(newBoxY - parentOriginY);
+                    const oldW = t.width;
+                    const oldH = t.height;
                     if (typeof Geo !== 'undefined' && typeof Geo.setSize === 'function') {
                         Geo.setSize(found.obj, Math.round(newBoxW), Math.round(newBoxH));
                     } else {
                         t.width = Math.round(newBoxW);
                         t.height = Math.round(newBoxH);
+                        if (found.obj.type === 'frame' && window.LayoutEngine && typeof window.LayoutEngine.applyFrameResizeConstraints === 'function') {
+                            window.LayoutEngine.applyFrameResizeConstraints(found.obj, oldW, oldH, t.width, t.height);
+                        }
                     }
 
                     if (found.obj.type === 'text' && (activeHandle.includes('e') || activeHandle.includes('w'))) {

@@ -13,6 +13,160 @@
     208: '52', 224: '56', 240: '60', 256: '64', 288: '72', 320: '80', 384: '96'
   };
 
+  // Helper Box Shadow Tailwind Mapper
+  const getTailwindShadowClass = (effects) => {
+    if (!Array.isArray(effects) || effects.length === 0) return null;
+    const shadows = effects.filter(e => e && e.visible !== false && (e.type === 'drop-shadow' || e.type === 'inner-shadow'));
+    if (shadows.length === 0) return null;
+
+    // Jika tepat 1 shadow, periksa apakah cocok dengan preset Tailwind standar
+    if (shadows.length === 1) {
+      const e = shadows[0];
+      const isInner = e.type === 'inner-shadow';
+      const x = typeof e.x === 'number' ? e.x : 0;
+      const y = typeof e.y === 'number' ? e.y : 0;
+      const blur = typeof e.blur === 'number' ? e.blur : 0;
+      const spread = typeof e.spread === 'number' ? e.spread : 0;
+      const op = typeof e.opacity === 'number' ? e.opacity : 0.25;
+      const col = (e.color || '#000000').toLowerCase();
+      const isBlack = col === '#000000' || col === '#000';
+
+      if (isInner) {
+        if (x === 0 && y === 2 && blur === 4 && isBlack) return 'shadow-inner';
+      } else {
+        if (x === 0 && y === 1 && blur === 2 && isBlack && op <= 0.1) return 'shadow-sm';
+        if (x === 0 && y === 1 && blur === 3 && isBlack) return 'shadow';
+        if (x === 0 && y === 4 && blur === 6 && isBlack) return 'shadow-md';
+        if (x === 0 && y === 10 && blur === 15 && isBlack) return 'shadow-lg';
+        if (x === 0 && y === 20 && blur === 25 && isBlack) return 'shadow-xl';
+        if (x === 0 && y === 25 && blur === 50 && isBlack) return 'shadow-2xl';
+      }
+    }
+
+    // Jika custom atau multi-shadow, buat arbitrary shadow-[...]
+    const parts = shadows.map(e => {
+      const inset = e.type === 'inner-shadow' ? 'inset_' : '';
+      const x = (typeof e.x === 'number' ? e.x : 0) + 'px';
+      const y = (typeof e.y === 'number' ? e.y : 4) + 'px';
+      const blur = (typeof e.blur === 'number' ? e.blur : 8) + 'px';
+      const spread = typeof e.spread === 'number' && e.spread !== 0 ? ('_' + e.spread + 'px') : '';
+      const op = typeof e.opacity === 'number' ? e.opacity : 0.25;
+      let cleanHex = (e.color || '#000000').replace('#', '');
+      if (cleanHex.length === 3) cleanHex = cleanHex.split('').map(c => c + c).join('');
+      const num = parseInt(cleanHex, 16);
+      const r = isNaN(num) ? 0 : (num >> 16) & 255;
+      const g = isNaN(num) ? 0 : (num >> 8) & 255;
+      const b = isNaN(num) ? 0 : num & 255;
+      const color = `rgba(${r},${g},${b},${op})`;
+      return `${inset}${x}_${y}_${blur}${spread}_${color}`;
+    });
+
+    return `shadow-[${parts.join(',')}]`;
+  };
+
+  // Tailwind Palette Color Mapper
+  const tailwindColorPalette = {
+    '#ffffff': 'bg-white',
+    '#000000': 'bg-black',
+    '#f8fafc': 'bg-slate-50', '#f1f5f9': 'bg-slate-100', '#e2e8f0': 'bg-slate-200', '#cbd5e1': 'bg-slate-300',
+    '#94a3b8': 'bg-slate-400', '#64748b': 'bg-slate-500', '#475569': 'bg-slate-600', '#334155': 'bg-slate-700',
+    '#1e293b': 'bg-slate-800', '#0f172a': 'bg-slate-900', '#020617': 'bg-slate-950',
+    '#ef4444': 'bg-red-500', '#dc2626': 'bg-red-600', '#b91c1c': 'bg-red-700',
+    '#f97316': 'bg-orange-500', '#ea580c': 'bg-orange-600',
+    '#f59e0b': 'bg-amber-500', '#d97706': 'bg-amber-600',
+    '#10b981': 'bg-emerald-500', '#059669': 'bg-emerald-600',
+    '#06b6d4': 'bg-cyan-500', '#0891b2': 'bg-cyan-600',
+    '#3b82f6': 'bg-blue-500', '#2563eb': 'bg-blue-600', '#1d4ed8': 'bg-blue-700',
+    '#6366f1': 'bg-indigo-500', '#4f46e5': 'bg-indigo-600', '#4338ca': 'bg-indigo-700',
+    '#8b5cf6': 'bg-purple-500', '#7c3aed': 'bg-purple-600', '#6d28d9': 'bg-purple-700',
+    '#ec4899': 'bg-pink-500', '#db2777': 'bg-pink-600',
+    '#f43f5e': 'bg-rose-500', '#e11d48': 'bg-rose-600'
+  };
+
+  const getTailwindBgColor = (hex) => {
+    if (!hex) return null;
+    const lower = hex.toLowerCase();
+    if (tailwindColorPalette[lower]) return tailwindColorPalette[lower];
+    return `bg-[${hex}]`;
+  };
+
+  const getTailwindGradientClass = (fill) => {
+    if (!fill || fill.type !== 'GRADIENT_LINEAR') return null;
+
+    // Calculate angle in CSS degrees
+    let deg = 90;
+    if (typeof Paint !== 'undefined' && typeof Paint.linearAngle === 'function') {
+      deg = Math.round((Paint.linearAngle(fill) + 90) % 360);
+    } else if (fill.start && fill.end) {
+      const s = fill.start, e = fill.end;
+      const a = (Math.atan2(e.y - s.y, e.x - s.x) * 180 / Math.PI + 360) % 360;
+      deg = Math.round((a + 90) % 360);
+    }
+
+    const stops = (Array.isArray(fill.stops) ? fill.stops : [])
+      .filter(st => st && isFinite(st.offset))
+      .sort((a, b) => a.offset - b.offset);
+
+    if (stops.length < 2) return null;
+
+    // Arah standar mata angin (8 arah)
+    const angleMap = {
+      90: 'to-r',
+      135: 'to-br',
+      180: 'to-b',
+      225: 'to-bl',
+      270: 'to-l',
+      315: 'to-tl',
+      0: 'to-t',
+      360: 'to-t',
+      45: 'to-tr'
+    };
+
+    // Cari arah mata angin yang paling dekat (toleransi +/- 5 derajat)
+    let matchedDir = null;
+    for (const [angleStr, dir] of Object.entries(angleMap)) {
+      const a = parseInt(angleStr, 10);
+      if (Math.abs(deg - a) <= 5) {
+        matchedDir = dir;
+        break;
+      }
+    }
+
+    // Kasus 1: Tepat 2 atau 3 warna DAN memiliki sudut arah standar Tailwind (to-r, to-br, dll.)
+    if (matchedDir && stops.length <= 3) {
+      const classes = [`bg-gradient-${matchedDir}`];
+      const fromColor = (stops[0].color || '#000000').toLowerCase();
+      const toColor = (stops[stops.length - 1].color || '#ffffff').toLowerCase();
+
+      // From color class
+      const fromBg = tailwindColorPalette[fromColor] ? tailwindColorPalette[fromColor].replace('bg-', 'from-') : `from-[${fromColor}]`;
+      classes.push(fromBg);
+
+      // Via color class (jika 3 warna)
+      if (stops.length === 3) {
+        const viaColor = (stops[1].color || '#888888').toLowerCase();
+        const viaBg = tailwindColorPalette[viaColor] ? tailwindColorPalette[viaColor].replace('bg-', 'via-') : `via-[${viaColor}]`;
+        classes.push(viaBg);
+      }
+
+      // To color class
+      const toBg = tailwindColorPalette[toColor] ? tailwindColorPalette[toColor].replace('bg-', 'to-') : `to-[${toColor}]`;
+      classes.push(toBg);
+
+      return classes.join(' ');
+    }
+
+    // Kasus 2: Multi-color (4 s/d 6+ warna) ATAU sudut kustom bebas (misal 120deg, 30deg)
+    // Gunakan Arbitrary Tailwind linear-gradient yang presisi!
+    const stopParts = stops.map(st => {
+      const col = st.color || '#000000';
+      const pct = Math.round(st.offset * 100);
+      return `${col}_${pct}%`;
+    });
+
+    return `bg-[linear-gradient(${deg}deg,${stopParts.join(',')})]`;
+  };
+
   const getSpacingClass = (prefix, px) => {
     const rounded = Math.round(px);
     if (tailwindSpacingMap[rounded] !== undefined) {
@@ -107,14 +261,42 @@
       classes.push(`row-span-${l.rowSpan}`);
     }
 
-    // 2. Position (Dinamis: jika isAbsolute === true)
-    if (c.position && c.position.isAbsolute) {
-      classes.push('absolute');
-      if (c.position.top !== null && c.position.top !== undefined) classes.push(getSpacingClass('top', c.position.top));
-      if (c.position.left !== null && c.position.left !== undefined) classes.push(getSpacingClass('left', c.position.left));
-      if (c.position.right !== null && c.position.right !== undefined) classes.push(getSpacingClass('right', c.position.right));
-      if (c.position.bottom !== null && c.position.bottom !== undefined) classes.push(getSpacingClass('bottom', c.position.bottom));
-      if (c.position.zIndex !== undefined && c.position.zIndex !== 1) classes.push(`z-[${c.position.zIndex}]`);
+    // 2. Position (Dinamis: jika isActive === true atau isAbsolute === true)
+    if (c.position && (c.position.isActive || c.position.isAbsolute)) {
+      const pType = c.position.type || 'absolute';
+      classes.push(pType);
+
+      // Inset-0 shorthand jika semua sisi 0
+      const hasTop = c.position.top !== null && c.position.top !== undefined && c.position.top !== '';
+      const hasRight = c.position.right !== null && c.position.right !== undefined && c.position.right !== '';
+      const hasBottom = c.position.bottom !== null && c.position.bottom !== undefined && c.position.bottom !== '';
+      const hasLeft = c.position.left !== null && c.position.left !== undefined && c.position.left !== '';
+
+      const topVal = parseFloat(c.position.top);
+      const rightVal = parseFloat(c.position.right);
+      const bottomVal = parseFloat(c.position.bottom);
+      const leftVal = parseFloat(c.position.left);
+
+      if (hasTop && hasRight && hasBottom && hasLeft && topVal === 0 && rightVal === 0 && bottomVal === 0 && leftVal === 0) {
+        classes.push('inset-0');
+      } else {
+        if (hasTop) classes.push(getSpacingClass('top', topVal));
+        if (hasRight) classes.push(getSpacingClass('right', rightVal));
+        if (hasBottom) classes.push(getSpacingClass('bottom', bottomVal));
+        if (hasLeft) classes.push(getSpacingClass('left', leftVal));
+      }
+
+      // Z-Index handling: preset (z-0, z-10, z-20, z-30, z-40, z-50) vs custom arbitrary z-[x]
+      if (c.position.zIndex !== undefined && c.position.zIndex !== null && c.position.zIndex !== '' && c.position.zIndex !== 1) {
+        const zNum = parseInt(c.position.zIndex, 10);
+        if ([0, 10, 20, 30, 40, 50].includes(zNum)) {
+          classes.push(`z-${zNum}`);
+        } else if (c.position.zIndex === 'auto') {
+          classes.push('z-auto');
+        } else {
+          classes.push(`z-[${c.position.zIndex}]`);
+        }
+      }
     }
 
     // 3. Dimensions (Width & Height)
@@ -130,13 +312,20 @@
       classes.push(getSpacingClass('h', t.height));
     }
 
-    // 4. Background Fill
-    if (s.fill && s.fill !== 'none') {
-      if (s.fill.startsWith('#')) {
-        classes.push(`bg-[${s.fill}]`);
-      } else {
-        classes.push(`bg-[${s.fill}]`);
+    // 4. Background Fill (Solid / Multi-Stop Gradients / Tailwind Mapping)
+    const fills = Array.isArray(s.fills) ? s.fills.filter(f => f && f.visible !== false) : [];
+    if (fills.length > 0) {
+      const topFill = fills[fills.length - 1];
+      if (topFill.type === 'SOLID') {
+        const bgClass = getTailwindBgColor(topFill.color || '#D9D9D9');
+        if (bgClass) classes.push(bgClass);
+      } else if (topFill.type === 'GRADIENT_LINEAR') {
+        const gradClass = getTailwindGradientClass(topFill);
+        if (gradClass) classes.push(gradClass);
       }
+    } else if (s.fill && s.fill !== 'none') {
+      const bgClass = getTailwindBgColor(s.fill);
+      if (bgClass) classes.push(bgClass);
     }
 
     // 5. Border & Stroke
@@ -173,9 +362,31 @@
       classes.push(getRadiusClass('', parseFloat(cr)));
     }
 
-    // 7. Shadow
+    // 7. Shadow & Effects
     if (Array.isArray(s.effects) && s.effects.length > 0) {
-      classes.push('shadow-md');
+      const shadowClass = getTailwindShadowClass(s.effects);
+      if (shadowClass) classes.push(shadowClass);
+
+      // Blur filters
+      const layerBlur = s.effects.find(e => e && e.visible !== false && e.type === 'layer-blur');
+      if (layerBlur && layerBlur.blur > 0) {
+        classes.push(`blur-[${layerBlur.blur}px]`);
+      }
+      const bgBlur = s.effects.find(e => e && e.visible !== false && e.type === 'background-blur');
+      if (bgBlur && bgBlur.blur > 0) {
+        classes.push(`backdrop-blur-[${bgBlur.blur}px]`);
+      }
+    }
+
+    // 7b. Opacity
+    if (s.opacity !== undefined && s.opacity !== null && s.opacity < 1) {
+      const opPct = Math.round(s.opacity * 100);
+      const standardOpacities = [0, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 100];
+      if (standardOpacities.includes(opPct)) {
+        classes.push(`opacity-${opPct}`);
+      } else {
+        classes.push(`opacity-[${s.opacity}]`);
+      }
     }
 
     // 8. Typography & Text Formatting (Khusus Teks)
@@ -262,8 +473,11 @@
       }
     }
 
-    // 9. Custom classes
-    if (c.customClasses) {
+    // 9. Custom class / Identifier
+    const customCls = c.customClass ? c.customClass.trim().replace(/^[.#]/, '') : '';
+    if (customCls) {
+      classes.unshift(customCls);
+    } else if (c.customClasses) {
       classes.push(c.customClasses);
     }
 
@@ -273,7 +487,8 @@
 
     // Format output berdasarkan pilihan: HTML | React (JSX) | Vue Template
     if (exportFormat === 'react') {
-      const compName = (obj.name || 'MyComponent').replace(/[^a-zA-Z0-9]/g, '');
+      const rawComp = (c && c.componentName) ? c.componentName.trim() : (obj.name || 'MyComponent');
+      const compName = rawComp.replace(/[^a-zA-Z0-9]/g, '');
       const validCompName = compName ? (compName.charAt(0).toUpperCase() + compName.slice(1)) : 'Component';
       return `export default function ${validCompName}() {\n  return (\n    <${tag} className="${classStr}">\n      ${textContent}\n    </${tag}>\n  );\n}`;
     }

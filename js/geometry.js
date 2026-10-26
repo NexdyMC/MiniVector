@@ -116,6 +116,10 @@ const Geo = (() => {
           n.handleOut.y *= sy;
         }
       });
+    } else if (o.type === 'frame' && Array.isArray(o.children)) {
+      if (window.LayoutEngine && typeof window.LayoutEngine.applyFrameResizeConstraints === 'function') {
+        window.LayoutEngine.applyFrameResizeConstraints(o, oldW, oldH, w, h);
+      }
     }
   };
 

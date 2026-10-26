@@ -292,6 +292,101 @@
     },
 
     /**
+     * Memperbarui ukuran dan posisi elemen anak saat Frame di-resize,
+     * berdasarkan aturan constraint / inset position (e.g. inset-0, pin right/bottom, fill)
+     * serta auto-layout flow.
+     */
+    applyFrameResizeConstraints(frame, oldW, oldH, newW, newH) {
+      if (!frame || frame.type !== 'frame' || !Array.isArray(frame.children)) return;
+      if (!oldW || !oldH || oldW <= 0 || oldH <= 0) return;
+      if (oldW === newW && oldH === newH) return;
+
+      frame.children.forEach(child => {
+        if (!child || !child.transform) return;
+
+        const pos = (child.code && child.code.position) ? child.code.position : null;
+        const hasPos = !!(pos && (pos.isActive || pos.isAbsolute));
+
+        const hasTop = hasPos && (pos.top !== '' && pos.top !== null && pos.top !== undefined);
+        const hasRight = hasPos && (pos.right !== '' && pos.right !== null && pos.right !== undefined);
+        const hasBottom = hasPos && (pos.bottom !== '' && pos.bottom !== null && pos.bottom !== undefined);
+        const hasLeft = hasPos && (pos.left !== '' && pos.left !== null && pos.left !== undefined);
+
+        let targetW = child.transform.width;
+        let targetH = child.transform.height;
+        let targetX = child.transform.x;
+        let targetY = child.transform.y;
+        let changed = false;
+
+        // 1. Horizontal Constraints / Insets
+        if (hasLeft && hasRight) {
+          // Stretch horizontally (e.g. inset-x-0 atau pin Left & Right)
+          const padL = parseFloat(pos.left) || 0;
+          const padR = parseFloat(pos.right) || 0;
+          targetX = padL;
+          targetW = Math.max(1, Math.round(newW - padL - padR));
+          changed = true;
+        } else if (hasRight && !hasLeft) {
+          // Pin Right (jarak ke sisi kanan tetap)
+          const padR = parseFloat(pos.right) || 0;
+          targetX = Math.round(newW - (targetW + padR));
+          changed = true;
+        }
+
+        // 2. Vertical Constraints / Insets
+        if (hasTop && hasBottom) {
+          // Stretch vertically (e.g. inset-y-0 atau pin Top & Bottom)
+          const padT = parseFloat(pos.top) || 0;
+          const padB = parseFloat(pos.bottom) || 0;
+          targetY = padT;
+          targetH = Math.max(1, Math.round(newH - padT - padB));
+          changed = true;
+        } else if (hasBottom && !hasTop) {
+          // Pin Bottom (jarak ke sisi bawah tetap)
+          const padB = parseFloat(pos.bottom) || 0;
+          targetY = Math.round(newH - (targetH + padB));
+          changed = true;
+        }
+
+        // Jika child memiliki sizing unit '%' (w-full / h-full)
+        if (child.code && child.code.sizing) {
+          if (child.code.sizing.width && child.code.sizing.width.unit === '%') {
+            targetW = Math.max(1, Math.round(newW));
+            changed = true;
+          }
+          if (child.code.sizing.height && child.code.sizing.height.unit === '%') {
+            targetH = Math.max(1, Math.round(newH));
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          child.transform.x = targetX;
+          child.transform.y = targetY;
+          if (typeof Geo !== 'undefined' && typeof Geo.setSize === 'function') {
+            Geo.setSize(child, targetW, targetH);
+          } else {
+            child.transform.width = targetW;
+            child.transform.height = targetH;
+            if (child.type === 'rectangle' && child.geometry && !child.geometry.isCustomPath) {
+              child.geometry.nodes = [
+                { id: 'p0', x: 0, y: 0 },
+                { id: 'p1', x: targetW, y: 0 },
+                { id: 'p2', x: targetW, y: targetH },
+                { id: 'p3', x: 0, y: targetH }
+              ];
+            }
+          }
+        }
+      });
+
+      // Jika Frame menggunakan Auto Layout flex/grid, tata ulang flow children
+      if (frame.layout && frame.layout.display && frame.layout.display !== 'none') {
+        this.applyAutoLayout(frame);
+      }
+    },
+
+    /**
      * Membungkus seleksi saat ini ke dalam Auto Layout Frame baru (Shortcut Shift + A)
      */
     wrapSelectionInAutoLayout() {

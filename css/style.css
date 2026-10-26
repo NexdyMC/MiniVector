@@ -1746,3 +1746,48 @@
   align-items: center;
   gap: 8px;
 }
+
+
+/* ================= CODE TAB POSITION: QUICK ANCHOR BAR ================= */
+.code-quick-anchor-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 5px;
+  border-radius: 6px;
+  border: 1px solid var(--c-line);
+  max-width: 140px;
+  margin: 0 auto 6px auto;
+}
+
+.code-quick-anchor-bar .anchor-btn {
+  height: 26px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 4px;
+  color: var(--c-mute);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  padding: 0;
+}
+
+.code-quick-anchor-bar .anchor-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: var(--c-line-strong);
+}
+
+.code-quick-anchor-bar .anchor-btn.active {
+  background: rgba(13, 153, 255, 0.2);
+  color: #0D99FF;
+  border-color: #0D99FF;
+}
+
+#code-pos-zindex-presets button.on {
+  background: var(--c-accent, #0D99FF);
+  color: #fff;
+}
