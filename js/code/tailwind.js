@@ -175,8 +175,12 @@
     return `${prefix}-[${rounded}px]`;
   };
 
-  const toTailwind = (obj) => {
-    if (!obj || !obj.transform) return '<!-- Tidak ada objek terpilih -->';
+  /**
+   * Helper mengekstrak daftar class Tailwind untuk satu node tunggal.
+   * Parameter isChildOfFreeFrame bernilai true jika node berada di dalam frame dengan display: 'none' (canvas bebas).
+   */
+  const getNodeClasses = (obj, isChildOfFreeFrame = false) => {
+    if (!obj || !obj.transform) return [];
 
     const t = obj.transform;
     const s = obj.style || {};
@@ -184,8 +188,6 @@
     const l = obj.layout || {};
     const c = obj.code || {};
     const classes = [];
-
-    const tag = (c && c.htmlTag) || (obj.type === 'text' ? 'p' : 'div');
 
     // 1. Display & Flow (None | Flex | Grid)
     if (obj.type === 'frame') {
@@ -205,7 +207,7 @@
           const [top, right, bottom, left] = l.padding;
           if (top > 0) classes.push(getSpacingClass('p', top));
         }
-        if (obj.clipContent) classes.push('overflow-hidden');
+        if (obj.clipContent !== false) classes.push('overflow-hidden');
       } else if (l.display === 'flex') {
         classes.push('flex');
         const dir = l.direction || 'column';
@@ -217,7 +219,7 @@
         else if (l.alignItems === 'flex-start') classes.push('items-start');
         else if (l.alignItems === 'stretch') classes.push('items-stretch');
         else if (l.alignItems === 'baseline') classes.push('items-baseline');
-      
+
         if (l.justifyContent === 'center') classes.push('justify-center');
         else if (l.justifyContent === 'space-between') classes.push('justify-between');
         else if (l.justifyContent === 'space-around') classes.push('justify-around');
@@ -229,25 +231,29 @@
           classes.push(getSpacingClass('gap', l.gap));
         }
 
-      if (Array.isArray(l.padding)) {
-        const [top, right, bottom, left] = l.padding;
-        if (top === bottom && right === left && top === right && top > 0) {
-          classes.push(getSpacingClass('p', top));
-        } else {
-          if (right === left && right > 0) classes.push(getSpacingClass('px', right));
-          else {
-            if (left > 0) classes.push(getSpacingClass('pl', left));
-            if (right > 0) classes.push(getSpacingClass('pr', right));
-          }
-          if (top === bottom && top > 0) classes.push(getSpacingClass('py', top));
-          else {
-            if (top > 0) classes.push(getSpacingClass('pt', top));
-            if (bottom > 0) classes.push(getSpacingClass('pb', bottom));
+        if (Array.isArray(l.padding)) {
+          const [top, right, bottom, left] = l.padding;
+          if (top === bottom && right === left && top === right && top > 0) {
+            classes.push(getSpacingClass('p', top));
+          } else {
+            if (right === left && right > 0) classes.push(getSpacingClass('px', right));
+            else {
+              if (left > 0) classes.push(getSpacingClass('pl', left));
+              if (right > 0) classes.push(getSpacingClass('pr', right));
+            }
+            if (top === bottom && top > 0) classes.push(getSpacingClass('py', top));
+            else {
+              if (top > 0) classes.push(getSpacingClass('pt', top));
+              if (bottom > 0) classes.push(getSpacingClass('pb', bottom));
+            }
           }
         }
-      }
 
-      if (obj.clipContent) classes.push('overflow-hidden');
+        if (obj.clipContent !== false) classes.push('overflow-hidden');
+      } else {
+        // Frame Canvas Bebas -> Beri relative dan overflow-hidden agar child absolute posisinya presisi
+        classes.push('relative');
+        if (obj.clipContent !== false) classes.push('overflow-hidden');
       }
     } else {
       classes.push('block');
@@ -261,12 +267,13 @@
       classes.push(`row-span-${l.rowSpan}`);
     }
 
-    // 2. Position (Dinamis: jika isActive === true atau isAbsolute === true)
-    if (c.position && (c.position.isActive || c.position.isAbsolute)) {
+    // 2. Position (Dinamis: jika isActive / isAbsolute ATAU anak dari frame canvas bebas)
+    const hasExplicitPos = c.position && (c.position.isActive || c.position.isAbsolute);
+
+    if (hasExplicitPos) {
       const pType = c.position.type || 'absolute';
       classes.push(pType);
 
-      // Inset-0 shorthand jika semua sisi 0
       const hasTop = c.position.top !== null && c.position.top !== undefined && c.position.top !== '';
       const hasRight = c.position.right !== null && c.position.right !== undefined && c.position.right !== '';
       const hasBottom = c.position.bottom !== null && c.position.bottom !== undefined && c.position.bottom !== '';
@@ -286,7 +293,6 @@
         if (hasLeft) classes.push(getSpacingClass('left', leftVal));
       }
 
-      // Z-Index handling: preset (z-0, z-10, z-20, z-30, z-40, z-50) vs custom arbitrary z-[x]
       if (c.position.zIndex !== undefined && c.position.zIndex !== null && c.position.zIndex !== '' && c.position.zIndex !== 1) {
         const zNum = parseInt(c.position.zIndex, 10);
         if ([0, 10, 20, 30, 40, 50].includes(zNum)) {
@@ -297,6 +303,11 @@
           classes.push(`z-[${c.position.zIndex}]`);
         }
       }
+    } else if (isChildOfFreeFrame) {
+      // Jika berada di frame canvas bebas, pasang absolute dengan koordinat t.x dan t.y
+      classes.push('absolute');
+      if (t.x !== undefined) classes.push(getSpacingClass('left', t.x));
+      if (t.y !== undefined) classes.push(getSpacingClass('top', t.y));
     }
 
     // 3. Dimensions (Width & Height)
@@ -313,19 +324,22 @@
     }
 
     // 4. Background Fill (Solid / Multi-Stop Gradients / Tailwind Mapping)
-    const fills = Array.isArray(s.fills) ? s.fills.filter(f => f && f.visible !== false) : [];
-    if (fills.length > 0) {
-      const topFill = fills[fills.length - 1];
-      if (topFill.type === 'SOLID') {
-        const bgClass = getTailwindBgColor(topFill.color || '#D9D9D9');
+    // Catatan: Jika objek teks, s.fill diperlakukan sebagai text color (bukan bg color)
+    if (obj.type !== 'text') {
+      const fills = Array.isArray(s.fills) ? s.fills.filter(f => f && f.visible !== false) : [];
+      if (fills.length > 0) {
+        const topFill = fills[fills.length - 1];
+        if (topFill.type === 'SOLID') {
+          const bgClass = getTailwindBgColor(topFill.color || '#D9D9D9');
+          if (bgClass) classes.push(bgClass);
+        } else if (topFill.type === 'GRADIENT_LINEAR') {
+          const gradClass = getTailwindGradientClass(topFill);
+          if (gradClass) classes.push(gradClass);
+        }
+      } else if (s.fill && s.fill !== 'none') {
+        const bgClass = getTailwindBgColor(s.fill);
         if (bgClass) classes.push(bgClass);
-      } else if (topFill.type === 'GRADIENT_LINEAR') {
-        const gradClass = getTailwindGradientClass(topFill);
-        if (gradClass) classes.push(gradClass);
       }
-    } else if (s.fill && s.fill !== 'none') {
-      const bgClass = getTailwindBgColor(s.fill);
-      if (bgClass) classes.push(bgClass);
     }
 
     // 5. Border & Stroke
@@ -333,7 +347,11 @@
     const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
     if (hasStroke && sw > 0) {
       classes.push(sw === 1 ? 'border' : `border-[${sw}px]`);
-      if (s.stroke && s.stroke !== 'none') classes.push(`border-[${s.stroke}]`);
+      if (s.stroke && s.stroke !== 'none') {
+        const strokeCol = (s.stroke || '').toLowerCase();
+        const strokeClass = tailwindColorPalette[strokeCol] ? tailwindColorPalette[strokeCol].replace('bg-', 'border-') : `border-[${s.stroke}]`;
+        classes.push(strokeClass);
+      }
     }
 
     // 6. Corner Radius (All / Individual Corners)
@@ -344,7 +362,8 @@
       if (val === 8) return `${prefix ? prefix + '-' : 'rounded-'}lg`;
       if (val === 12) return `${prefix ? prefix + '-' : 'rounded-'}xl`;
       if (val === 16) return `${prefix ? prefix + '-' : 'rounded-'}2xl`;
-      if (val >= 999) return `${prefix ? prefix + '-' : 'rounded-'}full`;
+      if (val === 24) return `${prefix ? prefix + '-' : 'rounded-'}3xl`;
+      if (val >= 999) return prefix ? `${prefix}-full` : 'rounded-full';
       return `${prefix ? prefix + '-' : 'rounded-'}[${val}px]`;
     };
 
@@ -367,7 +386,6 @@
       const shadowClass = getTailwindShadowClass(s.effects);
       if (shadowClass) classes.push(shadowClass);
 
-      // Blur filters
       const layerBlur = s.effects.find(e => e && e.visible !== false && e.type === 'layer-blur');
       if (layerBlur && layerBlur.blur > 0) {
         classes.push(`blur-[${layerBlur.blur}px]`);
@@ -391,86 +409,111 @@
 
     // 8. Typography & Text Formatting (Khusus Teks)
     if (obj.type === 'text') {
-      // Font Size
       const fs = obj.fontSize || 16;
       const fontSizeMap = {
-        12: 'text-xs',
-        14: 'text-sm',
-        16: 'text-base',
-        18: 'text-lg',
-        20: 'text-xl',
-        24: 'text-2xl',
-        30: 'text-3xl',
-        36: 'text-4xl',
-        48: 'text-5xl',
-        60: 'text-6xl'
+        12: 'text-xs', 14: 'text-sm', 16: 'text-base', 18: 'text-lg',
+        20: 'text-xl', 24: 'text-2xl', 30: 'text-3xl', 36: 'text-4xl',
+        48: 'text-5xl', 60: 'text-6xl'
       };
-      if (fontSizeMap[fs]) {
-        classes.push(fontSizeMap[fs]);
-      } else {
-        classes.push(`text-[${fs}px]`);
-      }
+      if (fontSizeMap[fs]) classes.push(fontSizeMap[fs]);
+      else classes.push(`text-[${fs}px]`);
 
-      // Font Weight
       const fw = String(obj.fontWeight || '400');
       const fontWeightMap = {
-        '100': 'font-thin',
-        '200': 'font-extralight',
-        '300': 'font-light',
-        '400': 'font-normal',
-        '500': 'font-medium',
-        '600': 'font-semibold',
-        '700': 'font-bold',
-        '800': 'font-extrabold',
-        '900': 'font-black'
+        '100': 'font-thin', '200': 'font-extralight', '300': 'font-light',
+        '400': 'font-normal', '500': 'font-medium', '600': 'font-semibold',
+        '700': 'font-bold', '800': 'font-extrabold', '900': 'font-black'
       };
-      if (fontWeightMap[fw]) {
-        classes.push(fontWeightMap[fw]);
-      }
+      if (fontWeightMap[fw]) classes.push(fontWeightMap[fw]);
 
-      // Text Align
       const ta = obj.textAlign || 'left';
       if (ta === 'center') classes.push('text-center');
       else if (ta === 'right') classes.push('text-right');
       else if (ta === 'justify') classes.push('text-justify');
-      else if (ta === 'left') classes.push('text-left');
 
-      // Leading (Line Height)
-      const lh = obj.leadingPreset || (obj.lineHeightCustom ? (obj.lineHeight / (obj.fontSize || 16)) : 'normal');
-      const leadingMap = {
-        'none': 'leading-none',
-        'tight': 'leading-tight',
-        'snug': 'leading-snug',
-        'normal': 'leading-normal',
-        'relaxed': 'leading-relaxed',
-        'loose': 'leading-loose'
-      };
-      if (leadingMap[lh]) {
-        if (lh !== 'normal') classes.push(leadingMap[lh]);
-      } else if (typeof lh === 'number' && lh > 0) {
-        if (Math.abs(lh - 1.25) < 0.05) classes.push('leading-tight');
-        else if (Math.abs(lh - 1.375) < 0.05) classes.push('leading-snug');
-        else if (Math.abs(lh - 1.5) < 0.05) classes.push('leading-normal');
-        else if (Math.abs(lh - 1.625) < 0.05) classes.push('leading-relaxed');
-        else if (Math.abs(lh - 2) < 0.05) classes.push('leading-loose');
-        else classes.push(`leading-[${Math.round(lh * 100) / 100}]`);
+      if (s.fill && s.fill !== 'none') {
+        const textCol = (s.fill || '').toLowerCase();
+        const textColClass = tailwindColorPalette[textCol] ? tailwindColorPalette[textCol].replace('bg-', 'text-') : `text-[${s.fill}]`;
+        classes.push(textColClass);
       }
 
-      // Tracking (Letter Spacing)
+      const lp = obj.leadingPreset || 'normal';
+      const leadingMap = {
+        'none': 'leading-none', 'tight': 'leading-tight', 'snug': 'leading-snug',
+        'normal': 'leading-normal', 'relaxed': 'leading-relaxed', 'loose': 'leading-loose'
+      };
+      if (leadingMap[lp] && lp !== 'normal') classes.push(leadingMap[lp]);
+
       const tr = obj.trackingPreset || 'normal';
       const trackingMap = {
-        'tighter': 'tracking-tighter',
-        'tight': 'tracking-tight',
-        'normal': 'tracking-normal',
-        'wide': 'tracking-wide',
-        'wider': 'tracking-wider',
-        'widest': 'tracking-widest'
+        'tighter': 'tracking-tighter', 'tight': 'tracking-tight', 'normal': 'tracking-normal',
+        'wide': 'tracking-wide', 'wider': 'tracking-wider', 'widest': 'tracking-widest'
       };
-      if (trackingMap[tr]) {
-        if (tr !== 'normal') classes.push(trackingMap[tr]);
-      } else if (parseFloat(obj.letterSpacing) > 0) {
-        classes.push(`tracking-[${obj.letterSpacing}px]`);
+      if (trackingMap[tr] && tr !== 'normal') classes.push(trackingMap[tr]);
+    }
+
+    // 8b. Interactive States (:hover, :active, :focus)
+    const states = c.states || {};
+    const hasAnyState = Object.keys(states).some(k => states[k] && Object.keys(states[k]).length > 0);
+
+    if (hasAnyState) {
+      // Transition class (default transition-all duration-200)
+      const transDur = (states.hover && states.hover.transition) || (states.active && states.active.transition) || '200';
+      if (transDur !== 'none') {
+        classes.push('transition-all');
+        if (transDur !== '150') classes.push(`duration-${transDur}`);
+        else classes.push('duration-150');
       }
+
+      ['hover', 'active', 'focus'].forEach(stKey => {
+        const st = states[stKey];
+        if (!st) return;
+        const prefix = `${stKey}:`;
+
+        // Background / Fill
+        if (st.fill && st.fill !== 'none') {
+          const col = st.fill.toLowerCase();
+          const colClass = tailwindColorPalette[col] || `bg-[${st.fill}]`;
+          classes.push(`${prefix}${colClass}`);
+        }
+
+        // Text Color
+        if (st.textColor && st.textColor !== 'none') {
+          const col = st.textColor.toLowerCase();
+          const colClass = tailwindColorPalette[col] ? tailwindColorPalette[col].replace('bg-', 'text-') : `text-[${st.textColor}]`;
+          classes.push(`${prefix}${colClass}`);
+        }
+
+        // Scale
+        if (st.scale && parseFloat(st.scale) !== 1) {
+          const scNum = parseFloat(st.scale);
+          const scMap = {
+            0.95: 'scale-95', 0.9: 'scale-90', 1.05: 'scale-105', 1.1: 'scale-110', 1.25: 'scale-125'
+          };
+          if (scMap[scNum]) {
+            classes.push(`${prefix}${scMap[scNum]}`);
+          } else {
+            classes.push(`${prefix}scale-[${scNum}]`);
+          }
+        }
+
+        // Opacity
+        if (st.opacity !== undefined && st.opacity !== '' && st.opacity !== null) {
+          const op = parseInt(st.opacity, 10);
+          if (!isNaN(op) && op < 100) {
+            classes.push(`${prefix}opacity-${op}`);
+          }
+        }
+
+        // Shadow
+        if (st.shadow && st.shadow !== 'inherit') {
+          if (st.shadow === 'none') {
+            classes.push(`${prefix}shadow-none`);
+          } else {
+            classes.push(`${prefix}shadow-${st.shadow}`);
+          }
+        }
+      });
     }
 
     // 9. Custom class / Identifier
@@ -481,24 +524,91 @@
       classes.push(c.customClasses);
     }
 
-    const classStr = classes.join(' ');
-    const textContent = obj.type === 'text' ? (obj.content || obj.text || obj.name || 'Sample Text') : '';
+    return classes;
+  };
+
+  /**
+   * Rekursif: Mengonversi elemen beserta seluruh elemen anaknya menjadi pohon DOM HTML/JSX.
+   */
+  const renderNodeToTailwind = (node, isChildOfFreeFrame = false, indent = 0, isReact = false) => {
+    if (!node || node.visible === false) return '';
+
+    const ind = '  '.repeat(indent);
+    const c = node.code || {};
+    const defaultTag = (c && c.htmlTag) || (node.type === 'text' ? 'p' : 'div');
+    const tag = defaultTag;
+    const classes = getNodeClasses(node, isChildOfFreeFrame);
+    const classAttr = isReact ? 'className' : 'class';
+    const classStr = classes.length > 0 ? ` ${classAttr}="${classes.join(' ')}"` : '';
+
+    // 1. Jika objek adalah Image
+    const isImageObj = node.type === 'image' || (node.style && Array.isArray(node.style.fills) && node.style.fills.some(f => f && f.type === 'IMAGE'));
+    if (isImageObj) {
+      const src = (typeof window !== 'undefined' && window.CodeMedia) ? window.CodeMedia.getImageSource(node) : (node.src || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe');
+      const alt = node.name || 'Image';
+      const fitCls = (node.code && node.code.imageFit === 'contain') ? 'object-contain' : 'object-cover';
+      const fullClassStr = classStr ? classStr.replace('"', `"${fitCls} `) : ` ${classAttr}="${fitCls}"`;
+      return `${ind}<img src="${src}" alt="${alt}"${fullClassStr} />`;
+    }
+
+    // 2. Jika objek adalah Vector / Path / Icon
+    const isVectorObj = node.type === 'path' || node.type === 'polygon' || node.type === 'star';
+    if (isVectorObj && typeof window !== 'undefined' && window.CodeMedia) {
+      const svgInfo = window.CodeMedia.getVectorSvgSnippet(node);
+      const viewBox = `viewBox="0 0 ${svgInfo.w} ${svgInfo.h}"`;
+      return `${ind}<svg ${viewBox}${classStr} fill="none" xmlns="http://www.w3.org/2000/svg">
+${ind}  ${svgInfo.innerContent}
+${ind}</svg>`;
+    }
+
+    // 3. Jika objek adalah Text
+    if (node.type === 'text') {
+      const textVal = node.content || node.text || node.name || 'Sample Text';
+      return `${ind}<${tag}${classStr}>${textVal}</${tag}>`;
+    }
+
+    // Periksa apakah node memiliki children (misal Frame)
+    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+    if (!hasChildren) {
+      return `${ind}<${tag}${classStr}></${tag}>`;
+    }
+
+    // Apakah frame ini bertipe free-canvas (display: 'none')?
+    const isFreeCanvas = !node.layout || node.layout.display === 'none';
+
+    // Rekursif render setiap child
+    const renderedChildren = node.children
+      .map(child => renderNodeToTailwind(child, isFreeCanvas, indent + 1, isReact))
+      .filter(html => html.length > 0)
+      .join('\n');
+
+    return `${ind}<${tag}${classStr}>\n${renderedChildren}\n${ind}</${tag}>`;
+  };
+
+  const toTailwind = (obj) => {
+    if (!obj || !obj.transform) return '<!-- Tidak ada objek terpilih -->';
+
+    const c = obj.code || {};
     const exportFormat = (c && c.exportFormat) || 'html';
+    const isReact = exportFormat === 'react';
+
+    // Render tree secara rekursif mulai dari root object
+    const bodyCode = renderNodeToTailwind(obj, false, (isReact ? 2 : 0), isReact);
 
     // Format output berdasarkan pilihan: HTML | React (JSX) | Vue Template
     if (exportFormat === 'react') {
       const rawComp = (c && c.componentName) ? c.componentName.trim() : (obj.name || 'MyComponent');
       const compName = rawComp.replace(/[^a-zA-Z0-9]/g, '');
       const validCompName = compName ? (compName.charAt(0).toUpperCase() + compName.slice(1)) : 'Component';
-      return `export default function ${validCompName}() {\n  return (\n    <${tag} className="${classStr}">\n      ${textContent}\n    </${tag}>\n  );\n}`;
+      return `export default function ${validCompName}() {\n  return (\n${bodyCode}\n  );\n}`;
     }
 
     if (exportFormat === 'vue') {
-      return `<template>\n  <${tag} class="${classStr}">\n    ${textContent}\n  </${tag}>\n</template>`;
+      return `<template>\n${bodyCode.split('\n').map(l => '  ' + l).join('\n')}\n</template>`;
     }
 
     // Default HTML
-    return `<${tag} class="${classStr}">\n  ${textContent}\n</${tag}>`;
+    return bodyCode;
   };
 
   window.CodeTailwind = {

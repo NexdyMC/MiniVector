@@ -1646,6 +1646,107 @@
                   </div>
                 </section>
 
+                <!-- 3b. INTERACTIVE STATES (Figma Variant Mode: :hover, :active, :focus) -->
+                <section class="fg-sec" id="code-sec-states">
+                  <div class="fg-head">
+                    <span>Interactive States</span>
+                    <span id="code-states-active-badge" class="badge" style="font-size: 9px; padding: 1px 6px; border-radius: 10px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; display: none;">1 configured</span>
+                  </div>
+
+                  <!-- State Selector Dropdown -->
+                  <div class="fg-label" style="margin-top: 4px;">Target State</div>
+                  <div class="mv-custom-select-wrap" id="wrap-code-select-state" style="margin-bottom: 8px;">
+                    <div class="mv-custom-select-trigger" id="trigger-code-select-state" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="label-code-select-state"><i class="fa-solid fa-circle-dot" style="margin-right:6px; color:#94a3b8;"></i>Default (Normal)</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                    <div class="mv-custom-select-menu" id="menu-code-select-state" role="listbox">
+                      <div class="mv-custom-select-item selected" data-val="default"><i class="fa-solid fa-circle-dot" style="margin-right:6px; color:#94a3b8;"></i>Default (Normal)</div>
+                      <div class="mv-custom-select-item" data-val="hover"><i class="fa-solid fa-arrow-pointer" style="margin-right:6px; color:#60a5fa;"></i>:hover (Mouseover)</div>
+                      <div class="mv-custom-select-item" data-val="active"><i class="fa-regular fa-hand-pointer" style="margin-right:6px; color:#f59e0b;"></i>:active (Pressed)</div>
+                      <div class="mv-custom-select-item" data-val="focus"><i class="fa-solid fa-crosshairs" style="margin-right:6px; color:#10b981;"></i>:focus (Keyboard/Click)</div>
+                    </div>
+                  </div>
+                  <select id="code-select-state" style="display:none"></select>
+
+                  <!-- State Editor Box (Tampil saat mode bukan 'default') -->
+                  <div id="code-state-editor-box" style="display: none; background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.35); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                      <span id="code-state-editor-title" style="font-size: 11px; font-weight: 600; color: #60a5fa;">Editing :hover</span>
+                      <button type="button" id="code-btn-reset-state" class="fg-ib" style="font-size: 10px; padding: 2px 6px; height: 20px; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3);" title="Hapus konfigurasi state ini">Reset</button>
+                    </div>
+
+                    <!-- State Fill Color -->
+                    <div class="fg-label" style="margin: 0 0 4px;">Background Fill</div>
+                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                      <input id="code-state-fill-picker" type="color" aria-label="Warna fill state" value="#2563eb" style="width: 28px; height: 26px; border: 1px solid var(--c-line); border-radius: 4px; padding: 0; cursor: pointer; background: transparent;">
+                      <label class="fg-in" style="flex: 1;">
+                        <span class="lb">#</span>
+                        <input id="code-state-fill-hex" type="text" placeholder="inherit" style="font-family: monospace; text-transform: uppercase;">
+                      </label>
+                    </div>
+
+                    <!-- State Text Color (Khusus teks atau jika ingin override teks child) -->
+                    <div class="fg-label" style="margin: 0 0 4px;">Text Color</div>
+                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                      <input id="code-state-text-picker" type="color" aria-label="Warna teks state" value="#ffffff" style="width: 28px; height: 26px; border: 1px solid var(--c-line); border-radius: 4px; padding: 0; cursor: pointer; background: transparent;">
+                      <label class="fg-in" style="flex: 1;">
+                        <span class="lb">#</span>
+                        <input id="code-state-text-hex" type="text" placeholder="inherit" style="font-family: monospace; text-transform: uppercase;">
+                      </label>
+                    </div>
+
+                    <!-- State Scale & Opacity Grid -->
+                    <div class="fg-grid" style="margin-bottom: 8px;">
+                      <label class="fg-in" title="Scale / Zoom (misal 1.05 = zoom 5%)">
+                        <span class="lb"><i class="fa-solid fa-up-right-and-down-left-from-center" style="font-size:9px;"></i></span>
+                        <input id="code-state-scale" type="number" value="1.0" step="0.05" min="0.5" max="2.0">
+                      </label>
+                      <label class="fg-in" title="Opacity % saat state aktif">
+                        <span class="lb"><i class="fa-solid fa-circle-half-stroke" style="font-size:9px;"></i></span>
+                        <input id="code-state-opacity" type="number" placeholder="100" min="0" max="100" step="5">
+                        <span class="end">%</span>
+                      </label>
+                    </div>
+
+                    <!-- State Shadow Preset -->
+                    <div class="fg-label" style="margin: 0 0 4px;">Box Shadow</div>
+                    <div class="mv-custom-select-wrap" id="wrap-code-state-shadow" style="margin-bottom: 8px;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-state-shadow" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-state-shadow">Inherit (No Change)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-state-shadow" role="listbox">
+                        <div class="mv-custom-select-item selected" data-val="inherit">Inherit (No Change)</div>
+                        <div class="mv-custom-select-item" data-val="none">None (Remove Shadow)</div>
+                        <div class="mv-custom-select-item" data-val="sm">shadow-sm</div>
+                        <div class="mv-custom-select-item" data-val="md">shadow-md</div>
+                        <div class="mv-custom-select-item" data-val="lg">shadow-lg</div>
+                        <div class="mv-custom-select-item" data-val="xl">shadow-xl</div>
+                        <div class="mv-custom-select-item" data-val="2xl">shadow-2xl</div>
+                      </div>
+                    </div>
+                    <select id="code-state-shadow" style="display:none"></select>
+
+                    <!-- Transition Duration (Khusus :hover / active) -->
+                    <div class="fg-label" style="margin: 0 0 4px;">Transition Duration</div>
+                    <div class="mv-custom-select-wrap" id="wrap-code-state-transition" style="margin-bottom: 4px;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-state-transition" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-state-transition">duration-200 (200ms)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-state-transition" role="listbox">
+                        <div class="mv-custom-select-item" data-val="none">Instant (0ms)</div>
+                        <div class="mv-custom-select-item" data-val="150">duration-150 (150ms)</div>
+                        <div class="mv-custom-select-item selected" data-val="200">duration-200 (200ms)</div>
+                        <div class="mv-custom-select-item" data-val="300">duration-300 (300ms)</div>
+                        <div class="mv-custom-select-item" data-val="500">duration-500 (500ms)</div>
+                      </div>
+                    </div>
+                    <select id="code-state-transition" style="display:none"></select>
+                  </div>
+                </section>
+
                 <!-- 3c. CODE OUTPUT SETTINGS & CUSTOM CLASS -->
                 <section class="fg-sec" id="code-sec-output-settings">
                   <div class="fg-head"><span>Output Settings</span></div>
@@ -2386,6 +2487,7 @@
     <script src="js/import/json.js"></script>
 
     <!-- code mode inspector -->
+    <script src="js/code/media.js"></script>
     <script src="js/code/css.js"></script>
     <script src="js/code/tailwind.js"></script>
     <script src="js/code/layout.js"></script>

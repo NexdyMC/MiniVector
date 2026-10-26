@@ -1,0 +1,250 @@
+/* ============================================================
+   MINIVECTOR - BASE & LAYOUT STYLES
+   Mencakup: Design Tokens, CSS Reset, Shell App (#app, #main),
+   Topbar, Sidebar Kiri (Layers Tree), dan Responsive Drawer.
+   ============================================================ */
+
+
+  /* ============================================================
+     [EDIT] UKURAN TEKS & KONTROL
+     Semua ukuran dikontrol lewat variabel di :root. Atur ukuran teks
+     (besar -> kecil) di sini, mirip Figma. Tiap breakpoint punya set sendiri.
+     ============================================================ */
+  :root {
+    --fs: 14px;        /* teks utama */
+    --fs-sm: 13px;     /* label kecil, kode */
+    --fs-title: calc(var(--fs) + 2px);  /* judul popup */
+    --ico: 18px;       /* ikon */
+    --ctl: 34px;       /* tinggi tombol / input / baris layer */
+    --bar: 48px;       /* tinggi top bar */
+    --side: 260px;     /* lebar sidebar kiri & kanan */
+    --tool: 38px;      /* tombol toolbar bawah */
+  }
+  @media (min-width: 1440px) {
+    :root { --fs: 14px; --fs-sm: 12px; --ico: 18px; --ctl: 32px; --bar: 48px; --side: 240px; --tool: 42px; }
+  }
+  @media (max-width: 1023px) {
+    :root { --fs: 14px; --fs-sm: 12px; --ico: 18px; --ctl: 32px; --bar: 48px; --side: 240px; --tool: 42px; }
+  }
+  @media (max-width: 639px) {
+    :root { --fs: 14px; --fs-sm: 12px; --ico: 18px; --ctl: 32px; --bar: 48px; --side: 240px; --tool: 42px; }
+  }
+
+  /* ============================================================
+     [EDIT] UKURAN POPUP
+     ============================================================ */
+  :root {
+    --settings-w: 400px; --settings-h: 500px;
+    --save-w: 560px;     --save-h: auto;
+    --import-w: 520px;
+    --help-w: 720px;
+    --img-cell-w: 200px; --img-cell-h: 160px; --img-gap: 12px;   /* grid Image: 3 kolom x 3 baris (9 slot) */
+  }
+
+  /* ---------- Dasar ---------- */
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden; background: var(--c-bg); color: var(--c-ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: var(--fs); line-height: 1.4; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
+  }
+  * { scrollbar-width: thin; scrollbar-color: var(--c-line-strong) transparent; }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .4; cursor: default; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: -2px; }
+  .ico { width: var(--ico); height: var(--ico); flex: none; fill: none; stroke: currentColor;
+         stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Kerangka ---------- */
+  #app  { display: grid; grid-template-rows: var(--bar) minmax(0, 1fr); height: 100vh; height: 100dvh; width: 100vw; }
+  #main { display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); min-height: 0; }
+  #canvas { touch-action: none; }
+
+  /* ---------- Top bar ---------- */
+  #topbar { display: flex; align-items: stretch; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  #topbar::-webkit-scrollbar { display: none; }
+  #topbar > * { flex-shrink: 0; }
+  #file-name { display: flex; align-items: center; min-width: 110px; padding: 0 14px; font-weight: 600; white-space: nowrap;
+    border-right: 1px solid var(--c-line); box-shadow: inset 0 -2px 0 var(--c-accent); }
+  .tb-group { display: flex; align-items: center; gap: 2px; padding: 0 6px; }
+  .tb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+    min-height: var(--ctl); min-width: var(--ctl); padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--c-ink); }
+  .tb-btn:hover { background: var(--c-hover); }
+  .tb-btn.is-primary { background: var(--c-accent); color: #fff; font-weight: 600; }
+  .tb-btn.is-primary:hover { filter: brightness(1.1); }
+  #btn-new { align-self: center; margin: 0 6px; width: var(--ctl); height: var(--ctl); display: grid; place-items: center;
+    border: 1px solid var(--c-line); border-radius: 6px; background: transparent; }
+  #btn-new:hover { background: var(--c-hover); }
+
+  /* Zoom: [-]  [100 %]  [+] */
+  .zoom { display: flex; align-items: center; gap: 2px; height: var(--ctl); margin: 0 6px; background: var(--c-input); border-radius: 6px; }
+  .zoom-btn { display: grid; place-items: center; width: var(--ctl); height: 100%; border: 0; border-radius: 6px; background: transparent; }
+  .zoom-btn:hover:not(:disabled) { background: var(--c-hover); }
+  .zoom-val { display: flex; align-items: center; gap: 2px; padding: 0 4px; height: 100%; border-radius: 4px; color: var(--c-mute); }
+  .zoom-val:focus-within { box-shadow: inset 0 0 0 1px var(--c-accent); }
+  .zoom-val input { width: 4ch; padding: 0; border: 0; outline: 0; background: transparent; text-align: right;
+    font-weight: 600; color: var(--c-ink); -moz-appearance: textfield; }
+  .zoom-val input::-webkit-outer-spin-button, .zoom-val input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Tombol drawer (hanya HP / tablet kecil) */
+  .drawer-btn { display: none; place-items: center; align-self: center; margin: 0 6px; width: var(--ctl); height: var(--ctl);
+    border: 1px solid var(--c-line); border-radius: 6px; background: transparent; }
+  #backdrop { display: none; position: fixed; left: 0; right: 0; bottom: 0; top: var(--bar); z-index: 30; background: rgba(0,0,0,.55); }
+
+  /* ---------- Sidebar kiri / Layers ---------- */
+  #left-sidebar { display: flex; flex-direction: column; min-height: 0; }
+  .side-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 6px; font-weight: 600; }
+  .icon-btn { display: grid; place-items: center; width: var(--ctl); height: var(--ctl); flex: none; border: 0; border-radius: 6px;
+    background: transparent; color: var(--c-mute); }
+  .icon-btn:hover { background: var(--c-hover); color: var(--c-ink); }
+  #layer-search { width: 100%; height: var(--ctl); padding: 0 10px; border: 1px solid transparent; border-radius: 6px;
+    background: var(--c-input); color: var(--c-ink); outline: 0; }
+  #layer-search::placeholder { color: var(--c-dim); }
+  #layer-search:focus { border-color: var(--c-accent); }
+
+  #layer-list { display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0; padding: 4px 6px; overflow-y: auto;
+    list-style: none; border-top: 1px solid var(--c-line); }
+  .layer { position: relative; flex: none; display: flex; align-items: center; gap: 6px; min-height: var(--ctl);
+    padding: 0 8px 0 calc(4px + var(--depth, 0) * 18px); border-radius: 6px; color: var(--c-ink);
+    user-select: none; -webkit-user-select: none; touch-action: pan-y; cursor: default; }
+  .layer:hover { background: var(--c-hover); }
+  .layer.selected { background: var(--c-accent-soft); }
+  .layer > .ico { color: var(--c-mute); }
+  .layer.selected > .ico { color: var(--c-ink); }
+  .layer .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layer-rename-input {
+    flex: 1; min-width: 0; height: 22px; padding: 0 4px; font-size: 12px; font-family: inherit;
+    background: #09090b; color: #ffffff; border: 1px solid var(--c-accent); border-radius: 4px;
+    outline: none; box-shadow: 0 0 0 2px rgba(13, 153, 255, 0.25);
+  }
+  .twirl { flex: none; display: grid; place-items: center; width: var(--ico); height: var(--ico); padding: 0; border: 0;
+    border-radius: 4px; background: transparent; color: var(--c-mute); }
+  button.twirl:hover { background: var(--c-hover); color: var(--c-ink); }
+  .twirl .ico { width: 12px; height: 12px; transition: transform .12s ease; }
+  .layer.open > .twirl .ico { transform: rotate(90deg); }
+  .layer-end { flex: 1 0 28px; }
+
+  /* Canvas Frame Header Rename Input */
+  #canvas-rename-input {
+    position: absolute;
+    display: none;
+    z-index: 55;
+    background: #18181b;
+    color: #ffffff;
+    border: 1px solid #0D99FF;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-family: sans-serif;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(13, 153, 255, 0.3);
+  }
+
+  /* indikator drag & drop */
+  .layer.dragging { opacity: .4; }
+  .layer.drop-before::before, .layer.drop-after::after { content: ""; position: absolute; left: calc(4px + var(--depth, 0) * 18px); right: 4px;
+    height: 2px; border-radius: 1px; background: var(--c-accent); pointer-events: none; z-index: 1; }
+  .layer.drop-before::before { top: -1px; }
+  .layer.drop-after::after { bottom: -1px; }
+  .layer.drop-inside { background: transparent; outline: 2px solid var(--c-accent); outline-offset: -2px; }
+  .layer-end.drop-end { box-shadow: inset 0 2px 0 var(--c-accent); }
+  .drag-ghost { position: fixed; z-index: 100; display: flex; align-items: center; gap: 8px; padding: 6px 12px; pointer-events: none;
+    border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-panel); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+  body.dragging-layer, body.dragging-layer * { cursor: grabbing !important; user-select: none; }
+
+  .side-foot { padding: 6px 8px; border-top: 1px solid var(--c-line); }
+  #btn-settings { display: flex; align-items: center; gap: 8px; width: 100%; height: var(--ctl); padding: 0 8px; border: 0; border-radius: 6px;
+    background: transparent; color: var(--c-mute); }
+  #btn-settings:hover { background: var(--c-hover); color: var(--c-ink); }
+
+
+  /* ---------- Responsif ---------- */
+  @media (max-width: 899px) {
+    #main { grid-template-columns: minmax(0, 1fr); }
+    #left-sidebar, #right-sidebar { position: fixed; top: var(--bar); bottom: 0; width: var(--side); z-index: 40;
+      transition: transform .2s ease; box-shadow: 0 0 24px rgba(0,0,0,.5); }
+    #left-sidebar  { left: 0;  transform: translateX(-105%); }
+    #right-sidebar { right: 0; transform: translateX(105%); }
+    body.show-left  #left-sidebar, body.show-right #right-sidebar { transform: none; }
+    body.show-left #backdrop, body.show-right #backdrop { display: block; }
+    .drawer-btn { display: grid; }
+  }
+  @media (max-width: 639px) {
+    .lbl { display: none; }
+    #file-name { min-width: 84px; }
+  }
+  @media (min-width: 900px) {
+    body.hide-left  #left-sidebar,  body.hide-right #right-sidebar { display: none; }
+    body.hide-left  #main { grid-template-columns: 0 minmax(0, 1fr) var(--side); }
+    body.hide-right #main { grid-template-columns: var(--side) minmax(0, 1fr) 0; }
+    body.hide-left.hide-right #main { grid-template-columns: 0 minmax(0, 1fr) 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #left-sidebar, #right-sidebar, .twirl .ico, .fg-acc .fg-chev i { transition: none; }
+  }
+
+  /* Inline Text Editor */
+  #text-inline-editor {
+    position: absolute;
+    display: none;
+    z-index: 50;
+    background: transparent;
+    border: 1px dashed #0D99FF;
+    outline: none;
+    resize: none;
+    overflow: hidden;
+    padding: 0px;
+    margin: 0px;
+    line-height: 1.25;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Drag & Drop Visual Overlay Feedback */
+  #drag-overlay {
+    position: fixed;
+    inset: 12px;
+    z-index: 99999;
+    border: 2px dashed #0D99FF;
+    border-radius: 12px;
+    background: rgba(13, 153, 255, 0.15);
+    backdrop-filter: blur(2px);
+    display: none;
+    pointer-events: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: #fff;
+    box-shadow: 0 0 32px rgba(13, 153, 255, 0.25);
+    transition: opacity 0.15s ease;
+  }
+  #drag-overlay.active {
+    display: flex;
+  }
+  #drag-overlay .drag-overlay-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 24px 36px;
+    background: rgba(24, 24, 27, 0.88);
+    border: 1px solid rgba(13, 153, 255, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+  #drag-overlay .drag-overlay-card svg {
+    width: 44px;
+    height: 44px;
+    color: #0D99FF;
+  }
+  #drag-overlay .drag-overlay-card span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+

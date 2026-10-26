@@ -445,6 +445,39 @@ $(function () {
     }
 
 
+    // 4b2. Sinkronisasi Interactive States (:hover, :active, :focus)
+    const states = c.states || {};
+    const configuredCount = ['hover', 'active', 'focus'].filter(k => states[k] && Object.keys(states[k]).length > 0).length;
+    if (configuredCount > 0) {
+      $('#code-states-active-badge').text(`${configuredCount} configured`).show();
+    } else {
+      $('#code-states-active-badge').hide();
+    }
+
+    // Default target state select to 'default' if not set or restore
+    let currentSelectedState = $('#code-select-state').val() || 'default';
+    setCustomSelectVal('code-select-state', currentSelectedState);
+
+    const isNonDefault = currentSelectedState !== 'default';
+    $('#code-state-editor-box').toggle(isNonDefault);
+
+    if (isNonDefault) {
+      const curStateData = states[currentSelectedState] || {};
+      $('#code-state-editor-title').text(`Editing :${currentSelectedState}`);
+      $('#code-state-fill-hex').val(curStateData.fill ? curStateData.fill.replace('#', '') : '');
+      if (curStateData.fill && curStateData.fill.startsWith('#')) {
+        $('#code-state-fill-picker').val(curStateData.fill);
+      }
+      $('#code-state-text-hex').val(curStateData.textColor ? curStateData.textColor.replace('#', '') : '');
+      if (curStateData.textColor && curStateData.textColor.startsWith('#')) {
+        $('#code-state-text-picker').val(curStateData.textColor);
+      }
+      $('#code-state-scale').val(curStateData.scale !== undefined ? curStateData.scale : 1.0);
+      $('#code-state-opacity').val(curStateData.opacity !== undefined ? curStateData.opacity : '');
+      setCustomSelectVal('code-state-shadow', curStateData.shadow || 'inherit');
+      setCustomSelectVal('code-state-transition', curStateData.transition || '200');
+    }
+
     // 4c. Sinkronisasi Output Settings (Custom Class, Component Name, Preferences)
     const defaultClass = (obj.name || obj.type || 'element')
       .toLowerCase()
@@ -1578,6 +1611,158 @@ $(function () {
 
   $(document).on('input change', '#code-shadow-x, #code-shadow-y, #code-shadow-blur, #code-shadow-spread, #code-shadow-color, #code-shadow-opacity', updateCustomShadow);
 
+
+  // ================= INTERACTIVE STATES HANDLERS =================
+  $(document).on('change', '#code-select-state', function () {
+    syncCodeView();
+  });
+
+  const getOrCreateStateObj = (obj, stateKey) => {
+    obj.code = obj.code || {};
+    obj.code.states = obj.code.states || {};
+    obj.code.states[stateKey] = obj.code.states[stateKey] || {};
+    return obj.code.states[stateKey];
+  };
+
+  // State Fill Color Handlers
+  $(document).on('input change', '#code-state-fill-picker', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    const hex = $(this).val();
+    $('#code-state-fill-hex').val(hex.replace('#', ''));
+    const stObj = getOrCreateStateObj(obj, curState);
+    stObj.fill = hex;
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  $(document).on('change', '#code-state-fill-hex', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    let hex = $(this).val().trim();
+    const stObj = getOrCreateStateObj(obj, curState);
+    if (!hex) {
+      delete stObj.fill;
+    } else {
+      if (!hex.startsWith('#')) hex = '#' + hex;
+      stObj.fill = hex;
+      $('#code-state-fill-picker').val(hex);
+    }
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // State Text Color Handlers
+  $(document).on('input change', '#code-state-text-picker', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    const hex = $(this).val();
+    $('#code-state-text-hex').val(hex.replace('#', ''));
+    const stObj = getOrCreateStateObj(obj, curState);
+    stObj.textColor = hex;
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  $(document).on('change', '#code-state-text-hex', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    let hex = $(this).val().trim();
+    const stObj = getOrCreateStateObj(obj, curState);
+    if (!hex) {
+      delete stObj.textColor;
+    } else {
+      if (!hex.startsWith('#')) hex = '#' + hex;
+      stObj.textColor = hex;
+      $('#code-state-text-picker').val(hex);
+    }
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // State Scale Handler
+  $(document).on('input change', '#code-state-scale', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    const val = parseFloat($(this).val()) || 1.0;
+    const stObj = getOrCreateStateObj(obj, curState);
+    stObj.scale = val;
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // State Opacity Handler
+  $(document).on('input change', '#code-state-opacity', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    const val = $(this).val().trim();
+    const stObj = getOrCreateStateObj(obj, curState);
+    if (val === '') {
+      delete stObj.opacity;
+    } else {
+      stObj.opacity = Math.max(0, Math.min(100, parseInt(val, 10)));
+    }
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // State Shadow Handler
+  $(document).on('change', '#code-state-shadow', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    const val = $(this).val();
+    const stObj = getOrCreateStateObj(obj, curState);
+    if (val === 'inherit') {
+      delete stObj.shadow;
+    } else {
+      stObj.shadow = val;
+    }
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // State Transition Duration Handler
+  $(document).on('change', '#code-state-transition', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    const curState = $('#code-select-state').val();
+    if (curState === 'default') return;
+    const val = $(this).val();
+    const stObj = getOrCreateStateObj(obj, curState);
+    stObj.transition = val;
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  // Reset State Button Handler
+  $(document).on('click', '#code-btn-reset-state', function () {
+    const obj = getSelectedObject();
+    if (!obj || !obj.code || !obj.code.states) return;
+    const curState = $('#code-select-state').val();
+    if (curState !== 'default') {
+      delete obj.code.states[curState];
+      if (Object.keys(obj.code.states).length === 0) {
+        delete obj.code.states;
+      }
+      $(document).trigger('object:change');
+      syncCodeView();
+    }
+  });
+
   // Element Opacity Handlers
   $(document).on('input change', '#code-element-opacity', function () {
     const obj = getSelectedObject();
@@ -1743,59 +1928,174 @@ $(function () {
     renderLiveModalPreview(obj);
   };
 
-  const renderLiveModalPreview = (obj) => {
-    const $container = $('#code-preview-rendered-box');
-    $container.empty();
-    if (!obj || !obj.transform) return;
+  /**
+   * Helper rekursif membangun preview elemen DOM nyata untuk ditampilkan di panggung modal.
+   */
+  const buildLiveElement = (obj, isChildOfFreeFrame = false) => {
+    if (!obj || obj.visible === false) return null;
 
-    const t = obj.transform;
+    const t = obj.transform || { width: 100, height: 100, x: 0, y: 0 };
     const w = Math.round(t.width || 0);
     const h = Math.round(t.height || 0);
-
     const sty = obj.style || {};
-    let bg = sty.fill || '#D9D9D9';
+    const c = obj.code || {};
+    const l = obj.layout || {};
+
+    // 1. Background
+    let bg = 'transparent';
+    const fills = Array.isArray(sty.fills) ? sty.fills.filter(f => f && f.visible !== false) : [];
+    if (fills.length > 0) {
+      const topFill = fills[fills.length - 1];
+      if (topFill.type === 'SOLID') {
+        bg = topFill.color || '#D9D9D9';
+      } else if (topFill.type === 'GRADIENT_LINEAR' && typeof Paint !== 'undefined' && typeof Paint.previewCss === 'function') {
+        bg = Paint.previewCss(topFill);
+      }
+    } else if (sty.fill && sty.fill !== 'none') {
+      bg = sty.fill;
+    }
+
+    // 2. Border
     let border = '';
-    const bw = sty.strokeWidth || 0;
+    const bw = sty.strokeWidth !== undefined ? sty.strokeWidth : 0;
     const bc = sty.stroke || '#000000';
     if (bw > 0 && bc !== 'none') {
       border = `${bw}px solid ${bc}`;
     }
 
-    let br = 0;
-    if (obj.geometry && obj.geometry.cornerRadius) {
-      const cr = obj.geometry.cornerRadius;
-      br = Array.isArray(cr) ? `${cr[0]}px ${cr[1]}px ${cr[2]}px ${cr[3]}px` : `${cr}px`;
+    // 3. Corner Radius
+    let br = '0px';
+    const geom = obj.geometry || {};
+    const cr = geom.cornerRadius || sty.cornerRadius;
+    if (Array.isArray(cr)) {
+      br = `${cr[0] || 0}px ${cr[1] || 0}px ${cr[2] || 0}px ${cr[3] || 0}px`;
+    } else if (parseFloat(cr) > 0) {
+      br = `${parseFloat(cr)}px`;
     }
 
-    const $previewEl = $('<div>').css({
-      width: w + 'px',
-      height: h + 'px',
-      background: bg,
+    // 4. Box Shadow
+    let boxShadow = '';
+    if (Array.isArray(sty.effects) && sty.effects.length > 0) {
+      const activeShadows = sty.effects
+        .filter(e => e && e.visible !== false && (e.type === 'drop-shadow' || e.type === 'inner-shadow'))
+        .map(e => {
+          const inset = e.type === 'inner-shadow' ? 'inset ' : '';
+          const x = e.x || 0;
+          const y = e.y || 4;
+          const blur = e.blur || 8;
+          const spread = e.spread ? ` ${e.spread}px` : '';
+          const col = e.color || '#000000';
+          const op = e.opacity !== undefined ? e.opacity : 0.25;
+          return `${inset}${x}px ${y}px ${blur}px${spread} rgba(0,0,0,${op})`;
+        });
+      if (activeShadows.length > 0) {
+        boxShadow = activeShadows.join(', ');
+      }
+    }
+
+    // 5. Layout Display
+    let display = 'block';
+    let flexDirection = 'column';
+    let justifyContent = 'flex-start';
+    let alignItems = 'flex-start';
+    let gap = '0px';
+    let padding = '0px';
+
+    if (obj.type === 'frame') {
+      if (l.display === 'flex') {
+        display = 'flex';
+        flexDirection = l.direction || 'column';
+        justifyContent = l.justifyContent || 'flex-start';
+        alignItems = l.alignItems || 'flex-start';
+        gap = (l.gap || 0) + 'px';
+        if (Array.isArray(l.padding)) {
+          padding = `${l.padding[0]}px ${l.padding[1]}px ${l.padding[2]}px ${l.padding[3]}px`;
+        }
+      } else if (l.display === 'grid') {
+        display = 'grid';
+        const cols = Math.max(1, parseInt(l.columns, 10) || 3);
+        const colGap = l.colGap || 12;
+        const rowGap = l.rowGap || 12;
+        gap = `${rowGap}px ${colGap}px`;
+        if (Array.isArray(l.padding)) {
+          padding = `${l.padding[0]}px ${l.padding[1]}px ${l.padding[2]}px ${l.padding[3]}px`;
+        }
+      }
+    }
+
+    // 6. Positioning
+    let position = 'relative';
+    let posX = '';
+    let posY = '';
+    if (isChildOfFreeFrame) {
+      position = 'absolute';
+      posX = (t.x || 0) + 'px';
+      posY = (t.y || 0) + 'px';
+    } else if (c.position && (c.position.isActive || c.position.isAbsolute)) {
+      position = c.position.type || 'absolute';
+      if (c.position.left !== '' && c.position.left !== undefined) posX = c.position.left + 'px';
+      if (c.position.top !== '' && c.position.top !== undefined) posY = c.position.top + 'px';
+    }
+
+    const $el = $('<div>').css({
+      width: w > 0 ? (w + 'px') : 'auto',
+      height: h > 0 ? (h + 'px') : 'auto',
+      background: obj.type === 'text' ? 'transparent' : bg,
       border: border,
       borderRadius: br,
+      boxShadow: boxShadow,
       boxSizing: 'border-box',
-      display: obj.type === 'frame' ? 'flex' : 'block',
-      position: 'relative',
+      display: display,
+      flexDirection: flexDirection,
+      justifyContent: justifyContent,
+      alignItems: alignItems,
+      gap: gap,
+      padding: padding,
+      position: position,
+      left: posX,
+      top: posY,
+      opacity: sty.opacity !== undefined ? sty.opacity : 1,
       overflow: obj.clipContent !== false ? 'hidden' : 'visible',
-      transition: 'all 0.15s ease'
+      transition: 'all 0.12s ease'
     });
 
     if (obj.type === 'text') {
-      $previewEl.text(obj.content || obj.text || obj.name || 'Sample Text').css({
+      $el.text(obj.content || obj.text || obj.name || 'Sample Text').css({
         fontSize: (obj.fontSize || 16) + 'px',
         fontFamily: obj.fontFamily || 'sans-serif',
         fontWeight: obj.fontWeight || '400',
         color: sty.fill || '#ffffff',
-        lineHeight: obj.lineHeight ? obj.lineHeight : 'normal',
+        lineHeight: obj.lineHeight ? (typeof obj.lineHeight === 'number' ? obj.lineHeight + 'px' : obj.lineHeight) : 'normal',
         letterSpacing: (obj.letterSpacing || 0) + 'px',
         textAlign: obj.textAlign || 'left',
         background: 'transparent'
       });
     }
 
-    $container.append($previewEl);
+    // Rekursif bangun anak jika ada
+    if (Array.isArray(obj.children) && obj.children.length > 0) {
+      const isFree = !l.display || l.display === 'none';
+      obj.children.forEach(child => {
+        const $childEl = buildLiveElement(child, isFree);
+        if ($childEl) $el.append($childEl);
+      });
+    }
+
+    return $el;
+  };
+
+  const renderLiveModalPreview = (obj) => {
+    const $container = $('#code-preview-rendered-box');
+    $container.empty();
+    if (!obj || !obj.transform) return;
+
+    const $renderedTree = buildLiveElement(obj, false);
+    if ($renderedTree) {
+      $container.append($renderedTree);
+    }
     updatePreviewZoom(modalPreviewZoom);
   };
+
 
   const updatePreviewZoom = (zoom) => {
     modalPreviewZoom = Math.min(3, Math.max(0.2, zoom));

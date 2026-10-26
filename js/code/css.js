@@ -62,8 +62,30 @@
     return null;
   };
 
-  const toCss = (obj) => {
-    if (!obj || !obj.transform) return '/* Tidak ada objek terpilih */';
+  /**
+   * Helper menghasilkan nama class yang valid dan bersih dari objek / nama layer.
+   */
+  const getCleanClassName = (obj, fallbackPrefix = 'element') => {
+    const c = obj.code || {};
+    if (c.customClass && c.customClass.trim()) {
+      return c.customClass.trim().replace(/^[.#]/, '');
+    }
+    const raw = (obj.name && obj.name !== 'Rectangle' && obj.name !== 'Frame' && obj.name !== 'Text')
+      ? obj.name
+      : (fallbackPrefix || obj.type || 'element');
+
+    return raw
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'element';
+  };
+
+  /**
+   * Helper mengekstrak baris-baris CSS properties untuk satu node tunggal.
+   */
+  const getNodeCssProperties = (obj, isChildOfFreeFrame = false) => {
+    if (!obj || !obj.transform) return [];
 
     const t = obj.transform;
     const s = obj.style || {};
@@ -71,20 +93,6 @@
     const l = obj.layout || {};
     const c = obj.code || {};
     const lines = [];
-
-    let selector = c.customClass ? c.customClass.trim() : '';
-    if (selector) {
-      if (!selector.startsWith('.') && !selector.startsWith('#')) {
-        selector = '.' + selector;
-      }
-    } else {
-      const cleanName = (obj.name || obj.type || 'element')
-        .toLowerCase()
-        .replace(/[^a-z0-9_-]/g, '-')
-        .replace(/-+/g, '-');
-      selector = '.' + cleanName;
-    }
-    const isInlineStyle = !!c.inlineStyle;
 
     // 1. Display & Flow (Layout: None | Flex | Grid)
     if (obj.type === 'frame') {
@@ -109,34 +117,28 @@
         if (l.alignItems) lines.push(`  align-items: ${l.alignItems};`);
         if (l.justifyContent) lines.push(`  justify-content: ${l.justifyContent};`);
         if (typeof l.gap === 'number' && l.gap > 0) lines.push(`  gap: ${l.gap}px;`);
-        
         if (Array.isArray(l.padding)) {
           const [top, right, bottom, left] = l.padding;
           if (top || right || bottom || left) {
-            if (top === bottom && right === left) {
-              lines.push(top === right ? `  padding: ${top}px;` : `  padding: ${top}px ${right}px;`);
-            } else {
-              lines.push(`  padding: ${top}px ${right}px ${bottom}px ${left}px;`);
-            }
+            lines.push(`  padding: ${top}px ${right}px ${bottom}px ${left}px;`);
           }
         }
       } else {
-        lines.push(`  display: ${l.display};`);
+        // Frame canvas bebas -> jadikan relative agar children absolute berpatokan ke frame ini
+        lines.push('  position: relative;');
       }
     } else {
       lines.push('  display: block;');
     }
 
-    // 1b. Grid Item Placement (Jika memiliki parent Grid)
-    if (l.colSpan && l.colSpan > 1) {
-      lines.push(`  grid-column: span ${l.colSpan};`);
-    }
-    if (l.rowSpan && l.rowSpan > 1) {
-      lines.push(`  grid-row: span ${l.rowSpan};`);
-    }
+    // 1b. Grid Item Placement
+    if (l.colSpan && l.colSpan > 1) lines.push(`  grid-column: span ${l.colSpan};`);
+    if (l.rowSpan && l.rowSpan > 1) lines.push(`  grid-row: span ${l.rowSpan};`);
 
-    // 2. Position (Dinamis: jika isActive === true atau isAbsolute === true)
-    if (c.position && (c.position.isActive || c.position.isAbsolute)) {
+    // 2. Position (Dinamis atau Anak Frame Bebas)
+    const hasExplicitPos = c.position && (c.position.isActive || c.position.isAbsolute);
+
+    if (hasExplicitPos) {
       const pType = c.position.type || 'absolute';
       lines.push(`  position: ${pType};`);
       if (c.position.top !== null && c.position.top !== undefined && c.position.top !== '') {
@@ -154,6 +156,10 @@
       if (c.position.zIndex !== undefined && c.position.zIndex !== null && c.position.zIndex !== '' && c.position.zIndex !== 1) {
         lines.push(`  z-index: ${c.position.zIndex};`);
       }
+    } else if (isChildOfFreeFrame) {
+      lines.push('  position: absolute;');
+      if (t.x !== undefined) lines.push(`  left: ${Math.round(t.x)}px;`);
+      if (t.y !== undefined) lines.push(`  top: ${Math.round(t.y)}px;`);
     }
 
     // 3. Dimensions
@@ -166,10 +172,12 @@
       lines.push(`  height: ${hPreset};`);
     }
 
-    // 4. Fill (Background: Solid / Gradients)
-    const bgVal = getCssBackground(s);
-    if (bgVal) {
-      lines.push(`  background: ${bgVal};`);
+    // 4. Fill (Background: Solid / Gradients) - Hanya jika bukan teks
+    if (obj.type !== 'text') {
+      const bgVal = getCssBackground(s);
+      if (bgVal) {
+        lines.push(`  background: ${bgVal};`);
+      }
     }
 
     // 5. Border & Stroke
@@ -213,7 +221,6 @@
         lines.push(`  box-shadow: ${shadows.join(', ')};`);
       }
 
-      // Layer blur & Background blur
       const layerBlur = visibleEffects.find(e => e.type === 'layer-blur');
       if (layerBlur && layerBlur.blur > 0) {
         lines.push(`  filter: blur(${layerBlur.blur}px);`);
@@ -256,20 +263,160 @@
     }
 
     // 11. Clip Content / Overflow
-    if (obj.type === 'frame' && obj.clipContent) {
+    if (obj.type === 'frame' && obj.clipContent !== false) {
       lines.push('  overflow: hidden;');
     }
 
-    if (isInlineStyle) {
-      // Format as inline style="..." attribute string
-      const inlineProps = lines
-        .map(l => l.trim())
-        .filter(l => l && !l.startsWith('/*'))
-        .join(' ');
-      return `style="${inlineProps}"`;
+    return lines;
+  };
+
+  /**
+   * Rekursif: Mengumpulkan seluruh ruleset CSS dari node beserta seluruh anak-anaknya,
+   * dan menyusun markup HTML bertingkat dengan class yang cocok.
+   */
+
+  const getPseudoStateCss = (selector, stateKey, stateObj) => {
+    if (!stateObj) return null;
+    const lines = [];
+    if (stateObj.fill && stateObj.fill !== 'none') {
+      lines.push(`  background: ${stateObj.fill};`);
+    }
+    if (stateObj.textColor && stateObj.textColor !== 'none') {
+      lines.push(`  color: ${stateObj.textColor};`);
+    }
+    if (stateObj.scale && parseFloat(stateObj.scale) !== 1) {
+      lines.push(`  transform: scale(${stateObj.scale});`);
+    }
+    if (stateObj.opacity !== undefined && stateObj.opacity !== '' && stateObj.opacity !== null) {
+      const op = parseInt(stateObj.opacity, 10);
+      if (!isNaN(op)) {
+        lines.push(`  opacity: ${op / 100};`);
+      }
+    }
+    if (stateObj.shadow && stateObj.shadow !== 'inherit') {
+      const shadowMap = {
+        'none': 'none',
+        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+      };
+      if (shadowMap[stateObj.shadow]) {
+        lines.push(`  box-shadow: ${shadowMap[stateObj.shadow]};`);
+      }
     }
 
-    return `${selector} {\n${lines.join('\n')}\n}`;
+    if (lines.length === 0) return null;
+    return `${selector}:${stateKey} {
+${lines.join('\n')}
+}`;
+  };
+
+  const renderCssTree = (node, isChildOfFreeFrame = false, indent = 0, classCounts = {}, cssRules = []) => {
+    if (!node || node.visible === false) return '';
+
+    const ind = '  '.repeat(indent);
+    const c = node.code || {};
+    const defaultTag = (c && c.htmlTag) || (node.type === 'text' ? 'p' : 'div');
+    const tag = defaultTag;
+
+    // Tentukan nama class yang unik dan semantik
+    let baseClassName = getCleanClassName(node);
+    if (!classCounts[baseClassName]) {
+      classCounts[baseClassName] = 1;
+    } else {
+      classCounts[baseClassName]++;
+      baseClassName = `${baseClassName}-${classCounts[baseClassName]}`;
+    }
+    const className = baseClassName;
+
+    // Dapatkan ruleset CSS untuk elemen ini
+    const propLines = getNodeCssProperties(node, isChildOfFreeFrame);
+    if (propLines.length > 0) {
+      cssRules.push(`.${className} {\n${propLines.join('\n')}\n}`);
+    }
+
+    // 1. Jika objek adalah Image
+    const isImageObj = node.type === 'image' || (node.style && Array.isArray(node.style.fills) && node.style.fills.some(f => f && f.type === 'IMAGE'));
+    if (isImageObj) {
+      const src = (typeof window !== 'undefined' && window.CodeMedia) ? window.CodeMedia.getImageSource(node) : (node.src || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe');
+      const alt = node.name || 'Image';
+      return `${ind}<img src="${src}" alt="${alt}" class="${className}" />`;
+    }
+
+    // 2. Jika objek adalah Vector / Path / Icon
+    const isVectorObj = node.type === 'path' || node.type === 'polygon' || node.type === 'star';
+    if (isVectorObj && typeof window !== 'undefined' && window.CodeMedia) {
+      const svgInfo = window.CodeMedia.getVectorSvgSnippet(node);
+      const viewBox = `viewBox="0 0 ${svgInfo.w} ${svgInfo.h}"`;
+      return `${ind}<svg ${viewBox} class="${className}" fill="none" xmlns="http://www.w3.org/2000/svg">
+${ind}  ${svgInfo.innerContent}
+${ind}</svg>`;
+    }
+
+    // 3. Jika Text
+    if (node.type === 'text') {
+      const textVal = node.content || node.text || node.name || 'Sample Text';
+      return `${ind}<${tag} class="${className}">${textVal}</${tag}>`;
+    }
+
+    // Jika memiliki children (misal Frame)
+    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+    if (!hasChildren) {
+      return `${ind}<${tag} class="${className}"></${tag}>`;
+    }
+
+    const isFreeCanvas = !node.layout || node.layout.display === 'none';
+    const renderedChildren = node.children
+      .map(child => renderCssTree(child, isFreeCanvas, indent + 1, classCounts, cssRules))
+      .filter(html => html.length > 0)
+      .join('\n');
+
+    return `${ind}<${tag} class="${className}">\n${renderedChildren}\n${ind}</${tag}>`;
+  };
+
+  const toCss = (obj, options = {}) => {
+    if (!obj || !obj.transform) return '/* Tidak ada objek terpilih */';
+
+    const c = obj.code || {};
+    const isInlineStyle = !!c.inlineStyle;
+
+    // Mode 1: Jika objek tidak memiliki anak, atau mode inline style diaktifkan
+    const hasChildren = Array.isArray(obj.children) && obj.children.length > 0;
+
+    if (!hasChildren || isInlineStyle) {
+      let selector = c.customClass ? c.customClass.trim() : '';
+      if (selector) {
+        if (!selector.startsWith('.') && !selector.startsWith('#')) selector = '.' + selector;
+      } else {
+        selector = '.' + getCleanClassName(obj);
+      }
+
+      const lines = getNodeCssProperties(obj, false);
+
+      if (isInlineStyle) {
+        const inlineProps = lines.map(l => l.trim()).filter(l => l && !l.startsWith('/*')).join(' ');
+        return `style="${inlineProps}"`;
+      }
+
+      let resultCss = `${selector} {\n${lines.join('\n')}\n}`;
+      const states = c.states || {};
+      ['hover', 'active', 'focus'].forEach(stKey => {
+        const stateRule = getPseudoStateCss(selector, stKey, states[stKey]);
+        if (stateRule) resultCss += `\n\n${stateRule}`;
+      });
+      return resultCss;
+    }
+
+    // Mode 2: Full Tree Generator (Frame beserta seluruh anak-anaknya)
+    const cssRules = [];
+    const classCounts = {};
+    const htmlMarkup = renderCssTree(obj, false, 0, classCounts, cssRules);
+
+    // Format output: HTML Markup lengkap + Stylesheet CSS
+    const combinedOutput = `<!-- HTML Markup -->\n${htmlMarkup}\n\n/* CSS Stylesheet */\n${cssRules.join('\n\n')}`;
+    return combinedOutput;
   };
 
   window.CodeCSS = {

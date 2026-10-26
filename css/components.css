@@ -1,0 +1,713 @@
+/* ============================================================
+   MINIVECTOR - COMPONENTS & INTERACTIVE WIDGETS
+   Mencakup: Modern Custom Select Dropdown, Context Menu (Klik Kanan),
+   Stroke & Border Popover, Effects & Shadow Popover, dan Matrix Box.
+   ============================================================ */
+
+  /* ============================================================
+     CONTEXT MENU (FIGMA RIGHT CLICK MENU)
+     ============================================================ */
+  .context-menu {
+    position: fixed;
+    z-index: 10000;
+    min-width: 180px;
+    padding: 6px;
+    background: #1e1e20;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
+    user-select: none;
+    animation: ctxIn 0.1s ease-out;
+    font-family: inherit;
+  }
+
+  @keyframes ctxIn {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 5px;
+    color: #e4e4e7;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .ctx-item:hover {
+    background: #0D99FF;
+    color: #ffffff;
+  }
+
+  .ctx-item.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .ctx-ico {
+    font-size: 13px;
+    width: 14px;
+    text-align: center;
+    opacity: 0.85;
+  }
+
+  .ctx-label {
+    flex: 1;
+  }
+
+  .ctx-kbd {
+    font-size: 11px;
+    color: #8c8c8c;
+    font-family: inherit;
+  }
+
+  .ctx-item:hover .ctx-kbd {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ctx-danger:hover {
+    background: #e11d48;
+    color: #ffffff;
+  }
+
+  .ctx-sep {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 6px;
+  }
+
+
+  /* ============================================================
+     STROKE PANEL & ADVANCED STROKE POPOVER (FIGMA STYLE)
+     ============================================================ */
+  .stroke-sw-g {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,.25);
+    cursor: pointer;
+    flex: none;
+    box-sizing: border-box;
+  }
+  .stroke-sw-g:focus-visible { outline: 2px solid #0d99ff; }
+
+  .stroke-popover {
+    position: fixed;
+    z-index: 9999;
+    width: 240px;
+    background: #222224;
+    border: 1px solid #3e3e3e;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    padding: 12px;
+    color: #e4e4e7;
+    font-size: 12px;
+    user-select: none;
+    animation: strokePopIn 0.14s ease-out;
+  }
+  @keyframes strokePopIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .stroke-popover-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #333336;
+    cursor: grab;
+    touch-action: none;
+  }
+  .stroke-popover-head:active {
+    cursor: grabbing;
+  }
+  .stroke-popover-head span {
+    font-size: 12.5px;
+    color: #fff;
+  }
+  .stroke-pop-close {
+    background: transparent;
+    border: 0;
+    color: #9a9a9a;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .stroke-pop-close:hover {
+    color: #fff;
+    background: #333336;
+  }
+  .stroke-field-group {
+    margin-bottom: 10px;
+  }
+  .stroke-field-group:last-child {
+    margin-bottom: 0;
+  }
+  .stroke-field-label {
+    font-size: 11px;
+    color: #a1a1aa;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .stroke-btn-group {
+    display: flex;
+    gap: 4px;
+    background: #18181b;
+    padding: 3px;
+    border-radius: 6px;
+  }
+  .stroke-btn-opt {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: #a1a1aa;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .stroke-btn-opt:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .stroke-btn-opt.active {
+    background: #2e2e33;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .stroke-btn-opt i {
+    font-size: 12px;
+  }
+  .stroke-inputs-row {
+    display: flex;
+    gap: 6px;
+  }
+  .stroke-inputs-row .fg-in {
+    flex: 1;
+    min-width: 0;
+  }
+
+
+  /* ============================================================
+     EFFECTS PANEL & POPOVER (FIGMA STYLE)
+     ============================================================ */
+  .fx-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--ctl);
+    padding: 0 4px 0 8px;
+    background: var(--c-input);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: var(--fs);
+  }
+  .fx-item:last-child {
+    margin-bottom: 0;
+  }
+  .fx-ico {
+    width: 16px;
+    text-align: center;
+    color: var(--c-mute);
+    font-size: 13px;
+    flex: none;
+  }
+  .fx-name-btn {
+    flex: 1;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: var(--c-ink);
+    font-size: var(--fs);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fx-name-btn:hover {
+    color: #fff;
+  }
+  .fx-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  /* Dropdown Menu Tambah Efek (Ala Figma Screenshot) */
+  .fx-menu {
+    position: fixed;
+    z-index: 9999;
+    width: 180px;
+    background: #1e1e20;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+    padding: 6px;
+    color: #e4e4e7;
+    font-size: 12.5px;
+    user-select: none;
+    animation: fxMenuIn 0.14s ease-out;
+  }
+  @keyframes fxMenuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .fx-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    font-weight: 500;
+  }
+  .fx-menu-item:hover {
+    background: #0D99FF;
+    color: #ffffff;
+  }
+  .fx-menu-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .fx-menu-item:hover i {
+    opacity: 1;
+  }
+  .fx-menu-item .fx-beta-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 5px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #a1a1aa;
+  }
+  .fx-menu-item:hover .fx-beta-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+
+  /* Popover Pengaturan Parameter Efek (Draggable) */
+  .fx-popover {
+    position: fixed;
+    z-index: 9999;
+    width: 250px;
+    background: #222224;
+    border: 1px solid #3e3e3e;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    padding: 12px;
+    color: #e4e4e7;
+    font-size: 12px;
+    user-select: none;
+    animation: fxMenuIn 0.14s ease-out;
+  }
+  .fx-popover-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #333336;
+    cursor: grab;
+    touch-action: none;
+  }
+  .fx-popover-head:active {
+    cursor: grabbing;
+  }
+  .fx-popover-head span {
+    font-size: 12.5px;
+    color: #fff;
+  }
+  .fx-pop-close {
+    background: transparent;
+    border: 0;
+    color: #9a9a9a;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .fx-pop-close:hover {
+    color: #fff;
+    background: #333336;
+  }
+  .fx-param-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .fx-color-row {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .fx-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    flex: none;
+  }
+
+  /* Export Scale Presets (Ala Figma) */
+  #export-scale-presets button {
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.12s ease;
+  }
+  #export-scale-presets button.on {
+    background: #0D99FF !important;
+    color: #ffffff !important;
+    font-weight: 600;
+  }
+
+
+  /* ============================================================
+     3x3 MATRIX BOX: BORDER SIDES & CORNER RADIUS POPOVER
+     ============================================================ */
+  .matrix-box-popover {
+    position: fixed;
+    z-index: 9999;
+    width: 290px;
+    background: #1e1e21;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 2px 10px rgba(0,0,0,0.5);
+    padding: 12px;
+    color: #e4e4e7;
+    font-size: 12px;
+    user-select: none;
+    animation: matPopIn 0.14s ease-out;
+  }
+
+  @keyframes matPopIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .matrix-popover-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: grab;
+    touch-action: none;
+  }
+  .matrix-popover-head:active { cursor: grabbing; }
+  .matrix-popover-head span { font-size: 12.5px; color: #fff; }
+
+  .matrix-pop-close {
+    background: transparent;
+    border: 0;
+    color: #9a9a9a;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .matrix-pop-close:hover { color: #fff; background: #333336; }
+
+  /* Grid 3x3 Matriks */
+  .matrix-grid-3x3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    align-items: center;
+    justify-items: center;
+    margin-bottom: 10px;
+  }
+
+  .matrix-cell {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .matrix-cell-in {
+    width: 100%;
+    height: 30px;
+    background: #141416;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    gap: 3px;
+    transition: border-color 0.12s;
+  }
+  .matrix-cell-in:focus-within {
+    border-color: #0d99ff;
+    box-shadow: 0 0 0 1px #0d99ff;
+  }
+
+  .matrix-cell-in i {
+    font-size: 10px;
+    color: #71717a;
+    flex: none;
+    cursor: ew-resize;
+    padding: 2px 1px;
+  }
+  .matrix-cell-in:hover i {
+    color: #0d99ff;
+  }
+
+  .matrix-cell-in input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 500;
+    text-align: center;
+    outline: none;
+    padding: 0;
+  }
+
+  /* Center Preview Box */
+  .matrix-center-cell {
+    width: 100%;
+    height: 100%;
+    min-height: 52px;
+    background: #141416;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .matrix-center-cell:hover {
+    background: #1c1c1f;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Miniatur Kotak Preview */
+  .matrix-mini-preview {
+    width: 32px;
+    height: 24px;
+    background: rgba(13, 153, 255, 0.12);
+    border-style: solid;
+    border-color: #0d99ff;
+    transition: all 0.1s ease-out;
+    margin-bottom: 2px;
+  }
+
+  .matrix-sync-btn {
+    font-size: 9.5px;
+    color: #a1a1aa;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .matrix-sync-btn.active {
+    color: #0d99ff;
+    font-weight: 600;
+  }
+  .matrix-sync-btn:hover {
+    color: #fff;
+  }
+
+
+  /* ================= MODERN CUSTOM DROPDOWN SELECT ================= */
+  .mv-custom-select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .mv-custom-select-trigger {
+    width: 100%;
+    height: 28px;
+    background: var(--c-input, #222226);
+    border: 1px solid var(--c-line, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    color: var(--text-normal, #f4f4f5);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 500;
+    padding: 0 24px 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s, background 0.15s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mv-custom-select-trigger:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .mv-custom-select-trigger.active {
+    border-color: #0D99FF;
+    box-shadow: 0 0 0 1px #0D99FF;
+  }
+
+  .mv-custom-select-arrow {
+    position: absolute;
+    right: 8px;
+    pointer-events: none;
+    font-size: 10px;
+    color: var(--text-subtle, rgba(255, 255, 255, 0.5));
+    transition: transform 0.15s ease;
+  }
+
+  .mv-custom-select-trigger.active + .mv-custom-select-arrow,
+  .mv-custom-select-wrap.open .mv-custom-select-arrow {
+    transform: rotate(180deg);
+    color: #0D99FF;
+  }
+
+  .mv-custom-select-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    min-width: 140px;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    padding: 4px;
+    display: none;
+    animation: mvSelectFadeIn 0.12s ease-out;
+  }
+
+  .mv-custom-select-wrap.open .mv-custom-select-menu {
+    display: block;
+  }
+
+  @keyframes mvSelectFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .mv-custom-select-group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.4);
+    padding: 6px 8px 3px 8px;
+    user-select: none;
+  }
+
+  .mv-custom-select-item {
+    padding: 6px 8px;
+    font-size: 12px;
+    color: #d4d4d8;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .mv-custom-select-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+
+  .mv-custom-select-item.selected {
+    background: #0D99FF;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  /* SVG Icon Mask in Buttons (Adapts to text color & hover states) */
+  .ico-svg {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+  }
+
+  .ico-align-left {
+    background-image: url('../svg/align_horizontal_left.svg');
+  }
+  .ico-align-hcenter {
+    background-image: url('../svg/align_horizontal_center.svg');
+  }
+  .ico-align-right {
+    background-image: url('../svg/align_horizontal_right.svg');
+  }
+  .ico-align-top {
+    background-image: url('../svg/align_vertical_top.svg');
+  }
+  .ico-align-vcenter {
+    background-image: url('../svg/align_vertical_center.svg');
+  }
+  .ico-align-bottom {
+    background-image: url('../svg/align_vertical_bottom.svg');
+  }
+  .ico-distribute-h {
+    background-image: url('../svg/horizontal_distribute.svg');
+  }
+  .ico-distribute-v {
+    background-image: url('../svg/vertical_distribute.svg');
+  }
+  .ico-rotate-cw {
+    background-image: url('../svg/rotate_90_degrees_cw.svg');
+  }
+
+
