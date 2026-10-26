@@ -431,6 +431,21 @@
       else if (ta === 'right') classes.push('text-right');
       else if (ta === 'justify') classes.push('text-justify');
 
+      // Text Transform (Case)
+      const tc = obj.textCase || (c && c.textCase);
+      if (tc === 'uppercase') classes.push('uppercase');
+      else if (tc === 'lowercase') classes.push('lowercase');
+      else if (tc === 'titlecase' || tc === 'capitalize') classes.push('capitalize');
+
+      // Text Decoration
+      if (obj.underline) classes.push('underline');
+      if (obj.strikethrough) classes.push('line-through');
+      if (obj.italic) classes.push('italic');
+
+      // List Type
+      if (obj.listType === 'bullet') classes.push('list-disc list-inside');
+      else if (obj.listType === 'numbered') classes.push('list-decimal list-inside');
+
       if (s.fill && s.fill !== 'none') {
         const textCol = (s.fill || '').toLowerCase();
         const textColClass = tailwindColorPalette[textCol] ? tailwindColorPalette[textCol].replace('bg-', 'text-') : `text-[${s.fill}]`;
@@ -535,7 +550,7 @@
 
     const ind = '  '.repeat(indent);
     const c = node.code || {};
-    const defaultTag = (c && c.htmlTag) || (node.type === 'text' ? 'p' : 'div');
+    const defaultTag = (c && c.htmlTag) || (node.type === 'text' ? (node.listType === 'bullet' ? 'ul' : (node.listType === 'numbered' ? 'ol' : 'p')) : 'div');
     const tag = defaultTag;
     const classes = getNodeClasses(node, isChildOfFreeFrame);
     const classAttr = isReact ? 'className' : 'class';

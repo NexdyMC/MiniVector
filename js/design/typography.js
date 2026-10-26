@@ -1,3 +1,32 @@
+
+    // Helper mendapatkan teks terformat (textCase & listType)
+    window.getFormattedTextContent = (rawText, textCase = 'none', listType = 'none') => {
+        if (!rawText) return '';
+        let txt = rawText;
+
+        // 1. Text Case Transformation
+        if (textCase === 'uppercase') {
+            txt = txt.toUpperCase();
+        } else if (textCase === 'lowercase') {
+            txt = txt.toLowerCase();
+        } else if (textCase === 'titlecase' || textCase === 'capitalize') {
+            txt = txt.replace(/\b[a-z]/g, c => c.toUpperCase());
+        }
+
+        // 2. List Type prefixing
+        if (listType === 'bullet') {
+            txt = txt.split('\n').map(line => line.startsWith('• ') ? line : ('• ' + line)).join('\n');
+        } else if (listType === 'numbered') {
+            let num = 1;
+            txt = txt.split('\n').map(line => {
+                const cleaned = line.replace(/^\d+\.\s*/, '');
+                return `${num++}. ${cleaned}`;
+            }).join('\n');
+        }
+
+        return txt;
+    };
+
 /* ================= DESIGN: TYPOGRAPHY ================= */
 // Panel kanan -> Design -> Typography
 // Mengatur font-family, font-weight, font-size, line-height, letter-spacing, text-align, dekorasi, dan resizing
@@ -13,7 +42,9 @@ $(function () {
         $alignButtons = $('#text-align-seg button'),
         $styleButtons = $('#text-style-seg button'),
         $resizeButtons = $('#text-resize-seg button'),
-        $valignButtons = $('#text-valign-seg button');
+        $valignButtons = $('#text-valign-seg button'),
+        $caseButtons = $('#text-case-seg button'),
+        $listButtons = $('#text-list-seg button');
 
     // Storage custom fonts
     const STORAGE_KEY_CUSTOM_FONTS = 'minivector_custom_fonts_v1';
@@ -163,6 +194,16 @@ $(function () {
         const vAlignMode = first.verticalAlign || 'top';
         $valignButtons.removeClass('on');
         $valignButtons.filter(`[data-valign="${vAlignMode}"]`).addClass('on');
+
+        // 10. Text Case buttons
+        const caseMode = first.textCase || 'none';
+        $caseButtons.removeClass('on');
+        $caseButtons.filter(`[data-case="${caseMode}"]`).addClass('on');
+
+        // 11. List Mode buttons
+        const listMode = first.listType || 'none';
+        $listButtons.removeClass('on');
+        $listButtons.filter(`[data-list="${listMode}"]`).addClass('on');
     };
 
     Geo.watch(refresh);
@@ -170,7 +211,7 @@ $(function () {
 
     // Helper update dimensi teks saat font/size/spacing berubah
     const updateDimensions = (obj) => {
-        const rawContent = obj.content || 'Text';
+        const rawContent = window.getFormattedTextContent(obj.content || 'Text', obj.textCase, obj.listType);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const fontStyle = obj.italic ? 'italic ' : '';
@@ -373,6 +414,37 @@ $(function () {
                 t.italic = isNowOn;
                 updateDimensions(t);
             }
+        });
+        $(document).trigger('object:change');
+        requestRender();
+    });
+
+
+    // Text Case buttons toggle (none / uppercase / lowercase / titlecase)
+    $caseButtons.on('click', function () {
+        const tCase = $(this).data('case') || 'none';
+        $caseButtons.removeClass('on');
+        $(this).addClass('on');
+
+        const texts = selectedTextObjects();
+        texts.forEach(t => {
+            t.textCase = tCase;
+            updateDimensions(t);
+        });
+        $(document).trigger('object:change');
+        requestRender();
+    });
+
+    // List Mode buttons toggle (none / bullet / numbered)
+    $listButtons.on('click', function () {
+        const lType = $(this).data('list') || 'none';
+        $listButtons.removeClass('on');
+        $(this).addClass('on');
+
+        const texts = selectedTextObjects();
+        texts.forEach(t => {
+            t.listType = lType;
+            updateDimensions(t);
         });
         $(document).trigger('object:change');
         requestRender();

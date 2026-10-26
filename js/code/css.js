@@ -252,6 +252,20 @@
       if (ls !== undefined && ls !== 0) lines.push(`  letter-spacing: ${ls}px;`);
       if (ta) lines.push(`  text-align: ${ta};`);
       if (s.fill) lines.push(`  color: ${s.fill};`);
+
+      const tc = obj.textCase || (c && c.textCase);
+      if (tc === 'uppercase') lines.push('  text-transform: uppercase;');
+      else if (tc === 'lowercase') lines.push('  text-transform: lowercase;');
+      else if (tc === 'titlecase' || tc === 'capitalize') lines.push('  text-transform: capitalize;');
+
+      const decors = [];
+      if (obj.underline) decors.push('underline');
+      if (obj.strikethrough) decors.push('line-through');
+      if (decors.length) lines.push(`  text-decoration: ${decors.join(' ')};`);
+      if (obj.italic) lines.push('  font-style: italic;');
+
+      if (obj.listType === 'bullet') lines.push('  list-style-type: disc;\n  padding-left: 20px;');
+      else if (obj.listType === 'numbered') lines.push('  list-style-type: decimal;\n  padding-left: 20px;');
     }
 
     // 10. Transform (Rotation & Flip)
