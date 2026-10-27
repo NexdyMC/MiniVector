@@ -82,10 +82,10 @@ $(function() {
     });
     commit();
   };
-  $x.on('change', function() {
+  $x.on('input change', function() {
     move('x', this.value);
   });
-  $y.on('change', function() {
+  $y.on('input change', function() {
     move('y', this.value);
   });
   $x.add($y).add($rot).on('keydown', function(e) {

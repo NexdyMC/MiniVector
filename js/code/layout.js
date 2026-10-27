@@ -662,7 +662,7 @@ $(function () {
   });
 
   // --- E. Input Angka Width Manual ---
-  $(document).on('change', '#code-prop-w', function () {
+  $(document).on('input change', '#code-prop-w', function () {
     const obj = getSelectedObject();
     if (!obj || !obj.transform) return;
     const inputVal = Math.max(0, parseFloat(this.value) || 0);
@@ -717,7 +717,7 @@ $(function () {
   });
 
   // --- F. Input Angka Height Manual ---
-  $(document).on('change', '#code-prop-h', function () {
+  $(document).on('input change', '#code-prop-h', function () {
     const obj = getSelectedObject();
     if (!obj || !obj.transform) return;
     const inputVal = Math.max(0, parseFloat(this.value) || 0);

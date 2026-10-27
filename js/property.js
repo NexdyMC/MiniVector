@@ -61,6 +61,8 @@ $(function() {
     ).appendTo('body');
   }
 
+  let pointerLockedElement = null;
+
   $(document).on('pointerdown', '.fg-in > .lb, .fg-in > i, .fg-in input[type="number"], .fg-color .op, .matrix-cell-in, .matrix-cell-in > i, .matrix-cell-in input', function(e) {
     if (e.button !== 0) return; // Hanya klik kiri
     
@@ -104,6 +106,7 @@ $(function() {
       if (!$this.is('input')) {
         e.preventDefault();
         isScrubbing = true;
+        pointerLockedElement = this;
         try {
           if (e.pointerId && this.setPointerCapture) this.setPointerCapture(e.pointerId);
         } catch (err) {}
@@ -114,16 +117,26 @@ $(function() {
   $(document).on('pointermove', function(e) {
     if (!$targetInput) return;
 
-    // Dapatkan pergerakan mouse aktual
-    const moveX = (e.originalEvent && typeof e.originalEvent.movementX === 'number' && e.originalEvent.movementX !== 0) 
-      ? e.originalEvent.movementX 
-      : (e.clientX - startX);
+    // Pergerakan mouse aktual
+    let delta = 0;
+    if (e.originalEvent && typeof e.originalEvent.movementX === 'number' && e.originalEvent.movementX !== 0) {
+      delta = e.originalEvent.movementX;
+    } else {
+      delta = e.clientX - startX;
+      startX = e.clientX;
+    }
 
-    if (!moved && Math.abs(e.clientX - startX) > 2) {
+    if (!moved && Math.abs(delta) > 0) {
       moved = true;
       isScrubbing = true;
       $('body').addClass('scrubbing-active');
       $virtualCursor.show().css({ left: virtualX + 'px', top: virtualY + 'px' });
+      // Coba request pointer lock browser jika didukung agar kursor hardware tidak mentok di layar
+      try {
+        if (pointerLockedElement && pointerLockedElement.requestPointerLock && !document.pointerLockElement) {
+          pointerLockedElement.requestPointerLock();
+        }
+      } catch (_) {}
     }
 
     if (isScrubbing && moved) {
@@ -132,13 +145,7 @@ $(function() {
       const screenW = window.innerWidth;
       
       // Update posisi virtual cursor dengan infinite wrap:
-      // Jika kursor digeser keluar kiri (virtualX <= 0), lompat ke kanan layar (screenW)
-      // Jika kursor digeser keluar kanan (virtualX >= screenW), lompat ke kiri layar (0)
-      virtualX += (typeof e.originalEvent.movementX === 'number' && Math.abs(e.originalEvent.movementX) < 100)
-        ? e.originalEvent.movementX
-        : (e.clientX - startX);
-      startX = e.clientX;
-
+      virtualX += delta;
       if (virtualX <= 0) {
         virtualX = screenW - 2;
       } else if (virtualX >= screenW) {
@@ -148,18 +155,15 @@ $(function() {
       $virtualCursor.css({ left: virtualX + 'px', top: virtualY + 'px' });
 
       // Akumulasikan total jarak scrub
-      totalDeltaX += (typeof e.originalEvent.movementX === 'number' && Math.abs(e.originalEvent.movementX) < 100)
-        ? e.originalEvent.movementX
-        : moveX;
+      totalDeltaX += delta;
 
       // Multiplier modifier: Shift = 10x, Alt = 0.1x
       let multiplier = 1;
       if (e.shiftKey) multiplier = 10;
       else if (e.altKey) multiplier = 0.1;
 
-      // Hitung selisih nilai berdasarkan jarak geser piksel
-      // Setiap ~3px geser mouse = 1 unit nilai
-      const deltaUnits = (totalDeltaX / 3) * step * multiplier;
+      // Hitung selisih nilai: ~2.5px geser mouse = 1 unit nilai
+      const deltaUnits = (totalDeltaX / 2.5) * step * multiplier;
       let nextVal = startVal + deltaUnits;
 
       if (isDecimal || e.altKey) {
@@ -178,6 +182,9 @@ $(function() {
   });
 
   const endScrub = function(e) {
+    if (document.exitPointerLock && document.pointerLockElement) {
+      try { document.exitPointerLock(); } catch (_) {}
+    }
     if ($targetInput) {
       if (isScrubbing && moved) {
         $targetInput.trigger('change');
@@ -189,6 +196,7 @@ $(function() {
     moved = false;
     totalDeltaX = 0;
     $targetInput = null;
+    pointerLockedElement = null;
   };
 
   $(document).on('pointerup pointercancel', endScrub);

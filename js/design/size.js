@@ -64,10 +64,10 @@ $(function() {
     Geo.setSize(f.obj, w, h);
     commit();
   };
-  $w.on('change', function() {
+  $w.on('input change', function() {
     resize('w', this.value);
   });
-  $h.on('change', function() {
+  $h.on('input change', function() {
     resize('h', this.value);
   });
   $w.add($h).on('keydown', function(e) {
