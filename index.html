@@ -151,6 +151,23 @@
           <circle cx="6" cy="7" r="1" />
           <path d="m2 12 4-3 3 2 5-4" />
         </symbol>
+              <!-- Typography & Alignment Symbols -->
+        <symbol id="i-align-left" viewBox="0 0 16 16"><path d="M2 3h12M2 7h8M2 11h12M2 15h6"/></symbol>
+        <symbol id="i-align-center" viewBox="0 0 16 16"><path d="M2 3h12M4 7h8M2 11h12M5 15h6"/></symbol>
+        <symbol id="i-align-right" viewBox="0 0 16 16"><path d="M2 3h12M6 7h8M2 11h12M8 15h6"/></symbol>
+        <symbol id="i-align-justify" viewBox="0 0 16 16"><path d="M2 3h12M2 7h12M2 11h12M2 15h12"/></symbol>
+        <symbol id="i-underline" viewBox="0 0 16 16"><path d="M4 3v5a4 4 0 0 0 8 0V3M2 14h12"/></symbol>
+        <symbol id="i-strikethrough" viewBox="0 0 16 16"><path d="M2 8h12M5 5a3 3 0 0 1 6 0c0 2-2 3-2 3M6 10c0 1.5 1.5 3 3 3a3 3 0 0 0 3-2"/></symbol>
+        <symbol id="i-italic" viewBox="0 0 16 16"><path d="M7 3h5M4 13h5M9.5 3l-3 10"/></symbol>
+        <symbol id="i-list-bullet" viewBox="0 0 16 16"><circle cx="3" cy="4" r="1.5"/><path d="M7 4h7"/><circle cx="3" cy="8" r="1.5"/><path d="M7 8h7"/><circle cx="3" cy="12" r="1.5"/><path d="M7 12h7"/></symbol>
+        <symbol id="i-list-numbered" viewBox="0 0 16 16"><path d="M2 4h1.5M3 2.5v3M2 8h2l-2 2h2M2 11.5h1.5a1 1 0 0 1 0 2H2M3 13.5v1.5M7 4h7M7 8h7M7 12h7"/></symbol>
+        <symbol id="i-arrow-up" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4"/></symbol>
+        <symbol id="i-arrow-middle" viewBox="0 0 16 16"><path d="M2 8h12M8 2v3M8 14v-3"/></symbol>
+        <symbol id="i-arrow-down" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4"/></symbol>
+        <symbol id="i-resize-w" viewBox="0 0 16 16"><path d="M2 8h12M5 5 2 8l3 3M11 5l3 3-3 3"/></symbol>
+        <symbol id="i-resize-h" viewBox="0 0 16 16"><path d="M8 2v12M5 5l3-3 3 3M5 11l3 3 3-3"/></symbol>
+        <symbol id="i-resize-fixed" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" stroke-dasharray="2 2"/><path d="M3 3h4v4H3z"/></symbol>
+
       </defs>
     </svg>
 
@@ -759,32 +776,47 @@
                       type="number" value="0"><span class="end">%</span></label>
                 </div>
 
-                <!-- Text Align & Style -->
+                <!-- Text Align & Style (SVG Murni Offline) -->
                 <div class="fg-grid" style="margin-top:8px">
                   <div class="fg-seg" id="text-align-seg">
-                    <button class="fg-ib on" data-align="left" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
-                    <button class="fg-ib" data-align="center" title="Rata tengah"><i class="fa-solid fa-align-center"></i></button>
-                    <button class="fg-ib" data-align="right" title="Rata kanan"><i class="fa-solid fa-align-right"></i></button>
-                    <button class="fg-ib" data-align="justify" title="Rata kiri-kanan"><i class="fa-solid fa-align-justify"></i></button>
+                    <button type="button" class="fg-ib on" data-align="left" title="Rata kiri"><svg class="ico"><use href="#i-align-left" /></svg></button>
+                    <button type="button" class="fg-ib" data-align="center" title="Rata tengah"><svg class="ico"><use href="#i-align-center" /></svg></button>
+                    <button type="button" class="fg-ib" data-align="right" title="Rata kanan"><svg class="ico"><use href="#i-align-right" /></svg></button>
+                    <button type="button" class="fg-ib" data-align="justify" title="Rata kiri-kanan"><svg class="ico"><use href="#i-align-justify" /></svg></button>
                   </div>
                   <div class="fg-seg" id="text-style-seg">
-                    <button class="fg-ib" data-style="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
-                    <button class="fg-ib" data-style="strikethrough" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
-                    <button class="fg-ib" data-style="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                    <button type="button" class="fg-ib" data-style="underline" title="Underline"><svg class="ico"><use href="#i-underline" /></svg></button>
+                    <button type="button" class="fg-ib" data-style="strikethrough" title="Strikethrough"><svg class="ico"><use href="#i-strikethrough" /></svg></button>
+                    <button type="button" class="fg-ib" data-style="italic" title="Italic"><svg class="ico"><use href="#i-italic" /></svg></button>
+                  </div>
+                </div>
+
+                <!-- Text Case & List Mode -->
+                <div class="fg-grid" style="margin-top:8px; display:flex; gap:8px;">
+                  <div class="fg-seg" id="text-case-seg" style="flex:1.2" title="Text Case Transformation">
+                    <button type="button" class="fg-ib on" data-case="none" title="As Typed (Default)" style="font-size:10px;font-weight:600;">--</button>
+                    <button type="button" class="fg-ib" data-case="uppercase" title="UPPERCASE (Semua Kapital)" style="font-size:10px;font-weight:700;">AG</button>
+                    <button type="button" class="fg-ib" data-case="lowercase" title="lowercase (Huruf kecil)" style="font-size:10px;font-weight:600;">ag</button>
+                    <button type="button" class="fg-ib" data-case="titlecase" title="Title Case (Kapital Awal Kata)" style="font-size:10px;font-weight:600;">Ag</button>
+                  </div>
+                  <div class="fg-seg" id="text-list-seg" style="flex:0.8" title="List Format">
+                    <button type="button" class="fg-ib on" data-list="none" title="No List (Paragraf)"><svg class="ico"><use href="#i-align-left" /></svg></button>
+                    <button type="button" class="fg-ib" data-list="bullet" title="Bullet List (• Titik)"><svg class="ico"><use href="#i-list-bullet" /></svg></button>
+                    <button type="button" class="fg-ib" data-list="numbered" title="Numbered List (1. 2. 3.)"><svg class="ico"><use href="#i-list-numbered" /></svg></button>
                   </div>
                 </div>
 
                 <!-- Resizing & Vertical Align (Sejajar Simetris Ala Figma) -->
                 <div class="fg-grid" style="margin-top:8px; display:flex; gap:8px;">
                   <div class="fg-seg" id="text-resize-seg" style="flex:1" title="Text Resizing">
-                    <button class="fg-ib on" data-resize="auto" title="Auto Width (kotak pas melebar)"><i class="fa-solid fa-arrows-left-right"></i></button>
-                    <button class="fg-ib" data-resize="auto-height" title="Auto Height (word wrap, tinggi otomatis)"><i class="fa-solid fa-arrows-up-down"></i></button>
-                    <button class="fg-ib" data-resize="fixed" title="Fixed Size (ukuran kotak tetap)"><i class="fa-solid fa-arrows-split-up-and-left fa-rotate-90"></i></button>
+                    <button type="button" class="fg-ib on" data-resize="auto" title="Auto Width (kotak pas melebar)"><svg class="ico"><use href="#i-resize-w" /></svg></button>
+                    <button type="button" class="fg-ib" data-resize="auto-height" title="Auto Height (word wrap, tinggi otomatis)"><svg class="ico"><use href="#i-resize-h" /></svg></button>
+                    <button type="button" class="fg-ib" data-resize="fixed" title="Fixed Size (ukuran kotak tetap)"><svg class="ico"><use href="#i-resize-fixed" /></svg></button>
                   </div>
                   <div class="fg-seg" id="text-valign-seg" style="flex:1" title="Vertical Align">
-                    <button class="fg-ib on" data-valign="top" title="Align Top (Atas)"><i class="fa-solid fa-arrow-up"></i></button>
-                    <button class="fg-ib" data-valign="middle" title="Align Middle (Tengah)"><i class="fa-solid fa-arrows-to-dot"></i></button>
-                    <button class="fg-ib" data-valign="bottom" title="Align Bottom (Bawah)"><i class="fa-solid fa-arrow-down"></i></button>
+                    <button type="button" class="fg-ib on" data-valign="top" title="Align Top (Atas)"><svg class="ico"><use href="#i-arrow-up" /></svg></button>
+                    <button type="button" class="fg-ib" data-valign="middle" title="Align Middle (Tengah)"><svg class="ico"><use href="#i-arrow-middle" /></svg></button>
+                    <button type="button" class="fg-ib" data-valign="bottom" title="Align Bottom (Bawah)"><svg class="ico"><use href="#i-arrow-down" /></svg></button>
                   </div>
                 </div>
               </section>
@@ -1433,14 +1465,35 @@
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Alignment</div>
                       <div class="fg-seg" id="code-text-align-seg" style="height: var(--ctl);">
-                        <button type="button" class="fg-ib on" data-align="left" title="text-left" style="flex: 1;"><i class="fa-solid fa-align-left"></i></button>
-                        <button type="button" class="fg-ib" data-align="center" title="text-center" style="flex: 1;"><i class="fa-solid fa-align-center"></i></button>
-                        <button type="button" class="fg-ib" data-align="right" title="text-right" style="flex: 1;"><i class="fa-solid fa-align-right"></i></button>
+                        <button type="button" class="fg-ib on" data-align="left" title="text-left" style="flex: 1;"><svg class="ico"><use href="#i-align-left" /></svg></button>
+                        <button type="button" class="fg-ib" data-align="center" title="text-center" style="flex: 1;"><svg class="ico"><use href="#i-align-center" /></svg></button>
+                        <button type="button" class="fg-ib" data-align="right" title="text-right" style="flex: 1;"><svg class="ico"><use href="#i-align-right" /></svg></button>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Baris 3: Leading & Tracking -->
+                  <!-- Baris 3: Case & List -->
+                  <div class="fg-grid" style="margin-bottom: 6px;">
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">Case</div>
+                      <div class="fg-seg" id="code-text-case-seg" style="height: var(--ctl);">
+                        <button type="button" class="fg-ib on" data-case="none" title="normal-case" style="flex: 1; font-size:10px;">--</button>
+                        <button type="button" class="fg-ib" data-case="uppercase" title="uppercase" style="flex: 1; font-size:10px; font-weight:700;">AG</button>
+                        <button type="button" class="fg-ib" data-case="lowercase" title="lowercase" style="flex: 1; font-size:10px;">ag</button>
+                        <button type="button" class="fg-ib" data-case="capitalize" title="capitalize" style="flex: 1; font-size:10px;">Ag</button>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="fg-label" style="margin: 0 0 4px;">List</div>
+                      <div class="fg-seg" id="code-text-list-seg" style="height: var(--ctl);">
+                        <button type="button" class="fg-ib on" data-list="none" title="None" style="flex: 1;"><svg class="ico"><use href="#i-align-left" /></svg></button>
+                        <button type="button" class="fg-ib" data-list="bullet" title="list-disc" style="flex: 1;"><svg class="ico"><use href="#i-list-bullet" /></svg></button>
+                        <button type="button" class="fg-ib" data-list="numbered" title="list-decimal" style="flex: 1;"><svg class="ico"><use href="#i-list-numbered" /></svg></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Baris 4: Leading & Tracking -->
                   <div class="fg-grid" style="margin-bottom: 6px;">
                     <div>
                       <div class="fg-label" style="margin: 0 0 4px;">Leading</div>
@@ -1663,104 +1716,43 @@
                   </div>
                 </section>
 
-                <!-- 3b. INTERACTIVE STATES (Figma Variant Mode: :hover, :active, :focus) -->
+                <!-- 3b. INTERACTIVE STATES WITH POPUP MODAL -->
                 <section class="fg-sec" id="code-sec-states">
                   <div class="fg-head">
                     <span>Interactive States</span>
-                    <span id="code-states-active-badge" class="badge" style="font-size: 9px; padding: 1px 6px; border-radius: 10px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; display: none;">1 configured</span>
+                    <span id="code-states-active-badge" class="badge" style="font-size: 9.5px; padding: 2px 7px; border-radius: 10px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; display: none;">1 configured</span>
                   </div>
 
-                  <!-- State Selector Dropdown -->
+                  <!-- State Selector Bar with Configure Button -->
                   <div class="fg-label" style="margin-top: 4px;">Target State</div>
-                  <div class="mv-custom-select-wrap" id="wrap-code-select-state" style="margin-bottom: 8px;">
-                    <div class="mv-custom-select-trigger" id="trigger-code-select-state" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-                      <span id="label-code-select-state"><i class="fa-solid fa-circle-dot" style="margin-right:6px; color:#94a3b8;"></i>Default (Normal)</span>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                    <div class="mv-custom-select-wrap" id="wrap-code-select-state" style="flex: 1;">
+                      <div class="mv-custom-select-trigger" id="trigger-code-select-state" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="label-code-select-state"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px;"></span>Default (Normal)</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+                      <div class="mv-custom-select-menu" id="menu-code-select-state" role="listbox">
+                        <div class="mv-custom-select-item selected" data-val="default"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px;"></span>Default (Normal)</div>
+                        <div class="mv-custom-select-item" data-val="hover"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#60a5fa;margin-right:6px;"></span>:hover (Mouseover)</div>
+                        <div class="mv-custom-select-item" data-val="active"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:6px;"></span>:active (Pressed)</div>
+                        <div class="mv-custom-select-item" data-val="focus"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:6px;"></span>:focus (Keyboard/Click)</div>
+                      </div>
                     </div>
-                    <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
-                    <div class="mv-custom-select-menu" id="menu-code-select-state" role="listbox">
-                      <div class="mv-custom-select-item selected" data-val="default"><i class="fa-solid fa-circle-dot" style="margin-right:6px; color:#94a3b8;"></i>Default (Normal)</div>
-                      <div class="mv-custom-select-item" data-val="hover"><i class="fa-solid fa-arrow-pointer" style="margin-right:6px; color:#60a5fa;"></i>:hover (Mouseover)</div>
-                      <div class="mv-custom-select-item" data-val="active"><i class="fa-regular fa-hand-pointer" style="margin-right:6px; color:#f59e0b;"></i>:active (Pressed)</div>
-                      <div class="mv-custom-select-item" data-val="focus"><i class="fa-solid fa-crosshairs" style="margin-right:6px; color:#10b981;"></i>:focus (Keyboard/Click)</div>
-                    </div>
+                    <select id="code-select-state" style="display:none"></select>
+
+                    <!-- Tombol Buka Popover/Modal Properti State -->
+                    <button type="button" id="btn-open-state-popup" class="fg-ib" style="width: 32px; height: 32px; flex: none;" title="Buka Pengaturan Properti State">
+                      <svg class="ico"><use href="#i-sliders" /></svg>
+                    </button>
                   </div>
-                  <select id="code-select-state" style="display:none"></select>
 
-                  <!-- State Editor Box (Tampil saat mode bukan 'default') -->
-                  <div id="code-state-editor-box" style="display: none; background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.35); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                      <span id="code-state-editor-title" style="font-size: 11px; font-weight: 600; color: #60a5fa;">Editing :hover</span>
-                      <button type="button" id="code-btn-reset-state" class="fg-ib" style="font-size: 10px; padding: 2px 6px; height: 20px; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3);" title="Hapus konfigurasi state ini">Reset</button>
+                  <!-- Banner Card Ringkas Status State Aktif -->
+                  <div id="code-state-summary-banner" style="display: none; padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span id="code-state-summary-title" style="font-size: 11px; font-weight: 600; color: #60a5fa;">:hover configured</span>
+                      <button type="button" id="btn-trigger-edit-state" style="background:none; border:none; color:#38bdf8; font-size:11px; cursor:pointer; text-decoration:underline;">Edit Properti</button>
                     </div>
-
-                    <!-- State Fill Color -->
-                    <div class="fg-label" style="margin: 0 0 4px;">Background Fill</div>
-                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
-                      <input id="code-state-fill-picker" type="color" aria-label="Warna fill state" value="#2563eb" style="width: 28px; height: 26px; border: 1px solid var(--c-line); border-radius: 4px; padding: 0; cursor: pointer; background: transparent;">
-                      <label class="fg-in" style="flex: 1;">
-                        <span class="lb">#</span>
-                        <input id="code-state-fill-hex" type="text" placeholder="inherit" style="font-family: monospace; text-transform: uppercase;">
-                      </label>
-                    </div>
-
-                    <!-- State Text Color (Khusus teks atau jika ingin override teks child) -->
-                    <div class="fg-label" style="margin: 0 0 4px;">Text Color</div>
-                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
-                      <input id="code-state-text-picker" type="color" aria-label="Warna teks state" value="#ffffff" style="width: 28px; height: 26px; border: 1px solid var(--c-line); border-radius: 4px; padding: 0; cursor: pointer; background: transparent;">
-                      <label class="fg-in" style="flex: 1;">
-                        <span class="lb">#</span>
-                        <input id="code-state-text-hex" type="text" placeholder="inherit" style="font-family: monospace; text-transform: uppercase;">
-                      </label>
-                    </div>
-
-                    <!-- State Scale & Opacity Grid -->
-                    <div class="fg-grid" style="margin-bottom: 8px;">
-                      <label class="fg-in" title="Scale / Zoom (misal 1.05 = zoom 5%)">
-                        <span class="lb"><i class="fa-solid fa-up-right-and-down-left-from-center" style="font-size:9px;"></i></span>
-                        <input id="code-state-scale" type="number" value="1.0" step="0.05" min="0.5" max="2.0">
-                      </label>
-                      <label class="fg-in" title="Opacity % saat state aktif">
-                        <span class="lb"><i class="fa-solid fa-circle-half-stroke" style="font-size:9px;"></i></span>
-                        <input id="code-state-opacity" type="number" placeholder="100" min="0" max="100" step="5">
-                        <span class="end">%</span>
-                      </label>
-                    </div>
-
-                    <!-- State Shadow Preset -->
-                    <div class="fg-label" style="margin: 0 0 4px;">Box Shadow</div>
-                    <div class="mv-custom-select-wrap" id="wrap-code-state-shadow" style="margin-bottom: 8px;">
-                      <div class="mv-custom-select-trigger" id="trigger-code-state-shadow" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-                        <span id="label-code-state-shadow">Inherit (No Change)</span>
-                      </div>
-                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
-                      <div class="mv-custom-select-menu" id="menu-code-state-shadow" role="listbox">
-                        <div class="mv-custom-select-item selected" data-val="inherit">Inherit (No Change)</div>
-                        <div class="mv-custom-select-item" data-val="none">None (Remove Shadow)</div>
-                        <div class="mv-custom-select-item" data-val="sm">shadow-sm</div>
-                        <div class="mv-custom-select-item" data-val="md">shadow-md</div>
-                        <div class="mv-custom-select-item" data-val="lg">shadow-lg</div>
-                        <div class="mv-custom-select-item" data-val="xl">shadow-xl</div>
-                        <div class="mv-custom-select-item" data-val="2xl">shadow-2xl</div>
-                      </div>
-                    </div>
-                    <select id="code-state-shadow" style="display:none"></select>
-
-                    <!-- Transition Duration (Khusus :hover / active) -->
-                    <div class="fg-label" style="margin: 0 0 4px;">Transition Duration</div>
-                    <div class="mv-custom-select-wrap" id="wrap-code-state-transition" style="margin-bottom: 4px;">
-                      <div class="mv-custom-select-trigger" id="trigger-code-state-transition" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-                        <span id="label-code-state-transition">duration-200 (200ms)</span>
-                      </div>
-                      <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
-                      <div class="mv-custom-select-menu" id="menu-code-state-transition" role="listbox">
-                        <div class="mv-custom-select-item" data-val="none">Instant (0ms)</div>
-                        <div class="mv-custom-select-item" data-val="150">duration-150 (150ms)</div>
-                        <div class="mv-custom-select-item selected" data-val="200">duration-200 (200ms)</div>
-                        <div class="mv-custom-select-item" data-val="300">duration-300 (300ms)</div>
-                        <div class="mv-custom-select-item" data-val="500">duration-500 (500ms)</div>
-                      </div>
-                    </div>
-                    <select id="code-state-transition" style="display:none"></select>
+                    <div id="code-state-summary-diff" style="font-size: 10.5px; color: #94a3b8; margin-top: 4px; font-family: monospace;">Scale 1.05 • Fill #2563EB</div>
                   </div>
                 </section>
 
@@ -1843,6 +1835,121 @@
      ============================================================ -->
 
         <!-- Code Export Modal (Two-Column Split Layout: Live Preview & IDE Editor) -->
+    
+    <!-- Interactive State Properties Popup Modal -->
+    <div class="modal" id="modal-state-properties" role="dialog" aria-modal="true" aria-labelledby="state-modal-title">
+      <div class="modal-box" style="--mw: 420px; --mh: auto; max-width: 95vw;">
+        <div class="modal-head">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg class="ico" style="color: var(--c-accent);"><use href="#i-sliders" /></svg>
+            <span id="state-modal-title" style="font-weight: 600; font-size: 13.5px;">Configure State: :hover</span>
+          </div>
+          <button class="icon-btn modal-close" data-close-modal aria-label="Tutup"><svg class="ico"><use href="#i-close" /></svg></button>
+        </div>
+        <div class="modal-body" style="padding: 16px 20px;">
+          <!-- Category Tabs: Color & Style | Size & Scale | Shadow & Transition -->
+          <div class="fg-seg" id="state-modal-tab-seg" style="width: 100%; margin-bottom: 14px;">
+            <button type="button" class="fg-ib on" data-tab="colors" style="flex: 1; height: 26px; font-size: 11px;">🎨 Colors</button>
+            <button type="button" class="fg-ib" data-tab="size" style="flex: 1; height: 26px; font-size: 11px;">📐 Scale & Size</button>
+            <button type="button" class="fg-ib" data-tab="effects" style="flex: 1; height: 26px; font-size: 11px;">✨ Effects</button>
+          </div>
+
+          <!-- TAB 1: COLORS -->
+          <div class="state-modal-tab-content" id="state-tab-colors">
+            <div class="fg-label" style="margin-top: 0;">Background Fill saat State Aktif</div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+              <input id="modal-state-fill-picker" type="color" aria-label="Warna fill state" value="#2563eb" style="width: 32px; height: 30px; border: 1px solid var(--c-line); border-radius: 6px; padding: 0; cursor: pointer; background: transparent;">
+              <label class="fg-in" style="flex: 1;">
+                <span class="lb">#</span>
+                <input id="modal-state-fill-hex" type="text" placeholder="inherit" style="font-family: monospace; text-transform: uppercase;">
+              </label>
+            </div>
+
+            <div class="fg-label">Text Color saat State Aktif</div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+              <input id="modal-state-text-picker" type="color" aria-label="Warna teks state" value="#ffffff" style="width: 32px; height: 30px; border: 1px solid var(--c-line); border-radius: 6px; padding: 0; cursor: pointer; background: transparent;">
+              <label class="fg-in" style="flex: 1;">
+                <span class="lb">#</span>
+                <input id="modal-state-text-hex" type="text" placeholder="inherit" style="font-family: monospace; text-transform: uppercase;">
+              </label>
+            </div>
+          </div>
+
+          <!-- TAB 2: SCALE & SIZE -->
+          <div class="state-modal-tab-content" id="state-tab-size" style="display: none;">
+            <div class="fg-label" style="margin-top: 0;">Scale / Transform Zoom</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <label class="fg-in" style="flex: 1;">
+                <span class="lb">Zoom</span>
+                <input id="modal-state-scale" type="number" value="1.0" step="0.02" min="0.5" max="2.0">
+              </label>
+              <div class="fg-seg" style="flex: 1.5; height: var(--ctl);">
+                <button type="button" class="fg-ib btn-state-scale-preset" data-scale="0.95">0.95x</button>
+                <button type="button" class="fg-ib btn-state-scale-preset" data-scale="1.0">1x</button>
+                <button type="button" class="fg-ib btn-state-scale-preset" data-scale="1.05">1.05x</button>
+                <button type="button" class="fg-ib btn-state-scale-preset" data-scale="1.10">1.10x</button>
+              </div>
+            </div>
+
+            <div class="fg-label">Opacity Transparency</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label class="fg-in" style="flex: 1;">
+                <span class="lb">Alpha</span>
+                <input id="modal-state-opacity" type="number" placeholder="100" min="0" max="100" step="5">
+                <span class="end">%</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- TAB 3: EFFECTS & TRANSITION -->
+          <div class="state-modal-tab-content" id="state-tab-effects" style="display: none;">
+            <div class="fg-label" style="margin-top: 0;">Box Shadow Elevation</div>
+            <div class="mv-custom-select-wrap" id="wrap-modal-state-shadow" style="margin-bottom: 10px;">
+              <div class="mv-custom-select-trigger" id="trigger-modal-state-shadow" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                <span id="label-modal-state-shadow">Inherit (No Change)</span>
+              </div>
+              <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+              <div class="mv-custom-select-menu" id="menu-modal-state-shadow" role="listbox">
+                <div class="mv-custom-select-item selected" data-val="inherit">Inherit (No Change)</div>
+                <div class="mv-custom-select-item" data-val="none">None (Remove Shadow)</div>
+                <div class="mv-custom-select-item" data-val="sm">shadow-sm (Subtle)</div>
+                <div class="mv-custom-select-item" data-val="md">shadow-md (Card Hover)</div>
+                <div class="mv-custom-select-item" data-val="lg">shadow-lg (Pop-up Elevation)</div>
+                <div class="mv-custom-select-item" data-val="xl">shadow-xl (Floating)</div>
+                <div class="mv-custom-select-item" data-val="2xl">shadow-2xl (High Elevation)</div>
+              </div>
+            </div>
+            <select id="modal-state-shadow" style="display:none"></select>
+
+            <div class="fg-label">Transition Smoothness</div>
+            <div class="mv-custom-select-wrap" id="wrap-modal-state-transition" style="margin-bottom: 6px;">
+              <div class="mv-custom-select-trigger" id="trigger-modal-state-transition" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                <span id="label-modal-state-transition">duration-200 (200ms ease)</span>
+              </div>
+              <i class="fa-solid fa-chevron-down mv-custom-select-arrow"></i>
+              <div class="mv-custom-select-menu" id="menu-modal-state-transition" role="listbox">
+                <div class="mv-custom-select-item" data-val="none">Instant (0ms)</div>
+                <div class="mv-custom-select-item" data-val="150">duration-150 (Fast 150ms)</div>
+                <div class="mv-custom-select-item selected" data-val="200">duration-200 (Smooth 200ms)</div>
+                <div class="mv-custom-select-item" data-val="300">duration-300 (Fluid 300ms)</div>
+                <div class="mv-custom-select-item" data-val="500">duration-500 (Slow 500ms)</div>
+              </div>
+            </div>
+            <select id="modal-state-transition" style="display:none"></select>
+          </div>
+        </div>
+
+        <div class="modal-foot" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--c-line);">
+          <button type="button" id="btn-modal-reset-state" class="btn-danger-outline" style="font-size: 11px; padding: 5px 10px;">
+            Reset State
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary-outline" data-close-modal style="font-size: 11.5px; padding: 5px 12px;">Selesai</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- [SEC:MODAL-EXPORT] -->
     <div class="modal" id="modal-code-export" role="dialog" aria-modal="true" aria-labelledby="code-export-title">
       <div class="modal-box">

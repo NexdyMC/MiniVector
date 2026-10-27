@@ -459,23 +459,38 @@ $(function () {
     setCustomSelectVal('code-select-state', currentSelectedState);
 
     const isNonDefault = currentSelectedState !== 'default';
-    $('#code-state-editor-box').toggle(isNonDefault);
+    const curStateData = isNonDefault ? (states[currentSelectedState] || {}) : {};
+    const hasProps = isNonDefault && Object.keys(curStateData).length > 0;
 
+    $('#code-state-summary-banner').toggle(hasProps);
+    if (hasProps) {
+      $('#code-state-summary-title').text(`:${currentSelectedState} configured`);
+      const diffs = [];
+      if (curStateData.scale && curStateData.scale != 1) diffs.push(`Scale ${curStateData.scale}x`);
+      if (curStateData.fill) diffs.push(`Fill ${curStateData.fill}`);
+      if (curStateData.textColor) diffs.push(`Text ${curStateData.textColor}`);
+      if (curStateData.shadow && curStateData.shadow !== 'inherit') diffs.push(`Shadow ${curStateData.shadow}`);
+      if (curStateData.opacity !== undefined && curStateData.opacity !== '') diffs.push(`Opacity ${curStateData.opacity}%`);
+      $('#code-state-summary-diff').text(diffs.join(' • ') || 'Configured');
+    }
+
+    // Sinkronisasi data di dalam Modal Popup State Properties
     if (isNonDefault) {
-      const curStateData = states[currentSelectedState] || {};
-      $('#code-state-editor-title').text(`Editing :${currentSelectedState}`);
-      $('#code-state-fill-hex').val(curStateData.fill ? curStateData.fill.replace('#', '') : '');
+      $('#state-modal-title').text(`Configure State: :${currentSelectedState}`);
+      $('#modal-state-fill-hex').val(curStateData.fill ? curStateData.fill.replace('#', '') : '');
       if (curStateData.fill && curStateData.fill.startsWith('#')) {
-        $('#code-state-fill-picker').val(curStateData.fill);
+        $('#modal-state-fill-picker').val(curStateData.fill);
       }
-      $('#code-state-text-hex').val(curStateData.textColor ? curStateData.textColor.replace('#', '') : '');
+      $('#modal-state-text-hex').val(curStateData.textColor ? curStateData.textColor.replace('#', '') : '');
       if (curStateData.textColor && curStateData.textColor.startsWith('#')) {
-        $('#code-state-text-picker').val(curStateData.textColor);
+        $('#modal-state-text-picker').val(curStateData.textColor);
       }
-      $('#code-state-scale').val(curStateData.scale !== undefined ? curStateData.scale : 1.0);
-      $('#code-state-opacity').val(curStateData.opacity !== undefined ? curStateData.opacity : '');
-      setCustomSelectVal('code-state-shadow', curStateData.shadow || 'inherit');
-      setCustomSelectVal('code-state-transition', curStateData.transition || '200');
+      $('#modal-state-scale').val(curStateData.scale !== undefined ? curStateData.scale : 1.0);
+      $('.btn-state-scale-preset').removeClass('on');
+      $(`.btn-state-scale-preset[data-scale="${curStateData.scale || 1.0}"]`).addClass('on');
+      $('#modal-state-opacity').val(curStateData.opacity !== undefined ? curStateData.opacity : '');
+      setCustomSelectVal('modal-state-shadow', curStateData.shadow || 'inherit');
+      setCustomSelectVal('modal-state-transition', curStateData.transition || '200');
     }
 
     // 4c. Sinkronisasi Output Settings (Custom Class, Component Name, Preferences)
@@ -551,6 +566,14 @@ $(function () {
       const ta = obj.textAlign || 'left';
       $('#code-text-align-seg button').removeClass('on');
       $(`#code-text-align-seg button[data-align="${ta}"]`).addClass('on');
+
+      const tc = obj.textCase || 'none';
+      $('#code-text-case-seg button').removeClass('on');
+      $(`#code-text-case-seg button[data-case="${tc}"]`).addClass('on');
+
+      const lt = obj.listType || 'none';
+      $('#code-text-list-seg button').removeClass('on');
+      $(`#code-text-list-seg button[data-list="${lt}"]`).addClass('on');
 
       setCustomSelectVal('code-select-leading', obj.leadingPreset || 'normal');
       setCustomSelectVal('code-select-tracking', obj.trackingPreset || 'normal');
@@ -1109,6 +1132,28 @@ $(function () {
     syncCodeView();
   });
 
+  // Text Case Segment (none, uppercase, lowercase, capitalize)
+  $(document).on('click', '#code-text-case-seg button', function () {
+    const obj = getSelectedObject();
+    if (!obj || obj.type !== 'text') return;
+    const textCase = $(this).data('case');
+    obj.textCase = textCase;
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
+  // Text List Segment (none, bullet, numbered)
+  $(document).on('click', '#code-text-list-seg button', function () {
+    const obj = getSelectedObject();
+    if (!obj || obj.type !== 'text') return;
+    const listType = $(this).data('list');
+    obj.listType = listType;
+    $(document).trigger('object:change');
+    if (typeof requestRender === 'function') requestRender();
+    syncCodeView();
+  });
+
   // Leading (Line Height) Dropdown
   $(document).on('change', '#code-select-leading', function () {
     const obj = getSelectedObject();
@@ -1612,11 +1657,7 @@ $(function () {
   $(document).on('input change', '#code-shadow-x, #code-shadow-y, #code-shadow-blur, #code-shadow-spread, #code-shadow-color, #code-shadow-opacity', updateCustomShadow);
 
 
-  // ================= INTERACTIVE STATES HANDLERS =================
-  $(document).on('change', '#code-select-state', function () {
-    syncCodeView();
-  });
-
+  // ================= INTERACTIVE STATES MODAL & POPUP HANDLERS =================
   const getOrCreateStateObj = (obj, stateKey) => {
     obj.code = obj.code || {};
     obj.code.states = obj.code.states || {};
@@ -1624,21 +1665,57 @@ $(function () {
     return obj.code.states[stateKey];
   };
 
-  // State Fill Color Handlers
-  $(document).on('input change', '#code-state-fill-picker', function () {
+  const openStateModal = () => {
+    const curState = $('#code-select-state').val() || 'default';
+    if (curState === 'default') {
+      // Jika masih default, alihkan otomatis ke :hover
+      setCustomSelectVal('code-select-state', 'hover');
+    }
+    syncCodeView();
+    if (typeof openModal === 'function') {
+      openModal('state-properties');
+    } else {
+      $('#modal-state-properties').addClass('show');
+    }
+  };
+
+  $(document).on('click', '#btn-open-state-popup, #btn-trigger-edit-state', function () {
+    openStateModal();
+  });
+
+  $(document).on('change', '#code-select-state', function () {
+    const curState = $(this).val();
+    if (curState !== 'default') {
+      openStateModal();
+    } else {
+      syncCodeView();
+    }
+  });
+
+  // Modal Category Tabs (Colors | Size & Scale | Effects)
+  $(document).on('click', '#state-modal-tab-seg button', function () {
+    const tab = $(this).data('tab');
+    $('#state-modal-tab-seg button').removeClass('on');
+    $(this).addClass('on');
+    $('.state-modal-tab-content').hide();
+    $(`#state-tab-${tab}`).show();
+  });
+
+  // State Fill Color in Modal
+  $(document).on('input change', '#modal-state-fill-picker', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
     if (curState === 'default') return;
     const hex = $(this).val();
-    $('#code-state-fill-hex').val(hex.replace('#', ''));
+    $('#modal-state-fill-hex').val(hex.replace('#', ''));
     const stObj = getOrCreateStateObj(obj, curState);
     stObj.fill = hex;
     $(document).trigger('object:change');
     syncCodeView();
   });
 
-  $(document).on('change', '#code-state-fill-hex', function () {
+  $(document).on('change', '#modal-state-fill-hex', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
@@ -1650,27 +1727,27 @@ $(function () {
     } else {
       if (!hex.startsWith('#')) hex = '#' + hex;
       stObj.fill = hex;
-      $('#code-state-fill-picker').val(hex);
+      $('#modal-state-fill-picker').val(hex);
     }
     $(document).trigger('object:change');
     syncCodeView();
   });
 
-  // State Text Color Handlers
-  $(document).on('input change', '#code-state-text-picker', function () {
+  // State Text Color in Modal
+  $(document).on('input change', '#modal-state-text-picker', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
     if (curState === 'default') return;
     const hex = $(this).val();
-    $('#code-state-text-hex').val(hex.replace('#', ''));
+    $('#modal-state-text-hex').val(hex.replace('#', ''));
     const stObj = getOrCreateStateObj(obj, curState);
     stObj.textColor = hex;
     $(document).trigger('object:change');
     syncCodeView();
   });
 
-  $(document).on('change', '#code-state-text-hex', function () {
+  $(document).on('change', '#modal-state-text-hex', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
@@ -1682,14 +1759,14 @@ $(function () {
     } else {
       if (!hex.startsWith('#')) hex = '#' + hex;
       stObj.textColor = hex;
-      $('#code-state-text-picker').val(hex);
+      $('#modal-state-text-picker').val(hex);
     }
     $(document).trigger('object:change');
     syncCodeView();
   });
 
-  // State Scale Handler
-  $(document).on('input change', '#code-state-scale', function () {
+  // State Scale & Presets in Modal
+  $(document).on('input change', '#modal-state-scale', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
@@ -1697,12 +1774,19 @@ $(function () {
     const val = parseFloat($(this).val()) || 1.0;
     const stObj = getOrCreateStateObj(obj, curState);
     stObj.scale = val;
+    $('.btn-state-scale-preset').removeClass('on');
+    $(`.btn-state-scale-preset[data-scale="${val}"]`).addClass('on');
     $(document).trigger('object:change');
     syncCodeView();
   });
 
-  // State Opacity Handler
-  $(document).on('input change', '#code-state-opacity', function () {
+  $(document).on('click', '.btn-state-scale-preset', function () {
+    const s = parseFloat($(this).data('scale')) || 1.0;
+    $('#modal-state-scale').val(s).trigger('input');
+  });
+
+  // State Opacity in Modal
+  $(document).on('input change', '#modal-state-opacity', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
@@ -1718,8 +1802,8 @@ $(function () {
     syncCodeView();
   });
 
-  // State Shadow Handler
-  $(document).on('change', '#code-state-shadow', function () {
+  // State Shadow Preset in Modal
+  $(document).on('change', '#modal-state-shadow', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
@@ -1735,8 +1819,8 @@ $(function () {
     syncCodeView();
   });
 
-  // State Transition Duration Handler
-  $(document).on('change', '#code-state-transition', function () {
+  // State Transition Duration in Modal
+  $(document).on('change', '#modal-state-transition', function () {
     const obj = getSelectedObject();
     if (!obj) return;
     const curState = $('#code-select-state').val();
@@ -1748,8 +1832,8 @@ $(function () {
     syncCodeView();
   });
 
-  // Reset State Button Handler
-  $(document).on('click', '#code-btn-reset-state', function () {
+  // Reset State Button in Modal
+  $(document).on('click', '#btn-modal-reset-state', function () {
     const obj = getSelectedObject();
     if (!obj || !obj.code || !obj.code.states) return;
     const curState = $('#code-select-state').val();
@@ -1760,6 +1844,7 @@ $(function () {
       }
       $(document).trigger('object:change');
       syncCodeView();
+      if (typeof closeModal === 'function') closeModal();
     }
   });
 
