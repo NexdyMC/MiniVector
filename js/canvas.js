@@ -1119,8 +1119,11 @@ const drawObject = o => {
             cvCtx.fillStyle = '#FFFFFF';
         }
 
-        const rawContent = o.content || '';
-        const lineHeight = o.lineHeight || (size * 1.25);
+        const rawText = o.content || '';
+        const rawContent = (typeof window.getFormattedTextContent === 'function') 
+            ? window.getFormattedTextContent(rawText, o.textCase, o.listType) 
+            : rawText;
+        const lineHeight = o.lineHeight || (size * 1.2);
 
         // Word wrap: jika mode fixed atau jika lebar kotak lebih sempit dari teks
         const lines = [];
@@ -1178,10 +1181,20 @@ const drawObject = o => {
         }
 
         // Hitung total tinggi teks untuk Auto-fit dan Vertical Alignment
-        const totalTextHeight = Math.max(lineHeight, lines.length * lineHeight);
+        // Menggunakan line-height proporsional yang pas ala Figma
+        const totalTextHeight = Math.max(size, lines.length * lineHeight);
 
-        // Jika mode auto resizing, sesuaikan tinggi kotak pas dengan konten teks
-        if (o.resizing !== 'fixed') {
+        // Hanya paksa update tinggi jika mode resizing adalah 'auto' (bukan fixed dan bukan auto-height yang ditarik manual)
+        if (o.resizing === 'auto') {
+            t.height = Math.round(totalTextHeight);
+            // Hitung lebar pas untuk auto width
+            let maxLineW = 0;
+            lines.forEach(l => {
+                const w = cvCtx.measureText(l).width;
+                if (w > maxLineW) maxLineW = w;
+            });
+            if (maxLineW > 0) t.width = Math.ceil(maxLineW);
+        } else if (o.resizing === 'auto-height') {
             t.height = Math.round(totalTextHeight);
         }
 
@@ -1333,6 +1346,38 @@ const drawSelection = () => {
             cvCtx.fillRect(cx - half, cy - half, handleSize, handleSize);
             cvCtx.strokeRect(cx - half, cy - half, handleSize, handleSize);
         });
+
+        // Pill badge dimensi objek tunggal ala Figma (misal: "85 × 14") di bawah bounding box
+        if (State.selectedIds.length === 1 && !State.marquee) {
+            const dimText = `${Math.round(bounds.width)} × ${Math.round(bounds.height)}`;
+            cvCtx.font = `bold ${Math.max(9, 10 / State.zoom)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            const dimMetrics = cvCtx.measureText(dimText);
+            const dimW = dimMetrics.width;
+            const dimH = 13 / State.zoom;
+            const padX = 5 / State.zoom;
+            const padY = 2 / State.zoom;
+            const badgeX = bounds.x + (bounds.width / 2) - (dimW / 2) - padX;
+            const badgeY = bounds.y + bounds.height + (8 / State.zoom);
+            const badgeW = dimW + padX * 2;
+            const badgeH = dimH + padY * 2;
+            const r = 3 / State.zoom;
+
+            cvCtx.fillStyle = '#0D99FF';
+            cvCtx.beginPath();
+            cvCtx.moveTo(badgeX + r, badgeY);
+            cvCtx.arcTo(badgeX + badgeW, badgeY, badgeX + badgeW, badgeY + badgeH, r);
+            cvCtx.arcTo(badgeX + badgeW, badgeY + badgeH, badgeX, badgeY + badgeH, r);
+            cvCtx.arcTo(badgeX, badgeY + badgeH, badgeX, badgeY, r);
+            cvCtx.arcTo(badgeX, badgeY, badgeX + badgeW, badgeY, r);
+            cvCtx.closePath();
+            cvCtx.fill();
+
+            cvCtx.fillStyle = '#FFFFFF';
+            cvCtx.textAlign = 'center';
+            cvCtx.textBaseline = 'middle';
+            cvCtx.fillText(dimText, bounds.x + (bounds.width / 2), badgeY + (badgeH / 2));
+        }
+
         cvCtx.restore();
     });
 

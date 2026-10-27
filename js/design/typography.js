@@ -220,7 +220,12 @@ $(function () {
 
         const lh = obj.lineHeight || ((obj.fontSize || 16) * 1.25);
 
-        if (obj.resizing === 'fixed' || obj.resizing === 'auto-height') {
+        if (obj.resizing === 'fixed') {
+            // Pada mode Fixed (ukuran kotak manual), jangan ubah transform.width atau transform.height secara otomatis!
+            return;
+        }
+
+        if (obj.resizing === 'auto-height') {
             // Mode wrapping: lebar dipertahankan, sesuaikan tinggi
             const lines = [];
             const rawParagraphs = rawContent.split('\n');
@@ -248,14 +253,14 @@ $(function () {
 
         // Mode auto width: hitung lebar dan tinggi pas tanpa margin kosong
         const lines = rawContent.split('\n');
-        let maxW = 20;
+        let maxW = 0;
         lines.forEach(l => {
             const m = ctx.measureText(l);
             if (m.width > maxW) maxW = m.width;
         });
 
         obj.transform.width = Math.ceil(maxW);
-        obj.transform.height = Math.ceil(lines.length * lh);
+        obj.transform.height = Math.ceil(Math.max(1, lines.length) * lh);
     };
 
     // Item select handler: Font Family
@@ -478,6 +483,13 @@ $(function () {
         const texts = selectedTextObjects();
         texts.forEach(t => {
             t.verticalAlign = vAlign;
+            // Jika user memilih middle/bottom tetapi ukuran kotak masih pas-pasan (auto),
+            // ubah ke fixed dan beri tinggi yang proporsional agar perataan tampak jelas
+            if (vAlign !== 'top' && t.resizing === 'auto') {
+                t.resizing = 'fixed';
+                $resizeButtons.removeClass('on');
+                $resizeButtons.filter('[data-resize="fixed"]').addClass('on');
+            }
         });
         $(document).trigger('object:change');
         requestRender();

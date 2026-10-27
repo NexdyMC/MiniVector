@@ -132,3 +132,30 @@ $('#toolbar').on('click', '.tool', function () {
 });
 
 loadFromStorage();
+/* ---------- helper global text formatting (case & list) ---------- */
+window.getFormattedTextContent = (rawText, textCase = 'none', listType = 'none') => {
+    if (!rawText) return '';
+    let txt = rawText;
+
+    // 1. Text Case Transformation
+    if (textCase === 'uppercase') {
+        txt = txt.toUpperCase();
+    } else if (textCase === 'lowercase') {
+        txt = txt.toLowerCase();
+    } else if (textCase === 'titlecase' || textCase === 'capitalize') {
+        txt = txt.replace(/\b[a-z]/g, c => c.toUpperCase());
+    }
+
+    // 2. List Type prefixing
+    if (listType === 'bullet') {
+        txt = txt.split('\n').map(line => line.startsWith('• ') ? line : ('• ' + line)).join('\n');
+    } else if (listType === 'numbered') {
+        let num = 1;
+        txt = txt.split('\n').map(line => {
+            const cleaned = line.replace(/^\d+\.\s*/, '');
+            return `${num++}. ${cleaned}`;
+        }).join('\n');
+    }
+
+    return txt;
+};

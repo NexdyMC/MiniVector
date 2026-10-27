@@ -42,11 +42,14 @@
         ctx.font = `${fontStyle}${fontWeight} ${fontSize}px ${fontFamily}`;
         try { ctx.letterSpacing = `${letterSpacing || 0}px`; } catch (_) {}
 
-        const singleLineH = lineHeight || (fontSize * 1.25);
+        const formatted = (typeof window.getFormattedTextContent === 'function')
+            ? window.getFormattedTextContent(rawContent)
+            : rawContent;
+        const singleLineH = lineHeight || (fontSize * 1.2);
 
         if (fixedWidth && fixedWidth > 20) {
             const lines = [];
-            const rawParagraphs = rawContent.split('\n');
+            const rawParagraphs = formatted.split('\n');
             rawParagraphs.forEach(para => {
                 const words = para.split(' ');
                 let curLine = '';
@@ -63,22 +66,22 @@
                 else lines.push('');
             });
             return {
-                width: fixedWidth,
-                height: Math.ceil(lines.length * singleLineH) + 4
+                width: Math.ceil(fixedWidth),
+                height: Math.ceil(Math.max(1, lines.length) * singleLineH)
             };
         }
 
-        const lines = rawContent.split('\n');
-        let maxW = 20;
+        const lines = formatted.split('\n');
+        let maxW = 0;
         lines.forEach(l => {
             const m = ctx.measureText(l);
             if (m.width > maxW) maxW = m.width;
         });
 
-        const totalH = lines.length * singleLineH;
+        const totalH = Math.max(1, lines.length) * singleLineH;
         return {
-            width: Math.ceil(maxW) + 4,
-            height: Math.ceil(totalH) + 2
+            width: Math.ceil(maxW),
+            height: Math.ceil(totalH)
         };
     };
     window.measureTextDimensions = measureTextDimensions;
@@ -252,7 +255,10 @@
         });
     });
 
-    // Klik kanvas saat tool 'text' aktif -> buat objek text baru
+    // Drag to create Text Box ala Figma (Click = Auto width, Drag = Fixed width text box)
+    let isDraggingText = false;
+    let dragStartWorld = null;
+
     cvEl.addEventListener('pointerdown', e => {
         if (State.tool !== TOOL || e.button !== 0) return;
         if (activeTextObj) {
@@ -260,17 +266,89 @@
             return;
         }
 
-        const clickWorld = snapWorld(eventToWorld(e), e);
-        const targetFrame = findFrameAt(clickWorld);
+        dragStartWorld = snapWorld(eventToWorld(e), e);
+        isDraggingText = true;
+        State.marquee = { x: dragStartWorld.x, y: dragStartWorld.y, width: 0, height: 0 };
+        cvEl.setPointerCapture(e.pointerId);
+    });
 
-        const localX = targetFrame ? clickWorld.x - targetFrame.transform.x : clickWorld.x;
-        const localY = targetFrame ? clickWorld.y - targetFrame.transform.y : clickWorld.y;
+    cvEl.addEventListener('pointermove', e => {
+        if (!isDraggingText || !dragStartWorld) return;
+
+        const curWorld = snapWorld(eventToWorld(e), e);
+        const x = Math.min(dragStartWorld.x, curWorld.x);
+        const y = Math.min(dragStartWorld.y, curWorld.y);
+        const width = Math.abs(curWorld.x - dragStartWorld.x);
+        const height = Math.abs(curWorld.y - dragStartWorld.y);
+
+        State.marquee = { x, y, width, height };
+
+        // Tampilkan distance / smart guides ke objek lain jika menekan Alt atau drag
+        if (window.Padding && window.Padding.enabled && width > 10 && height > 10) {
+            const dragBox = { x, y, width, height };
+            let nearest = null;
+            let minDist = Infinity;
+            State.objects.forEach(o => {
+                if (!o.visible || o.locked || !o.transform) return;
+                const b = getWorldBounds(o.id);
+                if (!b) return;
+                const dx = Math.min(Math.abs(b.x - (x + width)), Math.abs((b.x + b.width) - x));
+                const dy = Math.min(Math.abs(b.y - (y + height)), Math.abs((b.y + b.height) - y));
+                const d = Math.hypot(dx, dy);
+                if (d < minDist && d < (250 / State.zoom)) {
+                    minDist = d;
+                    nearest = b;
+                }
+            });
+            if (nearest) {
+                window.Padding.measureBetween(dragBox, nearest);
+            } else {
+                window.Padding.clear();
+            }
+        }
+
+        requestRender();
+    });
+
+    const onPointerUpText = e => {
+        if (!isDraggingText || !dragStartWorld) return;
+        isDraggingText = false;
+        try { cvEl.releasePointerCapture(e.pointerId); } catch (_) {}
+
+        const marqueeBox = State.marquee;
+        State.marquee = null;
+        if (window.Padding) window.Padding.clear();
+
+        const endWorld = snapWorld(eventToWorld(e), e);
+        const dragDist = Math.hypot(endWorld.x - dragStartWorld.x, endWorld.y - dragStartWorld.y);
+        const isDragged = dragDist > 8 && marqueeBox && marqueeBox.width > 30;
+
+        const spawnX = isDragged ? marqueeBox.x : dragStartWorld.x;
+        const spawnY = isDragged ? marqueeBox.y : dragStartWorld.y;
+        const targetFrame = findFrameAt({ x: spawnX, y: spawnY });
+
+        const localX = targetFrame ? spawnX - targetFrame.transform.x : spawnX;
+        const localY = targetFrame ? spawnY - targetFrame.transform.y : spawnY;
 
         const defaultContent = 'Type something';
         const defaultSize = 16;
         const defaultFont = 'Inter, sans-serif';
         const defaultWeight = '400';
-        const dims = measureTextDimensions(defaultContent, defaultSize, defaultFont, defaultWeight);
+        const defaultLineHeight = defaultSize * 1.2;
+
+        const dims = measureTextDimensions(
+            defaultContent, 
+            defaultSize, 
+            defaultFont, 
+            defaultWeight, 
+            defaultLineHeight, 
+            0, 
+            false, 
+            isDragged ? marqueeBox.width : null
+        );
+
+        const finalW = isDragged ? Math.max(marqueeBox.width, dims.width) : dims.width;
+        const finalH = isDragged ? Math.max(marqueeBox.height, dims.height) : dims.height;
 
         const n = newObjectId();
         const newObj = {
@@ -284,12 +362,14 @@
             fontFamily: defaultFont,
             fontWeight: defaultWeight,
             textAlign: 'left',
-            lineHeight: defaultSize * 1.25,
+            verticalAlign: 'top',
+            resizing: isDragged ? 'fixed' : 'auto',
+            lineHeight: defaultLineHeight,
             transform: {
                 x: localX,
                 y: localY,
-                width: dims.width,
-                height: dims.height,
+                width: Math.round(finalW),
+                height: Math.round(finalH),
                 rotation: 0
             },
             style: {
@@ -319,12 +399,17 @@
         $(document).trigger('object:add', [newObj]);
         $(document).trigger('selection:change');
 
-        // Kembalikan ke tool 'select' seperti kebiasaan di Figma setelah menempatkan teks
         // Buka inline editor langsung
         setTimeout(() => {
             window.startTextEditing(newObj, targetFrame, true);
         }, 10);
-    });
+
+        dragStartWorld = null;
+        requestRender();
+    };
+
+    cvEl.addEventListener('pointerup', onPointerUpText);
+    cvEl.addEventListener('pointercancel', onPointerUpText);
 
     // Shortcut 'T' untuk mengaktifkan tool text
     $(document).on('keydown', e => {
