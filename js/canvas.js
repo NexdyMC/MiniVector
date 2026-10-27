@@ -1207,12 +1207,16 @@ const drawObject = o => {
             startY = t.y + Math.max(0, t.height - totalTextHeight);
         }
 
+        // Half-leading font offset agar posisi teks di kanvas presisi pixel-perfect
+        // sejajar persis dengan DOM textarea editor maupun Figma
+        const leadingOffsetY = Math.max(0, (lineHeight - size) / 2);
+
         let renderX = t.x;
         if (o.textAlign === 'center') renderX = t.x + (t.width / 2);
         else if (o.textAlign === 'right') renderX = t.x + t.width;
 
         lines.forEach((line, idx) => {
-            const lineY = startY + (idx * lineHeight);
+            const lineY = startY + (idx * lineHeight) + leadingOffsetY;
             cvCtx.fillText(line, renderX, lineY);
 
             // Dekorasi Underline & Strikethrough

@@ -141,7 +141,7 @@
             fontWeight: obj.fontWeight || '400',
             textAlign: obj.textAlign || 'left',
             letterSpacing: (obj.letterSpacing || 0) * State.zoom + 'px',
-            lineHeight: (obj.lineHeight ? (obj.lineHeight * State.zoom) : (screenFontSize * 1.25)) + 'px',
+            lineHeight: (obj.lineHeight ? (obj.lineHeight * State.zoom) : (screenFontSize * 1.2)) + 'px',
             textDecoration: (obj.underline && obj.strikethrough) ? 'underline line-through' : (obj.underline ? 'underline' : (obj.strikethrough ? 'line-through' : 'none')),
             color: color
         }).focus();
