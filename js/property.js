@@ -25,9 +25,9 @@ $('.mode-tab').on('click', function() {
   $('#view-code').prop('hidden', mode !== 'code');
 });
 
-/* ================= SCRUBBABLE NUMBER INPUTS (FIGMA STYLE) ================= */
+/* ================= SCRUBBABLE NUMBER INPUTS (FIGMA STYLE WITH INFINITE MOUSE WRAP) ================= */
 // Mengatur nilai input angka dengan klik-tahan pada label/ikon atau input, lalu geser horizontal.
-// Geser kanan (+), geser kiri (-). Tahan Shift untuk lompatan 10x, tahan Alt untuk presisi halus 0.1x.
+// Fitur Infinite Mouse Wrapping ala Figma: saat kursor digeser keluar sisi kiri layar, kursor muncul dari kanan!
 $(function() {
   let isScrubbing = false,
       startVal = 0,
@@ -37,9 +37,29 @@ $(function() {
       step = 1,
       min = -Infinity,
       max = Infinity,
-      isDecimal = false;
+      isDecimal = false,
+      totalDeltaX = 0,
+      virtualX = 0,
+      virtualY = 0;
 
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  // Buat DOM Custom Virtual Scrubbing Cursor jika belum ada
+  let $virtualCursor = $('#virtual-scrub-cursor');
+  if (!$virtualCursor.length) {
+    $virtualCursor = $(
+      '<div id="virtual-scrub-cursor">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="8 4 2 12 8 20" stroke="#000" stroke-width="3"/>' +
+          '<polyline points="16 4 22 12 16 20" stroke="#000" stroke-width="3"/>' +
+          '<line x1="2" y1="12" x2="22" y2="12" stroke="#000" stroke-width="3"/>' +
+          '<polyline points="8 4 2 12 8 20"/>' +
+          '<polyline points="16 4 22 12 16 20"/>' +
+          '<line x1="2" y1="12" x2="22" y2="12"/>' +
+        '</svg>' +
+      '</div>'
+    ).appendTo('body');
+  }
 
   $(document).on('pointerdown', '.fg-in > .lb, .fg-in > i, .fg-in input[type="number"], .fg-color .op, .matrix-cell-in, .matrix-cell-in > i, .matrix-cell-in input', function(e) {
     if (e.button !== 0) return; // Hanya klik kiri
@@ -63,6 +83,9 @@ $(function() {
     const currentVal = parseFloat($targetInput.val());
     startVal = isFinite(currentVal) ? currentVal : 0;
     startX = e.clientX;
+    virtualX = e.clientX;
+    virtualY = e.clientY;
+    totalDeltaX = 0;
     moved = false;
 
     // Batas min dan max
@@ -84,7 +107,6 @@ $(function() {
         try {
           if (e.pointerId && this.setPointerCapture) this.setPointerCapture(e.pointerId);
         } catch (err) {}
-        $('body').css('cursor', 'ew-resize');
       }
     }
   });
@@ -92,15 +114,43 @@ $(function() {
   $(document).on('pointermove', function(e) {
     if (!$targetInput) return;
 
-    const dx = e.clientX - startX;
-    if (!moved && Math.abs(dx) > 2) {
+    // Dapatkan pergerakan mouse aktual
+    const moveX = (e.originalEvent && typeof e.originalEvent.movementX === 'number' && e.originalEvent.movementX !== 0) 
+      ? e.originalEvent.movementX 
+      : (e.clientX - startX);
+
+    if (!moved && Math.abs(e.clientX - startX) > 2) {
       moved = true;
       isScrubbing = true;
-      $('body').css('cursor', 'ew-resize');
+      $('body').addClass('scrubbing-active');
+      $virtualCursor.show().css({ left: virtualX + 'px', top: virtualY + 'px' });
     }
 
     if (isScrubbing && moved) {
       e.preventDefault();
+
+      const screenW = window.innerWidth;
+      
+      // Update posisi virtual cursor dengan infinite wrap:
+      // Jika kursor digeser keluar kiri (virtualX <= 0), lompat ke kanan layar (screenW)
+      // Jika kursor digeser keluar kanan (virtualX >= screenW), lompat ke kiri layar (0)
+      virtualX += (typeof e.originalEvent.movementX === 'number' && Math.abs(e.originalEvent.movementX) < 100)
+        ? e.originalEvent.movementX
+        : (e.clientX - startX);
+      startX = e.clientX;
+
+      if (virtualX <= 0) {
+        virtualX = screenW - 2;
+      } else if (virtualX >= screenW) {
+        virtualX = 2;
+      }
+
+      $virtualCursor.css({ left: virtualX + 'px', top: virtualY + 'px' });
+
+      // Akumulasikan total jarak scrub
+      totalDeltaX += (typeof e.originalEvent.movementX === 'number' && Math.abs(e.originalEvent.movementX) < 100)
+        ? e.originalEvent.movementX
+        : moveX;
 
       // Multiplier modifier: Shift = 10x, Alt = 0.1x
       let multiplier = 1;
@@ -109,7 +159,7 @@ $(function() {
 
       // Hitung selisih nilai berdasarkan jarak geser piksel
       // Setiap ~3px geser mouse = 1 unit nilai
-      const deltaUnits = (dx / 3) * step * multiplier;
+      const deltaUnits = (totalDeltaX / 3) * step * multiplier;
       let nextVal = startVal + deltaUnits;
 
       if (isDecimal || e.altKey) {
@@ -130,13 +180,14 @@ $(function() {
   const endScrub = function(e) {
     if ($targetInput) {
       if (isScrubbing && moved) {
-        // Akhiri perubahan dan picu change final
         $targetInput.trigger('change');
       }
-      $('body').css('cursor', '');
+      $('body').removeClass('scrubbing-active');
+      $virtualCursor.hide();
     }
     isScrubbing = false;
     moved = false;
+    totalDeltaX = 0;
     $targetInput = null;
   };
 

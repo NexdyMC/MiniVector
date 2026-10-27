@@ -711,3 +711,31 @@
   }
 
 
+
+  /* ============================================================
+     VIRTUAL SCRUBBING CURSOR (INFINITE MOUSE WRAP ALA FIGMA)
+     ============================================================ */
+  #virtual-scrub-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 999999;
+    display: none;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7));
+  }
+  #virtual-scrub-cursor svg {
+    width: 100%;
+    height: 100%;
+  }
+  body.scrubbing-active {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    cursor: none !important;
+  }
+  body.scrubbing-active * {
+    cursor: none !important;
+  }
