@@ -33,8 +33,14 @@
     background: var(--c-input); border: 1px solid transparent; border-radius: 6px; }
   .fg-in:hover { border-color: var(--c-line-strong); }
   .fg-in:focus-within { border-color: var(--c-accent); }
-  .fg-in > i, .fg-in > .lb { flex: none; width: 1.2em; text-align: center; color: var(--c-mute); font-size: var(--fs-sm);
+  .fg-in > i, .fg-in > .lb, .fg-in > svg, .fg-in > span:not(.end), .zoom-val span { flex: none; text-align: center; color: var(--c-mute); font-size: var(--fs-sm);
     cursor: ew-resize; user-select: none; -webkit-user-select: none; }
+  .fg-label:has(+ .fg-in input[type="number"]), .fg-label:has(+ div .fg-in input[type="number"]) {
+    cursor: ew-resize; user-select: none; -webkit-user-select: none;
+  }
+  .fg-label:has(+ .fg-in input[type="number"]):hover, .fg-label:has(+ div .fg-in input[type="number"]):hover {
+    color: var(--c-ink);
+  }
   .fg-in input { flex: 1; min-width: 0; width: 100%; height: 100%; padding: 0; background: transparent; border: 0; outline: 0;
     font-size: var(--fs); font-weight: 600; appearance: none; -moz-appearance: textfield; }
   .fg-in input::-webkit-outer-spin-button, .fg-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

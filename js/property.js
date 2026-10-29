@@ -63,24 +63,55 @@ $(function() {
 
   let pointerLockedElement = null;
 
-  $(document).on('pointerdown', '.fg-in > .lb, .fg-in > i, .fg-in input[type="number"], .fg-color .op, .matrix-cell-in, .matrix-cell-in > i, .matrix-cell-in input', function(e) {
+  // Selector komprehensif mencakup semua input number, label, ikon, maupun span prefix/suffix
+  const SCRUB_SELECTOR = [
+    'input[type="number"]',
+    '#prop-fontsize', '#prop-lineheight', '#prop-letterspacing', // Input text yang berisi angka
+    '.fg-in > .lb', '.fg-in > i', '.fg-in > svg', '.fg-in > span:not(.end)',
+    '.fg-label',
+    '.fg-color .op',
+    '.matrix-cell-in', '.matrix-cell-in > i', '.matrix-cell-in input',
+    '.zoom-val', '.zoom-val span', '.zoom-val input'
+  ].join(', ');
+
+  $(document).on('pointerdown', SCRUB_SELECTOR, function(e) {
     if (e.button !== 0) return; // Hanya klik kiri
     
-    // Temukan input terkait
     const $this = $(this);
+    let $input = null;
+
+    // 1. Jika elemen yang diklik adalah input itu sendiri
     if ($this.is('input')) {
-      $targetInput = $this;
-    } else if ($this.closest('.matrix-cell-in').length) {
-      $targetInput = $this.closest('.matrix-cell-in').find('input');
-    } else {
-      $targetInput = $this.closest('.fg-in').find('input[type="number"]');
-      if (!$targetInput.length) $targetInput = $this.closest('.fg-in').find('input');
+      $input = $this;
+    } 
+    // 2. Jika di dalam .matrix-cell-in
+    else if ($this.closest('.matrix-cell-in').length) {
+      $input = $this.closest('.matrix-cell-in').find('input');
+    }
+    // 3. Jika di dalam .zoom-val
+    else if ($this.closest('.zoom-val').length) {
+      $input = $this.closest('.zoom-val').find('input');
+    }
+    // 4. Jika di dalam .fg-in
+    else if ($this.closest('.fg-in').length) {
+      $input = $this.closest('.fg-in').find('input[type="number"]');
+      if (!$input.length) $input = $this.closest('.fg-in').find('input');
+    }
+    // 5. Jika mengklik .fg-label (mencari input number di bawahnya)
+    else if ($this.hasClass('fg-label')) {
+      const $parentDiv = $this.parent();
+      $input = $parentDiv.find('.fg-in input[type="number"], input[type="number"]');
+      if (!$input.length) {
+        $input = $this.next('.fg-in').find('input');
+      }
     }
 
-    if (!$targetInput.length || $targetInput.prop('disabled') || $targetInput.prop('readonly')) {
+    if (!$input || !$input.length || $input.prop('disabled') || $input.prop('readonly')) {
       $targetInput = null;
       return;
     }
+
+    $targetInput = $input;
 
     const currentVal = parseFloat($targetInput.val());
     startVal = isFinite(currentVal) ? currentVal : 0;
@@ -96,12 +127,12 @@ $(function() {
     min = rawMin !== undefined && rawMin !== '' ? parseFloat(rawMin) : -Infinity;
     max = rawMax !== undefined && rawMax !== '' ? parseFloat(rawMax) : Infinity;
 
-    // Deteksi apakah input memakai desimal
+    // Deteksi apakah input memakai desimal atau step custom
     const rawStep = $targetInput.attr('step');
     isDecimal = rawStep === 'any' || (rawStep && parseFloat(rawStep) < 1);
-    step = 1;
+    step = (rawStep && rawStep !== 'any' && parseFloat(rawStep) > 0) ? parseFloat(rawStep) : 1;
 
-    // Aktifkan scrubbing pada label/ikon atau jika klik pada elemen matrix
+    // Aktifkan scrubbing jika klik pada label/ikon atau drag mouse
     if (!$this.is('input') || $this.closest('.matrix-cell-in').length) {
       if (!$this.is('input')) {
         e.preventDefault();
