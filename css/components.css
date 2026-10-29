@@ -739,3 +739,94 @@
   body.scrubbing-active * {
     cursor: none !important;
   }
+
+  /* ============================================================
+     FIGMA / LINEAR STYLE ROW CARD TILE & CUSTOM CHECKBOX
+     ============================================================ */
+  .ui-row-tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: all 0.15s ease;
+  }
+  .ui-row-tile:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  .ui-row-tile.is-active,
+  .ui-row-tile:has(input[type="checkbox"]:checked) {
+    background: rgba(13, 153, 255, 0.08);
+    border-color: rgba(13, 153, 255, 0.35);
+  }
+  .ui-row-tile-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #d4d4d8;
+    transition: color 0.15s ease;
+  }
+  .ui-row-tile:hover .ui-row-tile-label {
+    color: #ffffff;
+  }
+  .ui-row-tile.is-active .ui-row-tile-label,
+  .ui-row-tile:has(input[type="checkbox"]:checked) .ui-row-tile-label {
+    color: #ffffff;
+  }
+
+  /* Custom Checkbox Box */
+  .ui-checkbox-box {
+    position: relative;
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+    background: #18181b;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ui-row-tile:hover .ui-checkbox-box {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  .ui-row-tile input[type="checkbox"]:checked ~ .ui-checkbox-box,
+  .ui-checkbox-box.checked {
+    background: #0D99FF;
+    border-color: #0D99FF;
+    box-shadow: 0 0 8px rgba(13, 153, 255, 0.4);
+  }
+  .ui-checkbox-box svg {
+    width: 10px;
+    height: 10px;
+    stroke: #ffffff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ui-row-tile input[type="checkbox"]:checked ~ .ui-checkbox-box svg,
+  .ui-checkbox-box.checked svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .ui-row-tile input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+  }

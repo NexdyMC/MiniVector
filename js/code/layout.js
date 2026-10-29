@@ -1883,6 +1883,43 @@ $(function () {
     syncCodeView();
   });
 
+  // --- Output Settings Handlers (Custom Class, Component Name, Preferences) ---
+  $(document).on('input change', '#code-custom-class', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.code = obj.code || {};
+    obj.code.customClass = $(this).val().trim();
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  $(document).on('input change', '#code-component-name', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.code = obj.code || {};
+    obj.code.componentName = $(this).val().trim();
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  $(document).on('change', '#code-pref-inline-style', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.code = obj.code || {};
+    obj.code.inlineStyle = $(this).is(':checked');
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
+  $(document).on('change', '#code-pref-comments', function () {
+    const obj = getSelectedObject();
+    if (!obj) return;
+    obj.code = obj.code || {};
+    obj.code.includeComments = $(this).is(':checked');
+    $(document).trigger('object:change');
+    syncCodeView();
+  });
+
   // --- I. Copy Code Buttons ---
   $(document).on('click', '[data-copy-target]', function () {
     const targetId = $(this).data('copy-target');
