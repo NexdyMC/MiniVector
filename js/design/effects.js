@@ -18,17 +18,17 @@
 
   if (!$list.length) return;
 
-  // Metadata 8 tipe efek
+  // Metadata 8 tipe efek (DROP_SHADOW di urutan pertama sesuai default Figma)
   const EFFECT_META = {
+    DROP_SHADOW: {
+      label: 'Drop shadow',
+      icon: 'fa-regular fa-clone',
+      defaultProps: () => ({ x: 0, y: 4, blur: 4, spread: 0, color: '#000000', opacity: 0.25 })
+    },
     INNER_SHADOW: {
       label: 'Inner shadow',
       icon: 'fa-regular fa-square',
       defaultProps: () => ({ x: 0, y: 4, blur: 4, spread: 0, color: '#000000', opacity: 0.25 })
-    },
-    DROP_SHADOW: {
-      label: 'Drop shadow',
-      icon: 'fa-regular fa-clone',
-      defaultProps: () => ({ x: 0, y: 4, blur: 8, spread: 0, color: '#000000', opacity: 0.25 })
     },
     LAYER_BLUR: {
       label: 'Layer blur',
@@ -268,6 +268,7 @@
       const hexVal = Color.toHex(c).slice(1);
       const opVal = Math.round((fx.opacity == null ? 0.25 : fx.opacity) * 100);
 
+      const isTextObj = targets().some(t => t.obj && t.obj.type === 'text');
       bodyHtml = `
       <div class="fx-param-grid">
         <label class="fg-in" title="Offset X">
@@ -282,9 +283,9 @@
           <span style="font-size:11px; color:var(--c-mute); margin-right:4px;">Blur</span>
           <input type="number" id="fx-p-blur" value="${fx.blur || 4}" min="0" step="1">
         </label>
-        <label class="fg-in" title="Spread Radius">
+        <label class="fg-in${isTextObj ? ' is-disabled' : ''}" title="${isTextObj ? 'Spread tidak berlaku untuk elemen Text (standar Figma/CSS)' : 'Spread Radius'}">
           <span style="font-size:11px; color:var(--c-mute); margin-right:4px;">Spread</span>
-          <input type="number" id="fx-p-spread" value="${fx.spread || 0}" step="1">
+          <input type="number" id="fx-p-spread" value="${isTextObj ? 0 : (fx.spread || 0)}" step="1" ${isTextObj ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
         </label>
       </div>
 

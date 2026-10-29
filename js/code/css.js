@@ -202,30 +202,49 @@
       lines.push(`  border-radius: ${parseFloat(cr)}px;`);
     }
 
-    // 7. Effects (Box Shadow & Blurs)
+    // 7. Effects (Box/Text Shadow & Blurs)
     if (Array.isArray(s.effects) && s.effects.length > 0) {
       const visibleEffects = s.effects.filter(e => e && e.visible !== false);
-      const shadows = visibleEffects
-        .filter(e => e.type === 'drop-shadow' || e.type === 'inner-shadow')
-        .map(e => {
-          const inset = e.type === 'inner-shadow' ? 'inset ' : '';
-          const x = typeof e.x === 'number' ? e.x : 0;
-          const y = typeof e.y === 'number' ? e.y : 4;
-          const blur = typeof e.blur === 'number' ? e.blur : 8;
-          const spread = typeof e.spread === 'number' && e.spread !== 0 ? ` ${e.spread}px` : '';
-          const op = typeof e.opacity === 'number' ? e.opacity : 0.25;
-          const color = hexToRgbaStr(e.color || '#000000', op);
-          return `${inset}${x}px ${y}px ${blur}px${spread} ${color}`;
-        });
-      if (shadows.length > 0) {
-        lines.push(`  box-shadow: ${shadows.join(', ')};`);
+      const norm = t => String(t || '').toLowerCase().replace(/_/g, '-');
+      
+      if (obj.type === 'text') {
+        // Teks menggunakan text-shadow untuk drop-shadow
+        const textShadows = visibleEffects
+          .filter(e => norm(e.type) === 'drop-shadow')
+          .map(e => {
+            const x = typeof e.x === 'number' ? e.x : 0;
+            const y = typeof e.y === 'number' ? e.y : 4;
+            const blur = typeof e.blur === 'number' ? e.blur : 8;
+            const op = typeof e.opacity === 'number' ? e.opacity : 0.25;
+            const color = hexToRgbaStr(e.color || '#000000', op);
+            return `${x}px ${y}px ${blur}px ${color}`;
+          });
+        if (textShadows.length > 0) {
+          lines.push(`  text-shadow: ${textShadows.join(', ')};`);
+        }
+      } else {
+        const shadows = visibleEffects
+          .filter(e => norm(e.type) === 'drop-shadow' || norm(e.type) === 'inner-shadow')
+          .map(e => {
+            const inset = norm(e.type) === 'inner-shadow' ? 'inset ' : '';
+            const x = typeof e.x === 'number' ? e.x : 0;
+            const y = typeof e.y === 'number' ? e.y : 4;
+            const blur = typeof e.blur === 'number' ? e.blur : 8;
+            const spread = typeof e.spread === 'number' && e.spread !== 0 ? ` ${e.spread}px` : '';
+            const op = typeof e.opacity === 'number' ? e.opacity : 0.25;
+            const color = hexToRgbaStr(e.color || '#000000', op);
+            return `${inset}${x}px ${y}px ${blur}px${spread} ${color}`;
+          });
+        if (shadows.length > 0) {
+          lines.push(`  box-shadow: ${shadows.join(', ')};`);
+        }
       }
 
-      const layerBlur = visibleEffects.find(e => e.type === 'layer-blur');
+      const layerBlur = visibleEffects.find(e => norm(e.type) === 'layer-blur');
       if (layerBlur && layerBlur.blur > 0) {
         lines.push(`  filter: blur(${layerBlur.blur}px);`);
       }
-      const bgBlur = visibleEffects.find(e => e.type === 'background-blur');
+      const bgBlur = visibleEffects.find(e => norm(e.type) === 'background-blur');
       if (bgBlur && bgBlur.blur > 0) {
         lines.push(`  backdrop-filter: blur(${bgBlur.blur}px);`);
       }

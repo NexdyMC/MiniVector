@@ -14,10 +14,28 @@
   };
 
   // Helper Box Shadow Tailwind Mapper
-  const getTailwindShadowClass = (effects) => {
+  const getTailwindShadowClass = (effects, isText = false) => {
     if (!Array.isArray(effects) || effects.length === 0) return null;
-    const shadows = effects.filter(e => e && e.visible !== false && (e.type === 'drop-shadow' || e.type === 'inner-shadow'));
+    const norm = t => String(t || '').toLowerCase().replace(/_/g, '-');
+    const shadows = effects.filter(e => e && e.visible !== false && (norm(e.type) === 'drop-shadow' || (!isText && norm(e.type) === 'inner-shadow')));
     if (shadows.length === 0) return null;
+
+    if (isText) {
+      // Untuk teks, gunakan utilitas drop-shadow-[...] Tailwind
+      const e = shadows[0];
+      const x = (typeof e.x === 'number' ? e.x : 0) + 'px';
+      const y = (typeof e.y === 'number' ? e.y : 4) + 'px';
+      const blur = (typeof e.blur === 'number' ? e.blur : 8) + 'px';
+      const op = typeof e.opacity === 'number' ? e.opacity : 0.25;
+      let cleanHex = (e.color || '#000000').replace('#', '');
+      if (cleanHex.length === 3) cleanHex = cleanHex.split('').map(c => c + c).join('');
+      const num = parseInt(cleanHex, 16);
+      const r = isNaN(num) ? 0 : (num >> 16) & 255;
+      const g = isNaN(num) ? 0 : (num >> 8) & 255;
+      const b = isNaN(num) ? 0 : num & 255;
+      const color = `rgba(${r},${g},${b},${op})`;
+      return `drop-shadow-[${x}_${y}_${blur}_${color}]`;
+    }
 
     // Jika tepat 1 shadow, periksa apakah cocok dengan preset Tailwind standar
     if (shadows.length === 1) {
@@ -383,14 +401,15 @@
 
     // 7. Shadow & Effects
     if (Array.isArray(s.effects) && s.effects.length > 0) {
-      const shadowClass = getTailwindShadowClass(s.effects);
+      const norm = t => String(t || '').toLowerCase().replace(/_/g, '-');
+      const shadowClass = getTailwindShadowClass(s.effects, obj.type === 'text');
       if (shadowClass) classes.push(shadowClass);
 
-      const layerBlur = s.effects.find(e => e && e.visible !== false && e.type === 'layer-blur');
+      const layerBlur = s.effects.find(e => e && e.visible !== false && norm(e.type) === 'layer-blur');
       if (layerBlur && layerBlur.blur > 0) {
         classes.push(`blur-[${layerBlur.blur}px]`);
       }
-      const bgBlur = s.effects.find(e => e && e.visible !== false && e.type === 'background-blur');
+      const bgBlur = s.effects.find(e => e && e.visible !== false && norm(e.type) === 'background-blur');
       if (bgBlur && bgBlur.blur > 0) {
         classes.push(`backdrop-blur-[${bgBlur.blur}px]`);
       }

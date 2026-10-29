@@ -301,21 +301,22 @@ const getTexturePattern = (ctx, patternType) => {
     return pat;
 };
 
-// Pasang efek sebelum menggambar shape (Drop shadow, Layer blur)
+// Pasang efek sebelum menggambar shape / text (Drop shadow, Layer blur)
 const applyEffectsBefore = (ctx, style) => {
     const effects = Array.isArray(style && style.effects) ? style.effects : [];
     if (!effects.length) return;
 
     effects.forEach(fx => {
         if (fx.visible === false) return;
-        if (fx.type === 'DROP_SHADOW') {
+        const typeNorm = String(fx.type || '').toUpperCase().replace(/-/g, '_');
+        if (typeNorm === 'DROP_SHADOW') {
             const c = Color.parseHex(fx.color) || Color.parseCss(fx.color) || { r: 0, g: 0, b: 0, a: 1 };
-            const op = (fx.opacity == null ? 0.25 : fx.opacity) * c.a;
+            const op = (fx.opacity == null ? 0.25 : fx.opacity) * (c.a == null ? 1 : c.a);
             ctx.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
             ctx.shadowBlur = Math.max(0, fx.blur || 0);
             ctx.shadowOffsetX = fx.x || 0;
             ctx.shadowOffsetY = fx.y || 0;
-        } else if (fx.type === 'LAYER_BLUR') {
+        } else if (typeNorm === 'LAYER_BLUR') {
             const b = Math.max(0, fx.blur || 0);
             if (b > 0) {
                 ctx.filter = `blur(${b}px)`;
@@ -325,7 +326,7 @@ const applyEffectsBefore = (ctx, style) => {
 };
 
 // Pasang efek sesudah shape digambar (Inner shadow, Noise, Texture, Glass, Shader)
-const applyEffectsAfter = (ctx, style, box, tracePathFn) => {
+const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) => {
     const effects = Array.isArray(style && style.effects) ? style.effects : [];
     if (!effects.length) return;
 
@@ -333,34 +334,125 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn) => {
         if (fx.visible === false) return;
 
         if (fx.type === 'INNER_SHADOW') {
-            ctx.save();
-            tracePathFn();
-            ctx.clip();
-
             const c = Color.parseHex(fx.color) || Color.parseCss(fx.color) || { r: 0, g: 0, b: 0, a: 1 };
-            const op = (fx.opacity == null ? 0.25 : fx.opacity) * c.a;
-            const ox = fx.x || 0;
-            const oy = fx.y || 0;
+            const op = (fx.opacity == null ? 0.25 : fx.opacity) * (c.a == null ? 1 : c.a);
+            const isox = fx.x || 0;
+            const isoy = fx.y || 0;
             const blur = Math.max(0, fx.blur || 0);
             const spread = fx.spread || 0;
+            const shadowColorStr = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
 
-            // Offset besar di luar batas untuk melemparkan bayangan ke dalam
-            const offsetDist = 10000;
-            ctx.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
-            ctx.shadowBlur = blur;
-            ctx.shadowOffsetX = ox;
-            ctx.shadowOffsetY = oy - offsetDist;
+            // Padding cukup besar agar bayangan + blur + offset + spread cukup ruang
+            const pad = Math.ceil(Math.max(50, blur * 3 + Math.abs(spread) * 2 + Math.max(Math.abs(isox), Math.abs(isoy)) + 40));
+            const ow = Math.ceil(Math.max(1, box.width + pad * 2));
+            const oh = Math.ceil(Math.max(1, box.height + pad * 2));
 
-            ctx.beginPath();
-            // Outer bounding box besar
-            ctx.rect(box.x - 200, box.y - 200, box.width + 400, box.height + 400);
-            tracePathFn();
-            ctx.closePath();
+            // Offset dari koordinat box ke koordinat offscreen canvas
+            const dx = pad - box.x;
+            const dy = pad - box.y;
 
-            ctx.fillStyle = '#000000';
-            ctx.translate(0, offsetDist);
-            ctx.fill('evenodd');
-            ctx.restore();
+            // === KANVAS 1: Buat "cetakan berlubang" (solid rect MINUS bentuk objek) ===
+            // Trik: fillRect penuh, lalu destination-out untuk memotong lubang bentuk objek.
+            // Ini menghindari bug beginPath() yang menghapus sub-path pada pendekatan evenodd.
+            const oc1 = document.createElement('canvas');
+            oc1.width = ow;
+            oc1.height = oh;
+            const ox1 = oc1.getContext('2d');
+
+            // === KANVAS 2: Render bayangan dari cetakan, lalu clip ke siluet objek ===
+            const oc2 = document.createElement('canvas');
+            oc2.width = ow;
+            oc2.height = oh;
+            const ox2 = oc2.getContext('2d');
+
+            if (ox1 && ox2) {
+                // --- Langkah 1: Isi oc1 penuh dengan warna solid ---
+                ox1.fillStyle = '#000000';
+                ox1.fillRect(0, 0, ow, oh);
+
+                // --- Langkah 2: Potong lubang berbentuk objek menggunakan destination-out ---
+                // Jika ada spread, perkecil lubang (spread positif = shadow lebih tebal = lubang lebih kecil)
+                ox1.globalCompositeOperation = 'destination-out';
+                ox1.save();
+                ox1.translate(dx, dy);
+                if (!isStrokeOnly && (box.width || 0) > 0 && (box.height || 0) > 0) {
+                    if (spread > 0) {
+                        // Perkecil lubang: translate ke center, scale down, lalu trace
+                        const cx = box.x + box.width / 2;
+                        const cy = box.y + box.height / 2;
+                        const scaleX = Math.max(0.01, (box.width - spread * 2) / box.width);
+                        const scaleY = Math.max(0.01, (box.height - spread * 2) / box.height);
+                        ox1.translate(cx, cy);
+                        ox1.scale(scaleX, scaleY);
+                        ox1.translate(-cx, -cy);
+                    } else if (spread < 0) {
+                        // Perbesar lubang: shadow lebih tipis
+                        const cx = box.x + box.width / 2;
+                        const cy = box.y + box.height / 2;
+                        const scaleX = Math.min(10, (box.width - spread * 2) / box.width);
+                        const scaleY = Math.min(10, (box.height - spread * 2) / box.height);
+                        ox1.translate(cx, cy);
+                        ox1.scale(scaleX, scaleY);
+                        ox1.translate(-cx, -cy);
+                    }
+                }
+                tracePathFn(ox1);
+                if (isStrokeOnly) {
+                    const sw = (style.strokeWidth !== undefined ? style.strokeWidth : 1);
+                    ox1.strokeStyle = '#000000';
+                    ox1.lineWidth = sw;
+                    ox1.lineCap = style.strokeCap || 'round';
+                    ox1.lineJoin = style.strokeJoin || 'round';
+                    ox1.stroke();
+                } else {
+                    ox1.fillStyle = '#000000';
+                    ox1.fill();
+                }
+                ox1.restore();
+
+                // --- Langkah 3: Gambar cetakan ke oc2 DENGAN bayangan aktif ---
+                // Shadow dari tepi lubang akan "merayap" ke dalam area yang terpotong.
+                ox2.shadowColor = shadowColorStr;
+                ox2.shadowBlur = blur;
+                ox2.shadowOffsetX = isox;
+                ox2.shadowOffsetY = isoy;
+                ox2.drawImage(oc1, 0, 0);
+
+                // Matikan shadow untuk operasi selanjutnya
+                ox2.shadowColor = 'transparent';
+                ox2.shadowBlur = 0;
+                ox2.shadowOffsetX = 0;
+                ox2.shadowOffsetY = 0;
+
+                // --- Langkah 4: Clip ke siluet bentuk asli menggunakan destination-in ---
+                // Ini menghilangkan kotak luar hitam dari oc1, menyisakan HANYA bayangan tepi
+                // yang berada DI DALAM bentuk objek.
+                ox2.globalCompositeOperation = 'destination-in';
+                ox2.save();
+                ox2.translate(dx, dy);
+                tracePathFn(ox2);
+                if (isStrokeOnly) {
+                    const sw = (style.strokeWidth !== undefined ? style.strokeWidth : 1);
+                    ox2.strokeStyle = '#000000';
+                    ox2.lineWidth = sw;
+                    ox2.lineCap = style.strokeCap || 'round';
+                    ox2.lineJoin = style.strokeJoin || 'round';
+                    ox2.stroke();
+                } else {
+                    ox2.fillStyle = '#000000';
+                    ox2.fill();
+                }
+                ox2.restore();
+
+                // --- Langkah 5: Tempelkan hasil bayangan tepi ke canvas utama ---
+                ox2.globalCompositeOperation = 'source-over';
+                ctx.save();
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.filter = 'none';
+                ctx.drawImage(oc2, box.x - pad, box.y - pad);
+                ctx.restore();
+            }
         } else if (fx.type === 'NOISE') {
             ctx.save();
             tracePathFn();
@@ -563,6 +655,9 @@ const drawObject = o => {
             }
 
             const c = o.crop;
+            // Terapkan efek (Drop Shadow & Layer Blur) sebelum menggambar image
+            applyEffectsBefore(cvCtx, s);
+
             if (c && typeof c.x === 'number' && typeof c.width === 'number' && c.width > 0 && c.height > 0) {
                 // Gambar bagian crop dari gambar asli
                 cvCtx.drawImage(imgEl, c.x, c.y, c.width, c.height, t.x, t.y, t.width, t.height);
@@ -573,12 +668,12 @@ const drawObject = o => {
             // Stroke jika ada
             const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
             const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
-            const traceImgBorder = () => {
-                cvCtx.beginPath();
-                if (radius > 0 && typeof cvCtx.roundRect === 'function') {
-                    cvCtx.roundRect(t.x, t.y, t.width, t.height, radius);
+            const traceImgBorder = (targetCtx = cvCtx) => {
+                targetCtx.beginPath();
+                if (radius > 0 && typeof targetCtx.roundRect === 'function') {
+                    targetCtx.roundRect(t.x, t.y, t.width, t.height, radius);
                 } else {
-                    cvCtx.rect(t.x, t.y, t.width, t.height);
+                    targetCtx.rect(t.x, t.y, t.width, t.height);
                 }
             };
 
@@ -625,18 +720,22 @@ const drawObject = o => {
         const frameCr = (o.geometry && o.geometry.cornerRadius) || (s && s.cornerRadius) || 0;
         const normFrameRadii = Array.isArray(frameCr) ? [frameCr[0] || 0, frameCr[1] || 0, frameCr[2] || 0, frameCr[3] || 0] : [parseFloat(frameCr) || 0, parseFloat(frameCr) || 0, parseFloat(frameCr) || 0, parseFloat(frameCr) || 0];
         const maxFrameR = Math.max(...normFrameRadii);
-        const traceFrame = () => {
-            cvCtx.beginPath();
-            if (maxFrameR > 0 && typeof cvCtx.roundRect === "function") {
-                cvCtx.roundRect(t.x, t.y, t.width, t.height, normFrameRadii);
+        const traceFrame = (targetCtx = cvCtx) => {
+            targetCtx.beginPath();
+            if (maxFrameR > 0 && typeof targetCtx.roundRect === "function") {
+                targetCtx.roundRect(t.x, t.y, t.width, t.height, normFrameRadii);
             } else {
-                cvCtx.rect(t.x, t.y, t.width, t.height);
+                targetCtx.rect(t.x, t.y, t.width, t.height);
             }
         };
         cvCtx.save();
+        applyEffectsBefore(cvCtx, s);
         traceFrame();
         Paint.fillPath(cvCtx, s, t);
         cvCtx.restore();
+
+        // Pasang efek inner shadow, noise, texture, glass, shader pada frame
+        applyEffectsAfter(cvCtx, s, t, traceFrame);
         const hasCustomFrameSides = s.strokeSides === 'custom' && s.strokeWidths;
         const sw = (s.strokeWidth !== undefined ? s.strokeWidth : 1);
         const hasStroke = (s.strokes && s.strokes.length > 0) || (s.stroke && s.stroke !== 'none');
@@ -711,12 +810,12 @@ const drawObject = o => {
         const cr = (o.geometry && o.geometry.cornerRadius) || (s && s.cornerRadius) || 0;
         const normRadii = Array.isArray(cr) ? [cr[0] || 0, cr[1] || 0, cr[2] || 0, cr[3] || 0] : [parseFloat(cr) || 0, parseFloat(cr) || 0, parseFloat(cr) || 0, parseFloat(cr) || 0];
         const maxR = Math.max(...normRadii);
-        const traceRect = () => {
-            cvCtx.beginPath();
-            if (maxR > 0 && typeof cvCtx.roundRect === 'function') {
-                cvCtx.roundRect(t.x, t.y, t.width, t.height, normRadii);
+        const traceRect = (targetCtx = cvCtx) => {
+            targetCtx.beginPath();
+            if (maxR > 0 && typeof targetCtx.roundRect === 'function') {
+                targetCtx.roundRect(t.x, t.y, t.width, t.height, normRadii);
             } else {
-                cvCtx.rect(t.x, t.y, t.width, t.height);
+                targetCtx.rect(t.x, t.y, t.width, t.height);
             }
         };
 
@@ -768,9 +867,9 @@ const drawObject = o => {
         const cx = t.x + rx;
         const cy = t.y + ry;
 
-        const traceEllipse = () => {
-            cvCtx.beginPath();
-            cvCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        const traceEllipse = (targetCtx = cvCtx) => {
+            targetCtx.beginPath();
+            targetCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
         };
 
         cvCtx.save();
@@ -815,6 +914,7 @@ const drawObject = o => {
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length >= 2) {
             cvCtx.save();
+            applyEffectsBefore(cvCtx, s);
             const sw = applyStrokeStyle(cvCtx, s, t);
             const x1 = t.x + nodes[0].x, y1 = t.y + nodes[0].y;
             const x2 = t.x + nodes[1].x, y2 = t.y + nodes[1].y;
@@ -853,6 +953,9 @@ const drawObject = o => {
 
             const isRealP2D = geom._path2d && (typeof Path2D !== 'undefined') && (geom._path2d instanceof Path2D);
             if (isRealP2D) {
+                // Terapkan efek (Drop Shadow & Layer Blur) sebelum fill & stroke path
+                applyEffectsBefore(cvCtx, s);
+
                 // Fills (Solid / Gradient dari Paint.js)
                 if (s.fills && s.fills.length > 0) {
                     s.fills.forEach(p => {
@@ -890,36 +993,44 @@ const drawObject = o => {
         }
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length >= 2) {
+            const hasFill = (s.fills && s.fills.some(f => f && f.visible !== false)) || (s.fill && s.fill !== 'none');
+            const isStrokeOnly = !hasFill && !o.closed;
+
+            const tracePen = (targetCtx = cvCtx) => {
+                targetCtx.beginPath();
+                const startNode = nodes[0];
+                targetCtx.moveTo(t.x + startNode.x, t.y + startNode.y);
+
+                for (let i = 1; i < nodes.length; i++) {
+                    const prev = nodes[i - 1];
+                    const curr = nodes[i];
+                    if (prev.handleOut || curr.handleIn) {
+                        const cp1x = t.x + (prev.handleOut ? prev.handleOut.x : prev.x);
+                        const cp1y = t.y + (prev.handleOut ? prev.handleOut.y : prev.y);
+                        const cp2x = t.x + (curr.handleIn ? curr.handleIn.x : curr.x);
+                        const cp2y = t.y + (curr.handleIn ? curr.handleIn.y : curr.y);
+                        targetCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, t.x + curr.x, t.y + curr.y);
+                    } else {
+                        targetCtx.lineTo(t.x + curr.x, t.y + curr.y);
+                    }
+                }
+
+                if (o.closed && nodes.length > 2) {
+                    const last = nodes[nodes.length - 1];
+                    if (last.handleOut || startNode.handleIn) {
+                        const cp1x = t.x + (last.handleOut ? last.handleOut.x : last.x);
+                        const cp1y = t.y + (last.handleOut ? last.handleOut.y : last.y);
+                        const cp2x = t.x + (startNode.handleIn ? startNode.handleIn.x : startNode.x);
+                        const cp2y = t.y + (startNode.handleIn ? startNode.handleIn.y : startNode.y);
+                        targetCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, t.x + startNode.x, t.y + startNode.y);
+                    }
+                    targetCtx.closePath();
+                }
+            };
+
             cvCtx.save();
-            cvCtx.beginPath();
-            const startNode = nodes[0];
-            cvCtx.moveTo(t.x + startNode.x, t.y + startNode.y);
-
-            for (let i = 1; i < nodes.length; i++) {
-                const prev = nodes[i - 1];
-                const curr = nodes[i];
-                if (prev.handleOut || curr.handleIn) {
-                    const cp1x = t.x + (prev.handleOut ? prev.handleOut.x : prev.x);
-                    const cp1y = t.y + (prev.handleOut ? prev.handleOut.y : prev.y);
-                    const cp2x = t.x + (curr.handleIn ? curr.handleIn.x : curr.x);
-                    const cp2y = t.y + (curr.handleIn ? curr.handleIn.y : curr.y);
-                    cvCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, t.x + curr.x, t.y + curr.y);
-                } else {
-                    cvCtx.lineTo(t.x + curr.x, t.y + curr.y);
-                }
-            }
-
-            if (o.closed && nodes.length > 2) {
-                const last = nodes[nodes.length - 1];
-                if (last.handleOut || startNode.handleIn) {
-                    const cp1x = t.x + (last.handleOut ? last.handleOut.x : last.x);
-                    const cp1y = t.y + (last.handleOut ? last.handleOut.y : last.y);
-                    const cp2x = t.x + (startNode.handleIn ? startNode.handleIn.x : startNode.x);
-                    const cp2y = t.y + (startNode.handleIn ? startNode.handleIn.y : startNode.y);
-                    cvCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, t.x + startNode.x, t.y + startNode.y);
-                }
-                cvCtx.closePath();
-            }
+            applyEffectsBefore(cvCtx, s);
+            tracePen(cvCtx);
 
             // Fill (bila ada)
             if (s.fills && s.fills.length > 0) {
@@ -944,6 +1055,9 @@ const drawObject = o => {
                 }
             }
             cvCtx.restore();
+
+            // Pasang efek inner shadow, noise, texture, dll pada vector/path
+            applyEffectsAfter(cvCtx, s, t, tracePen, isStrokeOnly);
         }
     } else if (o.type === 'polygon' || o.type === 'star') {
         const w = t.width, h = t.height;
@@ -981,9 +1095,9 @@ const drawObject = o => {
                 }
             }
 
-            const tracePoly = () => {
-                cvCtx.beginPath();
-                if (radius > 0 && typeof cvCtx.roundRect === 'function' && pts.length >= 3) {
+            const tracePoly = (targetCtx = cvCtx) => {
+                targetCtx.beginPath();
+                if (radius > 0 && typeof targetCtx.roundRect === 'function' && pts.length >= 3) {
                     for (let i = 0; i < pts.length; i++) {
                         const p1 = pts[i];
                         const p2 = pts[(i + 1) % pts.length];
@@ -991,17 +1105,17 @@ const drawObject = o => {
                         if (i === 0) {
                             const midX = (p0.x + p1.x) / 2;
                             const midY = (p0.y + p1.y) / 2;
-                            cvCtx.moveTo(midX, midY);
+                            targetCtx.moveTo(midX, midY);
                         }
-                        cvCtx.arcTo(p1.x, p1.y, p2.x, p2.y, radius);
+                        targetCtx.arcTo(p1.x, p1.y, p2.x, p2.y, radius);
                     }
-                    cvCtx.closePath();
+                    targetCtx.closePath();
                 } else {
                     pts.forEach((pt, i) => {
-                        if (i === 0) cvCtx.moveTo(pt.x, pt.y);
-                        else cvCtx.lineTo(pt.x, pt.y);
+                        if (i === 0) targetCtx.moveTo(pt.x, pt.y);
+                        else targetCtx.lineTo(pt.x, pt.y);
                     });
-                    cvCtx.closePath();
+                    targetCtx.closePath();
                 }
             };
 
@@ -1215,6 +1329,9 @@ const drawObject = o => {
         if (o.textAlign === 'center') renderX = t.x + (t.width / 2);
         else if (o.textAlign === 'right') renderX = t.x + t.width;
 
+        // Terapkan efek (Drop Shadow & Layer Blur) sebelum menggambar teks
+        applyEffectsBefore(cvCtx, o.style);
+
         lines.forEach((line, idx) => {
             const lineY = startY + (idx * lineHeight) + leadingOffsetY;
             cvCtx.fillText(line, renderX, lineY);
@@ -1248,6 +1365,81 @@ const drawObject = o => {
                 cvCtx.restore();
             }
         });
+
+        // Dukungan INNER_SHADOW pada teks menggunakan offscreen canvas
+        const textEffects = Array.isArray(o.style && o.style.effects) ? o.style.effects : [];
+        const innerShadows = textEffects.filter(fx => fx && fx.visible !== false && String(fx.type || '').toUpperCase().replace(/-/g, '_') === 'INNER_SHADOW');
+        if (innerShadows.length > 0) {
+            const pad = 100;
+            const ow = Math.ceil(Math.max(1, t.width + pad * 2));
+            const oh = Math.ceil(Math.max(1, t.height + pad * 2));
+            const oc = document.createElement('canvas');
+            oc.width = ow;
+            oc.height = oh;
+            const oxCtx = oc.getContext('2d');
+
+            if (oxCtx) {
+                innerShadows.forEach(fx => {
+                    oxCtx.clearRect(0, 0, ow, oh);
+                    oxCtx.font = cvCtx.font;
+                    oxCtx.textAlign = cvCtx.textAlign;
+                    oxCtx.textBaseline = cvCtx.textBaseline;
+                    try { oxCtx.letterSpacing = cvCtx.letterSpacing; } catch (_) {}
+
+                    const offRenderX = renderX - (t.x - pad);
+                    const offStartY = startY - (t.y - pad);
+
+                    // 1. Gambar teks hitam sebagai alpha mask
+                    oxCtx.fillStyle = '#000000';
+                    lines.forEach((line, idx) => {
+                        const lineY = offStartY + (idx * lineHeight) + leadingOffsetY;
+                        oxCtx.fillText(line, offRenderX, lineY);
+                    });
+
+                    // 2. Gunakan composite source-in untuk membuat bayangan jatuh ke dalam teks
+                    oxCtx.globalCompositeOperation = 'source-in';
+                    const c = Color.parseHex(fx.color) || Color.parseCss(fx.color) || { r: 0, g: 0, b: 0, a: 1 };
+                    const op = (fx.opacity == null ? 0.25 : fx.opacity) * (c.a == null ? 1 : c.a);
+                    const ox = fx.x || 0;
+                    const oy = fx.y || 0;
+                    const blur = Math.max(0, fx.blur || 0);
+
+                    // Buat bayangan dengan menggambar inverse mask di luar
+                    const oc2 = document.createElement('canvas');
+                    oc2.width = ow;
+                    oc2.height = oh;
+                    const oxCtx2 = oc2.getContext('2d');
+                    if (oxCtx2) {
+                        oxCtx2.fillStyle = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
+                        oxCtx2.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
+                        oxCtx2.shadowBlur = blur;
+                        oxCtx2.shadowOffsetX = ox + 5000;
+                        oxCtx2.shadowOffsetY = oy;
+
+                        // Gambar inverse mask
+                        oxCtx2.fillRect(0, 0, ow, oh);
+                        oxCtx2.globalCompositeOperation = 'destination-out';
+                        oxCtx2.font = cvCtx.font;
+                        oxCtx2.textAlign = cvCtx.textAlign;
+                        oxCtx2.textBaseline = cvCtx.textBaseline;
+                        try { oxCtx2.letterSpacing = cvCtx.letterSpacing; } catch (_) {}
+                        lines.forEach((line, idx) => {
+                            const lineY = offStartY + (idx * lineHeight) + leadingOffsetY;
+                            oxCtx2.fillText(line, offRenderX - 5000, lineY);
+                        });
+
+                        oxCtx.drawImage(oc2, 0, 0);
+                    }
+
+                    // Tempelkan hasil bayangan ke cvCtx
+                    cvCtx.save();
+                    cvCtx.shadowColor = 'transparent';
+                    cvCtx.filter = 'none';
+                    cvCtx.drawImage(oc, t.x - pad, t.y - pad);
+                    cvCtx.restore();
+                });
+            }
+        }
 
         cvCtx.restore();
     }
