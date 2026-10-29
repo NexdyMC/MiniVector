@@ -741,88 +741,77 @@
   }
 
   /* ============================================================
-     FIGMA / LINEAR STYLE ROW CARD TILE & CUSTOM CHECKBOX
+     FIGMA / LINEAR STYLE PURE TOGGLE TILE (TANPA CHECKBOX)
      ============================================================ */
-  .ui-row-tile {
+  .ui-toggle-tile {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    height: var(--ctl, 28px);
+    padding: 0 10px;
+    background: var(--c-input, #1e1e20);
+    border: 1px solid var(--c-line, rgba(255, 255, 255, 0.08));
     border-radius: 6px;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
-    transition: all 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .ui-row-tile:hover {
+  .ui-toggle-tile:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
   }
-  .ui-row-tile.is-active,
-  .ui-row-tile:has(input[type="checkbox"]:checked) {
-    background: rgba(13, 153, 255, 0.08);
-    border-color: rgba(13, 153, 255, 0.35);
+  /* Status Aktif (ON / Checked): Menyala biru Figma dengan glow lembut */
+  .ui-toggle-tile.on,
+  .ui-toggle-tile:has(input[type="checkbox"]:checked) {
+    background: rgba(13, 153, 255, 0.14);
+    border-color: #0D99FF;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(13, 153, 255, 0.2);
   }
-  .ui-row-tile-label {
+  .ui-toggle-tile-label {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 11px;
     font-weight: 500;
-    color: #d4d4d8;
+    color: #a1a1aa;
     transition: color 0.15s ease;
   }
-  .ui-row-tile:hover .ui-row-tile-label {
+  .ui-toggle-tile:hover .ui-toggle-tile-label {
     color: #ffffff;
   }
-  .ui-row-tile.is-active .ui-row-tile-label,
-  .ui-row-tile:has(input[type="checkbox"]:checked) .ui-row-tile-label {
+  .ui-toggle-tile.on .ui-toggle-tile-label,
+  .ui-toggle-tile:has(input[type="checkbox"]:checked) .ui-toggle-tile-label {
     color: #ffffff;
+    font-weight: 600;
+  }
+  .ui-toggle-tile.on .ui-toggle-tile-label i,
+  .ui-toggle-tile:has(input[type="checkbox"]:checked) .ui-toggle-tile-label i {
+    color: #38bdf8 !important;
   }
 
-  /* Custom Checkbox Box */
-  .ui-checkbox-box {
-    position: relative;
-    width: 15px;
-    height: 15px;
-    border-radius: 4px;
-    background: #18181b;
-    border: 1.5px solid rgba(255, 255, 255, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* Status Indicator Badge (Dot atau Icon Status di Kanan) */
+  .ui-toggle-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.15s ease;
     flex-shrink: 0;
-    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .ui-row-tile:hover .ui-checkbox-box {
-    border-color: rgba(255, 255, 255, 0.5);
+  .ui-toggle-tile:hover .ui-toggle-status-dot {
+    background: rgba(255, 255, 255, 0.4);
   }
-  .ui-row-tile input[type="checkbox"]:checked ~ .ui-checkbox-box,
-  .ui-checkbox-box.checked {
+  .ui-toggle-tile.on .ui-toggle-status-dot,
+  .ui-toggle-tile:has(input[type="checkbox"]:checked) .ui-toggle-status-dot {
     background: #0D99FF;
-    border-color: #0D99FF;
-    box-shadow: 0 0 8px rgba(13, 153, 255, 0.4);
+    box-shadow: 0 0 6px #0D99FF;
+    transform: scale(1.15);
   }
-  .ui-checkbox-box svg {
-    width: 10px;
-    height: 10px;
-    stroke: #ffffff;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-    opacity: 0;
-    transform: scale(0.5);
-    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .ui-row-tile input[type="checkbox"]:checked ~ .ui-checkbox-box svg,
-  .ui-checkbox-box.checked svg {
-    opacity: 1;
-    transform: scale(1);
-  }
-  .ui-row-tile input[type="checkbox"] {
+
+  .ui-toggle-tile input[type="checkbox"] {
     position: absolute;
     opacity: 0;
     width: 0;
