@@ -342,14 +342,23 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) =
             const spread = fx.spread || 0;
             const shadowColorStr = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
 
-            // Padding cukup besar agar bayangan + blur + offset + spread cukup ruang
-            const pad = Math.ceil(Math.max(50, blur * 3 + Math.abs(spread) * 2 + Math.max(Math.abs(isox), Math.abs(isoy)) + 40));
-            const ow = Math.ceil(Math.max(1, box.width + pad * 2));
-            const oh = Math.ceil(Math.max(1, box.height + pad * 2));
+            // --- Faktor resolusi ---
+            // Offscreen canvas harus sekali lipat zoom*DPR agar tidak buram saat di-zoom.
+            // Semua koordinat path, shadow, dan dimensi canvas dikalikan res.
+            // Saat ditempel balik ke ctx, kita gunakan ukuran world-coordinate eksplisit
+            // sehingga CTM (rotasi/translate) yang aktif di ctx otomatis menangani transformasi.
+            const res = Math.min(4, Math.max(1, (typeof State !== 'undefined' ? (State.zoom || 1) : 1) * (typeof cvDpr !== 'undefined' ? (cvDpr || 1) : 1)));
 
-            // Offset dari koordinat box ke koordinat offscreen canvas
-            const dx = pad - box.x;
-            const dy = pad - box.y;
+            // Padding dalam world-coordinate, lalu dikalikan res untuk offscreen
+            const pad = Math.ceil(Math.max(50, blur * 3 + Math.abs(spread) * 2 + Math.max(Math.abs(isox), Math.abs(isoy)) + 40));
+            const worldW = box.width + pad * 2;
+            const worldH = box.height + pad * 2;
+            const ow = Math.ceil(Math.max(1, worldW * res));
+            const oh = Math.ceil(Math.max(1, worldH * res));
+
+            // Offset dari koordinat box ke koordinat offscreen canvas (sudah ter-scale res)
+            const dx = (pad - box.x) * res;
+            const dy = (pad - box.y) * res;
 
             // === KANVAS 1: Buat "cetakan berlubang" (solid rect MINUS bentuk objek) ===
             // Trik: fillRect penuh, lalu destination-out untuk memotong lubang bentuk objek.
@@ -371,10 +380,11 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) =
                 ox1.fillRect(0, 0, ow, oh);
 
                 // --- Langkah 2: Potong lubang berbentuk objek menggunakan destination-out ---
-                // Jika ada spread, perkecil lubang (spread positif = shadow lebih tebal = lubang lebih kecil)
+                // Terapkan scale(res) agar semua koordinat path ikut terskala ke ruang offscreen.
                 ox1.globalCompositeOperation = 'destination-out';
                 ox1.save();
                 ox1.translate(dx, dy);
+                ox1.scale(res, res); // <-- semua koordinat world-coordinate dari tracePathFn di-scale res×
                 if (!isStrokeOnly && (box.width || 0) > 0 && (box.height || 0) > 0) {
                     if (spread > 0) {
                         // Perkecil lubang: translate ke center, scale down, lalu trace
@@ -411,11 +421,11 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) =
                 ox1.restore();
 
                 // --- Langkah 3: Gambar cetakan ke oc2 DENGAN bayangan aktif ---
-                // Shadow dari tepi lubang akan "merayap" ke dalam area yang terpotong.
+                // Shadow blur & offset dikalikan res agar proporsional dengan resolusi offscreen.
                 ox2.shadowColor = shadowColorStr;
-                ox2.shadowBlur = blur;
-                ox2.shadowOffsetX = isox;
-                ox2.shadowOffsetY = isoy;
+                ox2.shadowBlur = blur * res;
+                ox2.shadowOffsetX = isox * res;
+                ox2.shadowOffsetY = isoy * res;
                 ox2.drawImage(oc1, 0, 0);
 
                 // Matikan shadow untuk operasi selanjutnya
@@ -425,11 +435,10 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) =
                 ox2.shadowOffsetY = 0;
 
                 // --- Langkah 4: Clip ke siluet bentuk asli menggunakan destination-in ---
-                // Ini menghilangkan kotak luar hitam dari oc1, menyisakan HANYA bayangan tepi
-                // yang berada DI DALAM bentuk objek.
                 ox2.globalCompositeOperation = 'destination-in';
                 ox2.save();
                 ox2.translate(dx, dy);
+                ox2.scale(res, res); // <-- sama seperti ox1, scale res× agar path presisi
                 tracePathFn(ox2);
                 if (isStrokeOnly) {
                     const sw = (style.strokeWidth !== undefined ? style.strokeWidth : 1);
@@ -444,13 +453,17 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) =
                 }
                 ox2.restore();
 
-                // --- Langkah 5: Tempelkan hasil bayangan tepi ke canvas utama ---
+                // --- Langkah 5: Tempelkan hasil ke canvas utama ---
+                // PENTING: gunakan drawImage dengan explicit world-size (worldW x worldH).
+                // Browser akan memperkecil oc2 (resolusi tinggi) ke ukuran world-coordinate.
+                // CTM yang aktif di ctx (rotasi, zoom) akan otomatis menangani penempatan
+                // yang benar di layar — termasuk saat objek diputar!
                 ox2.globalCompositeOperation = 'source-over';
                 ctx.save();
                 ctx.shadowColor = 'transparent';
                 ctx.shadowBlur = 0;
                 ctx.filter = 'none';
-                ctx.drawImage(oc2, box.x - pad, box.y - pad);
+                ctx.drawImage(oc2, box.x - pad, box.y - pad, worldW, worldH);
                 ctx.restore();
             }
         } else if (fx.type === 'NOISE') {
