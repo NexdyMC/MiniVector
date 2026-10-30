@@ -1,4 +1,5 @@
 /* ================= SHORTCUT KEYBOARD ================= */
+let prevTool = null;
 const SMALL = window.matchMedia('(max-width: 899px)');
 const toolKeys = {
   KeyV: 'select',
