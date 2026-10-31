@@ -302,7 +302,9 @@ const getTexturePattern = (ctx, patternType) => {
 };
 
 // Pasang efek sebelum menggambar shape / text (Drop shadow, Layer blur)
-const applyEffectsBefore = (ctx, style) => {
+// Sesuai standar Figma: bayangan dihitung dalam koordinat lokal objek sehingga
+// otomatis ikut berputar bersama objek dan proporsional terhadap zoom canvas.
+const applyEffectsBefore = (ctx, style, transform = null) => {
     const effects = Array.isArray(style && style.effects) ? style.effects : [];
     if (!effects.length) return;
 
@@ -313,9 +315,36 @@ const applyEffectsBefore = (ctx, style) => {
             const c = Color.parseHex(fx.color) || Color.parseCss(fx.color) || { r: 0, g: 0, b: 0, a: 1 };
             const op = (fx.opacity == null ? 0.25 : fx.opacity) * (c.a == null ? 1 : c.a);
             ctx.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
-            ctx.shadowBlur = Math.max(0, fx.blur || 0);
-            ctx.shadowOffsetX = fx.x || 0;
-            ctx.shadowOffsetY = fx.y || 0;
+
+            // Skala viewport (zoom * DPR) agar ukuran dan blur bayangan selalu proporsional di layar
+            const dpr = typeof cvDpr !== 'undefined' ? (cvDpr || 1) : 1;
+            const zoom = typeof State !== 'undefined' ? (State.zoom || 1) : 1;
+            const scale = dpr * zoom;
+
+            // Proyeksikan offset ke ruang orientasi canvas berdasarkan rotasi dan flip objek
+            const rawX = fx.x || 0;
+            const rawY = fx.y || 0;
+            let effX = rawX;
+            let effY = rawY;
+
+            if (transform) {
+                if (transform.flipX) effX = -effX;
+                if (transform.flipY) effY = -effY;
+                const rotDeg = transform.rotation || 0;
+                if (rotDeg !== 0) {
+                    const rad = (rotDeg * Math.PI) / 180;
+                    const cos = Math.cos(rad);
+                    const sin = Math.sin(rad);
+                    const rx = effX * cos - effY * sin;
+                    const ry = effX * sin + effY * cos;
+                    effX = rx;
+                    effY = ry;
+                }
+            }
+
+            ctx.shadowOffsetX = effX * scale;
+            ctx.shadowOffsetY = effY * scale;
+            ctx.shadowBlur = Math.max(0, fx.blur || 0) * scale;
         } else if (typeNorm === 'LAYER_BLUR') {
             const b = Math.max(0, fx.blur || 0);
             if (b > 0) {
@@ -343,11 +372,9 @@ const applyEffectsAfter = (ctx, style, box, tracePathFn, isStrokeOnly = false) =
             const shadowColorStr = `rgba(${c.r}, ${c.g}, ${c.b}, ${+op.toFixed(3)})`;
 
             // --- Faktor resolusi ---
-            // Offscreen canvas harus sekali lipat zoom*DPR agar tidak buram saat di-zoom.
-            // Semua koordinat path, shadow, dan dimensi canvas dikalikan res.
-            // Saat ditempel balik ke ctx, kita gunakan ukuran world-coordinate eksplisit
-            // sehingga CTM (rotasi/translate) yang aktif di ctx otomatis menangani transformasi.
-            const res = Math.min(4, Math.max(1, (typeof State !== 'undefined' ? (State.zoom || 1) : 1) * (typeof cvDpr !== 'undefined' ? (cvDpr || 1) : 1)));
+            // Gunakan resolusi DPR konstan (1x display normal, 2x retina) agar tidak terjadi
+            // lonjakan visual saat zoom in/out. CTM canvas utama otomatis menangani zoom dan rotasi.
+            const res = Math.min(2, Math.max(1, Math.round(typeof cvDpr !== 'undefined' ? (cvDpr || 1) : 1)));
 
             // Padding dalam world-coordinate, lalu dikalikan res untuk offscreen
             const pad = Math.ceil(Math.max(50, blur * 3 + Math.abs(spread) * 2 + Math.max(Math.abs(isox), Math.abs(isoy)) + 40));
@@ -669,7 +696,7 @@ const drawObject = o => {
 
             const c = o.crop;
             // Terapkan efek (Drop Shadow & Layer Blur) sebelum menggambar image
-            applyEffectsBefore(cvCtx, s);
+            applyEffectsBefore(cvCtx, s, t);
 
             if (c && typeof c.x === 'number' && typeof c.width === 'number' && c.width > 0 && c.height > 0) {
                 // Gambar bagian crop dari gambar asli
@@ -742,7 +769,7 @@ const drawObject = o => {
             }
         };
         cvCtx.save();
-        applyEffectsBefore(cvCtx, s);
+        applyEffectsBefore(cvCtx, s, t);
         traceFrame();
         Paint.fillPath(cvCtx, s, t);
         cvCtx.restore();
@@ -833,7 +860,7 @@ const drawObject = o => {
         };
 
         cvCtx.save();
-        applyEffectsBefore(cvCtx, s);
+        applyEffectsBefore(cvCtx, s, t);
         traceRect();
         Paint.fillPath(cvCtx, s, t);
         cvCtx.restore();
@@ -886,7 +913,7 @@ const drawObject = o => {
         };
 
         cvCtx.save();
-        applyEffectsBefore(cvCtx, s);
+        applyEffectsBefore(cvCtx, s, t);
         traceEllipse();
         Paint.fillPath(cvCtx, s, t);
         cvCtx.restore();
@@ -927,7 +954,7 @@ const drawObject = o => {
         const nodes = (o.geometry && o.geometry.nodes) || [];
         if (nodes.length >= 2) {
             cvCtx.save();
-            applyEffectsBefore(cvCtx, s);
+            applyEffectsBefore(cvCtx, s, t);
             const sw = applyStrokeStyle(cvCtx, s, t);
             const x1 = t.x + nodes[0].x, y1 = t.y + nodes[0].y;
             const x2 = t.x + nodes[1].x, y2 = t.y + nodes[1].y;
@@ -967,7 +994,7 @@ const drawObject = o => {
             const isRealP2D = geom._path2d && (typeof Path2D !== 'undefined') && (geom._path2d instanceof Path2D);
             if (isRealP2D) {
                 // Terapkan efek (Drop Shadow & Layer Blur) sebelum fill & stroke path
-                applyEffectsBefore(cvCtx, s);
+                applyEffectsBefore(cvCtx, s, t);
 
                 // Fills (Solid / Gradient dari Paint.js)
                 if (s.fills && s.fills.length > 0) {
@@ -1042,7 +1069,7 @@ const drawObject = o => {
             };
 
             cvCtx.save();
-            applyEffectsBefore(cvCtx, s);
+            applyEffectsBefore(cvCtx, s, t);
             tracePen(cvCtx);
 
             // Fill (bila ada)
@@ -1136,7 +1163,7 @@ const drawObject = o => {
 
             // Fills dengan efek bayangan luar & layer blur
             cvCtx.save();
-            applyEffectsBefore(cvCtx, s);
+            applyEffectsBefore(cvCtx, s, t);
             tracePoly();
             if (s.fills && s.fills.length > 0) {
                 Paint.fillPath(cvCtx, s, t);
@@ -1343,7 +1370,7 @@ const drawObject = o => {
         else if (o.textAlign === 'right') renderX = t.x + t.width;
 
         // Terapkan efek (Drop Shadow & Layer Blur) sebelum menggambar teks
-        applyEffectsBefore(cvCtx, o.style);
+        applyEffectsBefore(cvCtx, o.style, t);
 
         lines.forEach((line, idx) => {
             const lineY = startY + (idx * lineHeight) + leadingOffsetY;
