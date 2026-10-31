@@ -579,17 +579,39 @@
                 }
             }
 
-            // Kunci Rasio Aspek (Proportional Aspect Ratio Lock) jika menekan Shift pada handle sudut (nw, ne, se, sw)
-            if (e.shiftKey && origBox.width > 0 && origBox.height > 0) {
+            // Kunci Rasio Aspek (Proportional Aspect Ratio Lock)
+            // Sesuai standar Figma: jika objek memiliki constrainProportions aktif, rasio selalu dikunci.
+            // Menekan Shift saat lock aktif akan membuka kunci sementara (invert) untuk free-resize.
+            // Jika lock mati, menekan Shift akan mengunci rasio sementara.
+            let isRatioLocked = false;
+            if (resizeTargetId && resizeTargetId !== '__multi__') {
+                const found = findObjectWithParent(resizeTargetId);
+                isRatioLocked = !!(found && found.obj && found.obj.transform && found.obj.transform.constrainProportions);
+            } else if (State.selectedIds && State.selectedIds.length > 0) {
+                isRatioLocked = State.selectedIds.every(id => {
+                    const found = findObjectWithParent(id);
+                    return !!(found && found.obj && found.obj.transform && found.obj.transform.constrainProportions);
+                });
+            }
+
+            const shouldConstrain = isRatioLocked ? !e.shiftKey : !!e.shiftKey;
+
+            if (shouldConstrain && origBox.width > 0 && origBox.height > 0) {
                 const aspect = origBox.width / origBox.height;
                 const isCorner = (activeHandle.includes('n') || activeHandle.includes('s')) &&
                                  (activeHandle.includes('e') || activeHandle.includes('w'));
 
                 if (isCorner) {
-                    // Gunakan perubahan skala yang paling dominan
-                    const scaleCandidateX = newBoxW / origBox.width;
-                    const scaleCandidateY = newBoxH / origBox.height;
-                    const scale = Math.max(scaleCandidateX, scaleCandidateY);
+                    // Tentukan skala berdasarkan delta pergerakan mouse dominan agar mulus saat membesar maupun mengecil
+                    const deltaW = Math.abs(newBoxW - origBox.width);
+                    const deltaH = Math.abs(newBoxH - origBox.height);
+
+                    let scale;
+                    if (deltaW / origBox.width > deltaH / origBox.height) {
+                        scale = Math.max(MIN_SIZE / origBox.width, newBoxW / origBox.width);
+                    } else {
+                        scale = Math.max(MIN_SIZE / origBox.height, newBoxH / origBox.height);
+                    }
 
                     newBoxW = Math.max(MIN_SIZE, origBox.width * scale);
                     newBoxH = Math.max(MIN_SIZE, origBox.height * scale);
@@ -601,11 +623,11 @@
                         newBoxY = origBox.y + (origBox.height - newBoxH);
                     }
                 } else if (activeHandle === 'e' || activeHandle === 'w') {
-                    // Tarik handle samping kiri/kanan dengan Shift: sesuaikan tinggi proporsional dari tengah
+                    // Tarik handle samping kiri/kanan: sesuaikan tinggi proporsional dari tengah
                     newBoxH = Math.max(MIN_SIZE, newBoxW / aspect);
                     newBoxY = origBox.y + (origBox.height - newBoxH) / 2;
                 } else if (activeHandle === 'n' || activeHandle === 's') {
-                    // Tarik handle atas/bawah dengan Shift: sesuaikan lebar proporsional dari tengah
+                    // Tarik handle atas/bawah: sesuaikan lebar proporsional dari tengah
                     newBoxW = Math.max(MIN_SIZE, newBoxH * aspect);
                     newBoxX = origBox.x + (origBox.width - newBoxW) / 2;
                 }

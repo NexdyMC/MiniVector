@@ -40,6 +40,7 @@
                 width: w || 300,
                 height: h || 200,
                 rotation: 0,
+                constrainProportions: true,
                 pivot: { x: 0.5, y: 0.5 }
             },
             geometry: {
