@@ -1,0 +1,141 @@
+/* ============================================================
+   MINIVECTOR - CUSTOM CURSORS (FIGMA STYLE)
+   Desain: Dual-Tone (Fill #000000 + Stroke #FFFFFF 1.5px)
+   Hotspot: Pixel-Calibrated
+   Fallback: Keyword kursor bawaan sistem operasi
+   ============================================================ */
+
+:root {
+  /* 1. Navigasi & Seleksi Utama */
+  --cursor-select: url('../assets/cursors/cursor-select.svg') 4 3, default;
+  --cursor-grab: url('../assets/cursors/cursor-grab.svg') 12 12, grab;
+  --cursor-grabbing: url('../assets/cursors/cursor-grabbing.svg') 12 12, grabbing;
+
+  /* 2. Transformasi & Manipulasi Objek */
+  --cursor-move-4way: url('../assets/cursors/cursor-move-4way.svg') 12 12, move;
+  --cursor-rotate: url('../assets/cursors/cursor-rotate.svg') 12 12, grab;
+  --cursor-resize-nwse: url('../assets/cursors/cursor-resize-nwse.svg') 12 12, nwse-resize;
+  --cursor-resize-nesw: url('../assets/cursors/cursor-resize-nesw.svg') 12 12, nesw-resize;
+  --cursor-resize-ew: url('../assets/cursors/cursor-resize-ew.svg') 12 12, ew-resize;
+  --cursor-resize-ns: url('../assets/cursors/cursor-resize-ns.svg') 12 12, ns-resize;
+
+  /* 3. Alat Pembuatan & Vektor */
+  --cursor-crosshair: url('../assets/cursors/cursor-crosshair.svg') 12 12, crosshair;
+  --cursor-pen: url('../assets/cursors/cursor-pen.svg') 3 21, crosshair;
+  --cursor-pen-close: url('../assets/cursors/cursor-pen-close.svg') 3 21, crosshair;
+  --cursor-pencil: url('../assets/cursors/cursor-pencil.svg') 3 21, crosshair;
+  --cursor-text: url('../assets/cursors/cursor-text.svg') 12 12, text;
+
+  /* 4. Modifikasi & Alat Bantu */
+  --cursor-duplicate: url('../assets/cursors/cursor-duplicate.svg') 4 3, copy;
+  --cursor-pipette: url('../assets/cursors/cursor-pipette.svg') 3 21, crosshair;
+  --cursor-zoom-in: url('../assets/cursors/cursor-zoom-in.svg') 10 10, zoom-in;
+  --cursor-zoom-out: url('../assets/cursors/cursor-zoom-out.svg') 10 10, zoom-out;
+}
+
+/* ============================================================
+   CANVAS STAGE CURSORS
+   ============================================================ */
+
+/* Kursor bawaan pada kanvas adalah panah miring seleksi ala Figma */
+#canvas {
+  cursor: var(--cursor-select);
+}
+
+/* Kontekstual berdasarkan tool yang sedang aktif */
+#workspace[data-tool="select"] #canvas,
+#canvas[data-tool="select"],
+body[data-active-tool="select"] #canvas {
+  cursor: var(--cursor-select);
+}
+
+#workspace[data-tool="frame"] #canvas,
+#workspace[data-tool="rectangle"] #canvas,
+#workspace[data-tool="ellipse"] #canvas,
+#workspace[data-tool="polygon"] #canvas,
+#workspace[data-tool="star"] #canvas,
+#workspace[data-tool="line"] #canvas,
+#canvas[data-tool="frame"],
+#canvas[data-tool="rectangle"],
+#canvas[data-tool="ellipse"],
+#canvas[data-tool="polygon"],
+#canvas[data-tool="star"],
+#canvas[data-tool="line"] {
+  cursor: var(--cursor-crosshair);
+}
+
+#workspace[data-tool="pen"] #canvas,
+#canvas[data-tool="pen"] {
+  cursor: var(--cursor-pen);
+}
+
+#workspace[data-tool="pencil"] #canvas,
+#canvas[data-tool="pencil"] {
+  cursor: var(--cursor-pencil);
+}
+
+#workspace[data-tool="text"] #canvas,
+#canvas[data-tool="text"] {
+  cursor: var(--cursor-text);
+}
+
+#workspace[data-tool="hand"] #canvas,
+#canvas[data-tool="hand"] {
+  cursor: var(--cursor-grab);
+}
+
+/* State interaksi khusus kanvas */
+body.is-panning #canvas,
+body.is-panning #workspace,
+#canvas.is-panning {
+  cursor: var(--cursor-grabbing) !important;
+}
+
+/* ============================================================
+   DATA-CURSOR ATTRIBUTES PADA CANVAS
+   Memudahkan kontrol kursor secara langsung lewat dataset JS:
+   cvEl.dataset.cursor = 'rotate' / 'move' / 'nwse-resize', dll.
+   ============================================================ */
+
+#canvas[data-cursor="select"] { cursor: var(--cursor-select); }
+#canvas[data-cursor="move"],
+#canvas[data-cursor="move-4way"] { cursor: var(--cursor-move-4way); }
+#canvas[data-cursor="rotate"] { cursor: var(--cursor-rotate); }
+#canvas[data-cursor="nwse-resize"] { cursor: var(--cursor-resize-nwse); }
+#canvas[data-cursor="nesw-resize"] { cursor: var(--cursor-resize-nesw); }
+#canvas[data-cursor="ew-resize"] { cursor: var(--cursor-resize-ew); }
+#canvas[data-cursor="ns-resize"] { cursor: var(--cursor-resize-ns); }
+#canvas[data-cursor="grab"] { cursor: var(--cursor-grab); }
+#canvas[data-cursor="grabbing"] { cursor: var(--cursor-grabbing); }
+#canvas[data-cursor="crosshair"] { cursor: var(--cursor-crosshair); }
+#canvas[data-cursor="pen"] { cursor: var(--cursor-pen); }
+#canvas[data-cursor="pen-close"] { cursor: var(--cursor-pen-close); }
+#canvas[data-cursor="pencil"] { cursor: var(--cursor-pencil); }
+#canvas[data-cursor="text"] { cursor: var(--cursor-text); }
+#canvas[data-cursor="pipette"] { cursor: var(--cursor-pipette); }
+#canvas[data-cursor="duplicate"] { cursor: var(--cursor-duplicate); }
+#canvas[data-cursor="zoom-in"] { cursor: var(--cursor-zoom-in); }
+#canvas[data-cursor="zoom-out"] { cursor: var(--cursor-zoom-out); }
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+.cursor-select { cursor: var(--cursor-select) !important; }
+.cursor-move-4way { cursor: var(--cursor-move-4way) !important; }
+.cursor-rotate { cursor: var(--cursor-rotate) !important; }
+.cursor-pen { cursor: var(--cursor-pen) !important; }
+.cursor-pen-close { cursor: var(--cursor-pen-close) !important; }
+.cursor-pencil { cursor: var(--cursor-pencil) !important; }
+.cursor-grab { cursor: var(--cursor-grab) !important; }
+.cursor-grabbing { cursor: var(--cursor-grabbing) !important; }
+.cursor-crosshair { cursor: var(--cursor-crosshair) !important; }
+.cursor-duplicate { cursor: var(--cursor-duplicate) !important; }
+.cursor-pipette { cursor: var(--cursor-pipette) !important; }
+.cursor-text { cursor: var(--cursor-text) !important; }
+.cursor-zoom-in { cursor: var(--cursor-zoom-in) !important; }
+.cursor-zoom-out { cursor: var(--cursor-zoom-out) !important; }
+.cursor-resize-nwse { cursor: var(--cursor-resize-nwse) !important; }
+.cursor-resize-nesw { cursor: var(--cursor-resize-nesw) !important; }
+.cursor-resize-ew { cursor: var(--cursor-resize-ew) !important; }
+.cursor-resize-ns { cursor: var(--cursor-resize-ns) !important; }

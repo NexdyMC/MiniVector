@@ -6,6 +6,7 @@
    - inspector.css  : Sidebar Kanan, Form Inputs, Auto Layout, Code Anchor Grid
    - components.css : Custom Dropdown, Context Menu, Stroke & Effect Popovers, Matrix Box
    - modals.css     : Two-Column Settings, Font Manager, Code Export & Dialogs
+   - cursor.css     : Dual-Tone Custom Cursors (Figma Style), Hotspots & Tool States
    ============================================================ */
 
 @import url('base.css');
@@ -13,3 +14,4 @@
 @import url('inspector.css');
 @import url('components.css');
 @import url('modals.css');
+@import url('cursor.css');

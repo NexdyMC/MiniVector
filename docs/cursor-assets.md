@@ -16,28 +16,30 @@ Dokumen ini merupakan panduan spesifikasi dan daftar kebutuhan aset kursor kusto
 ## 3. Daftar Kursor dalam Bentuk List Checkbox
 
 ### 3.1 Kursor Navigasi & Seleksi Utama (Navigation & Selection)
-- [ ] **`cursor-select` (Panah Utama)** : Sebagai kursor penunjuk utama di dalam area kanvas kerja | Ditampilkan saat Tool Select (`V`) aktif dan mouse berada di atas kanvas kosong atau objek netral. Titik hotspot berada pada ujung kiri atas jarum `(4, 3)`.
-- [ ] **`cursor-grab` (Tangan Terbuka)** : Memberi petunjuk visual bahwa kanvas siap digeser (*pan mode*) | Aktif saat menahan tombol `Space` atau mengaktifkan Hand Tool (`H`). Hotspot berada di tengah telapak tangan `(12, 12)`.
-- [ ] **`cursor-grabbing` (Tangan Mengepal)** : Memberi umpan balik bahwa kanvas sedang aktif ditarik/digeser | Aktif saat tombol kiri mouse ditekan dan diseret (*mouse drag*) dalam mode pan atau saat panning dengan tombol tengah mouse. Hotspot berada di `(12, 12)`.
+- [x] **`cursor-select` (Panah Utama)** : Sebagai kursor penunjuk utama di dalam area kanvas kerja | Ditampilkan saat Tool Select (`V`) aktif dan mouse berada di atas kanvas kosong atau objek netral. Titik hotspot berada pada ujung kiri atas jarum `(4, 3)`.
+- [x] **`cursor-move-4way` (Panah 4 Arah)** : Menggeser/memindahkan posisi objek terpilih di kanvas | Aktif saat mengarahkan mouse ke badan objek terseleksi atau saat drag memindahkan objek. Hotspot di `(12, 12)`.
+- [x] **`cursor-grab` (Tangan Terbuka)** : Memberi petunjuk visual bahwa kanvas siap digeser (*pan mode*) | Aktif saat menahan tombol `Space` atau mengaktifkan Hand Tool (`H`). Hotspot berada di tengah telapak tangan `(12, 12)`.
+- [x] **`cursor-grabbing` (Tangan Mengepal)** : Memberi umpan balik bahwa kanvas sedang aktif ditarik/digeser | Aktif saat tombol kiri mouse ditekan dan diseret (*mouse drag*) dalam mode pan atau saat panning dengan tombol tengah mouse. Hotspot berada di `(12, 12)`.
 
 ### 3.2 Kursor Transformasi & Manipulasi Objek (Transformation & Handles)
-- [ ] **`cursor-rotate` (Dua Panah Melengkung $90^\circ$)** : Menunjukkan objek dapat diputar secara bebas | Ditampilkan saat kursor berada tepat di luar 4 sudut seleksi objek (zona rotasi luar). Hotspot berada tepat di titik pusat lingkaran lengkung `(12, 12)`.
-- [ ] **`cursor-resize-nwse` (Diagonal Kiri-Atas ke Kanan-Bawah)** : Mengubah ukuran objek secara diagonal dari sudut barat laut / tenggara | Aktif saat kursor berada di atas handle `nw` atau `se`. Hotspot di `(12, 12)`.
-- [ ] **`cursor-resize-nesw` (Diagonal Kanan-Atas ke Kiri-Bawah)** : Mengubah ukuran objek secara diagonal dari sudut timur laut / barat daya | Aktif saat kursor berada di atas handle `ne` atau `sw`. Hotspot di `(12, 12)`.
-- [ ] **`cursor-resize-ew` (Horizontal Kiri-Kanan)** : Mengubah lebar objek dari sisi samping | Aktif saat kursor berada di atas handle sisi `e` (kanan) atau `w` (kiri). Hotspot di `(12, 12)`.
-- [ ] **`cursor-resize-ns` (Vertikal Atas-Bawah)** : Mengubah tinggi objek dari sisi atas/bawah | Aktif saat kursor berada di atas handle sisi `n` (atas) atau `s` (bawah). Hotspot di `(12, 12)`.
+- [x] **`cursor-rotate` (Dua Panah Melengkung $90^\circ$)** : Menunjukkan objek dapat diputar secara bebas | Ditampilkan saat kursor berada tepat di luar 4 sudut seleksi objek (zona rotasi luar). Hotspot berada tepat di titik pusat lingkaran lengkung `(12, 12)`.
+- [x] **`cursor-resize-nwse` (Diagonal Kiri-Atas ke Kanan-Bawah)** : Mengubah ukuran objek secara diagonal dari sudut barat laut / tenggara | Aktif saat kursor berada di atas handle `nw` atau `se`. Hotspot di `(12, 12)`.
+- [x] **`cursor-resize-nesw` (Diagonal Kanan-Atas ke Kiri-Bawah)** : Mengubah ukuran objek secara diagonal dari sudut timur laut / barat daya | Aktif saat kursor berada di atas handle `ne` atau `sw`. Hotspot di `(12, 12)`.
+- [x] **`cursor-resize-ew` (Horizontal Kiri-Kanan)** : Mengubah lebar objek dari sisi samping | Aktif saat kursor berada di atas handle sisi `e` (kanan) atau `w` (kiri). Hotspot di `(12, 12)`.
+- [x] **`cursor-resize-ns` (Vertikal Atas-Bawah)** : Mengubah tinggi objek dari sisi atas/bawah | Aktif saat kursor berada di atas handle sisi `n` (atas) atau `s` (bawah). Hotspot di `(12, 12)`.
 
 ### 3.3 Kursor Alat Pembuatan & Vektor (Creation & Drawing Tools)
-- [ ] **`cursor-crosshair` (Bidikan Garis Silang Presisi)** : Membantu penempatan awal titik koordinat bentuk dengan presisi tinggi | Aktif saat pengguna memilih alat pembuat bentuk: Rectangle (`R`), Frame (`F`), Ellipse (`O`), Polygon, atau Star. Hotspot di pusat persilangan `(12, 12)`.
-- [ ] **`cursor-pen` (Mata Pena Fountain)** : Menggambar titik kurva vektor bebas | Aktif saat Pen Tool (`P`) aktif untuk menambahkan node/anchor point baru di kanvas. Hotspot tepat di ujung mata pena `(3, 21)`.
-- [ ] **`cursor-pen-close` (Mata Pena dengan Lingkaran Kecil)** : Menandakan bahwa klik berikutnya akan menutup jalur path menjadi kurva tertutup (*closed path*) | Aktif saat kursor didekatkan ke titik awal pertama kurva pada mode Pen Tool. Hotspot di `(3, 21)`.
-- [ ] **`cursor-text` (I-Beam Kontras)** : Menentukan posisi awal pengetikan teks | Aktif saat Text Tool (`T`) aktif di atas kanvas. Hotspot di tengah garis vertikal `(12, 12)`.
+- [x] **`cursor-crosshair` (Bidikan Garis Silang Presisi)** : Membantu penempatan awal titik koordinat bentuk dengan presisi tinggi | Aktif saat pengguna memilih alat pembuat bentuk: Rectangle (`R`), Frame (`F`), Ellipse (`O`), Polygon, atau Star. Hotspot di pusat persilangan `(12, 12)`.
+- [x] **`cursor-pen` (Mata Pena Fountain)** : Menggambar titik kurva vektor bebas | Aktif saat Pen Tool (`P`) aktif untuk menambahkan node/anchor point baru di kanvas. Hotspot tepat di ujung mata pena `(3, 21)`.
+- [x] **`cursor-pen-close` (Mata Pena dengan Lingkaran Kecil)** : Menandakan bahwa klik berikutnya akan menutup jalur path menjadi kurva tertutup (*closed path*) | Aktif saat kursor didekatkan ke titik awal pertama kurva pada mode Pen Tool. Hotspot di `(3, 21)`.
+- [x] **`cursor-pencil` (Pensil Bebas)** : Menggambar garis bebas (*freehand vector stroke*) | Aktif saat Pencil Tool aktif. Hotspot tepat di ujung mata pensil `(3, 21)`.
+- [x] **`cursor-text` (I-Beam Kontras)** : Menentukan posisi awal pengetikan teks | Aktif saat Text Tool (`T`) aktif di atas kanvas. Hotspot di tengah garis vertikal `(12, 12)`.
 
 ### 3.4 Kursor Modifikasi & Alat Bantu (Modifiers & Utilities)
-- [ ] **`cursor-duplicate` (Panah Ganda Hitam-Putih)** : Menandakan aksi duplikasi instan saat objek diseret | Ditampilkan saat objek sedang diseleksi dan pengguna menahan tombol `Alt` (Windows) / `Option` (macOS) sambil menyeret objek. Hotspot di ujung panah utama `(4, 3)`.
-- [ ] **`cursor-pipette` (Pipet Eyedropper)** : Mengambil sampel warna langsung dari pixel kanvas | Aktif saat pengguna membuka Color Picker dan mengklik ikon pipet sampel warna (`I`). Hotspot tepat di ujung tetesan pipet `(3, 21)`.
-- [ ] **`cursor-zoom-in` (Kaca Pembesar Plus)** : Memperbesar tampilan area kanvas | Aktif saat Zoom Tool aktif atau menahan shortcut pembesar. Hotspot di pusat lensa kaca `(10, 10)`.
-- [ ] **`cursor-zoom-out` (Kaca Pembesar Minus)** : Memperkecil tampilan area kanvas | Aktif saat Zoom Tool aktif disertai tombol `Alt`. Hotspot di `(10, 10)`.
+- [x] **`cursor-duplicate` (Panah Ganda Hitam-Putih)** : Menandakan aksi duplikasi instan saat objek diseret | Ditampilkan saat objek sedang diseleksi dan pengguna menahan tombol `Alt` (Windows) / `Option` (macOS) sambil menyeret objek. Hotspot di ujung panah utama `(4, 3)`.
+- [x] **`cursor-pipette` (Pipet Eyedropper)** : Mengambil sampel warna langsung dari pixel kanvas | Aktif saat pengguna membuka Color Picker dan mengklik ikon pipet sampel warna (`I`). Hotspot tepat di ujung tetesan pipet `(3, 21)`.
+- [x] **`cursor-zoom-in` (Kaca Pembesar Plus)** : Memperbesar tampilan area kanvas | Aktif saat Zoom Tool aktif atau menahan shortcut pembesar. Hotspot di pusat lensa kaca `(10, 10)`.
+- [x] **`cursor-zoom-out` (Kaca Pembesar Minus)** : Memperkecil tampilan area kanvas | Aktif saat Zoom Tool aktif disertai tombol `Alt`. Hotspot di `(10, 10)`.
 
 ---
 
