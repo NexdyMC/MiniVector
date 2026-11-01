@@ -1109,7 +1109,10 @@ const drawObject = o => {
             const ry = h / 2;
             const g = o.geometry || {};
             const count = Math.max(3, parseInt(g.pointCount, 10) || (o.type === 'polygon' ? 3 : 5));
-            const radius = Math.max(0, parseFloat(g.cornerRadius) || 0);
+            const rawRadius = Math.max(0, parseFloat(g.cornerRadius) || 0);
+            // Batasi radius aman proporsional terhadap ukuran objek agar bentuk tidak saling silang saat mengecil
+            const maxSafeR = Math.min(rx, ry) * (o.type === 'star' ? 0.4 : 0.5);
+            const radius = Math.min(rawRadius, maxSafeR);
 
             // Bangun titik-titik sudut
             const pts = [];

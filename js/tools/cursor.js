@@ -210,18 +210,35 @@
 
         // 2. Cek Rotation Zone (hanya untuk seleksi tunggal, tepat di luar 4 sudut)
         if (State.selectedIds.length === 1) {
-            const cornerHandles = handles.slice(0, 4);
-            for (const ch of cornerHandles) {
-                const dist = Math.hypot(pt.x - ch.x, pt.y - ch.y);
-                if (dist > hitRadius && dist <= rotOuterRadius) {
-                    return {
-                        type: 'rotate',
-                        cursor: 'crosshair',
-                        targetId: State.selectedIds[0],
-                        bounds,
-                        cx,
-                        cy
-                    };
+            // Standar Figma: Zona rotasi dinonaktifkan jika ukuran objek di layar terlalu kecil (< 20px)
+            // agar objek kecil tidak terkunci oleh zona rotasi dan tetap mudah dipindahkan.
+            const screenW = bounds.width * State.zoom;
+            const screenH = bounds.height * State.zoom;
+            if (screenW >= 20 && screenH >= 20) {
+                // Periksa apakah titik kursor berada di DALAM bounding box objek (termasuk rotasi)
+                // Di Figma: area di dalam badan objek 100% adalah untuk MOVE / Seleksi, BUKAN rotasi!
+                let localPt = pt;
+                if (rot !== 0) {
+                    localPt = rotatePoint(pt.x, pt.y, cx, cy, -rad);
+                }
+                const isInsideBody = localPt.x >= bounds.x && localPt.x <= bounds.x + bounds.width &&
+                                     localPt.y >= bounds.y && localPt.y <= bounds.y + bounds.height;
+
+                if (!isInsideBody) {
+                    const cornerHandles = handles.slice(0, 4);
+                    for (const ch of cornerHandles) {
+                        const dist = Math.hypot(pt.x - ch.x, pt.y - ch.y);
+                        if (dist > hitRadius && dist <= rotOuterRadius) {
+                            return {
+                                type: 'rotate',
+                                cursor: 'crosshair',
+                                targetId: State.selectedIds[0],
+                                bounds,
+                                cx,
+                                cy
+                            };
+                        }
+                    }
                 }
             }
         }
@@ -318,16 +335,23 @@
             }
 
             if (handleHit.type === 'rotate') {
-                // Mode rotasi interaktif dengan drag mouse
-                mode = 'rotate';
-                resizeTargetId = handleHit.targetId;
-                rotateCenter = { x: handleHit.cx, y: handleHit.cy };
-                const found = findObjectWithParent(handleHit.targetId);
-                origRotationAngle = (found && found.obj.transform.rotation) || 0;
-                dragStartWorld = clickWorld;
-                pointerId = e.pointerId;
-                try { cvEl.setPointerCapture(e.pointerId); } catch (_) {}
-                return;
+                // Standar Figma: Jika klik mengenai objek LAIN di canvas,
+                // prioritaskan berpindah menyeleksi objek lain tersebut, jangan tertahan memutar objek lama!
+                const hitOther = hitTest(clickWorld);
+                if (hitOther && hitOther.id !== handleHit.targetId) {
+                    // Biarkan alur jatuh ke penyeleksian objek baru di bawah
+                } else {
+                    // Mode rotasi interaktif dengan drag mouse
+                    mode = 'rotate';
+                    resizeTargetId = handleHit.targetId;
+                    rotateCenter = { x: handleHit.cx, y: handleHit.cy };
+                    const found = findObjectWithParent(handleHit.targetId);
+                    origRotationAngle = (found && found.obj.transform.rotation) || 0;
+                    dragStartWorld = clickWorld;
+                    pointerId = e.pointerId;
+                    try { cvEl.setPointerCapture(e.pointerId); } catch (_) {}
+                    return;
+                }
             }
 
             mode = 'resize';
